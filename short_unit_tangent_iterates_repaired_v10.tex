@@ -1,0 +1,1869 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[margin=1.03in]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usepackage{enumitem}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,citecolor=blue!45!black,urlcolor=blue!45!black]{hyperref}
+\hypersetup{
+  pdftitle={A Noncircular Oval with Convex Unit-Tangent Iterates},
+  pdfauthor={Dean Menezes}
+}
+\allowdisplaybreaks
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\R}{\mathbb R}
+\newcommand{\Tmap}{\mathcal T}
+\newcommand{\Bmap}{\mathcal B}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\abs}[1]{\lvert #1\rvert}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\Per}{\operatorname{Per}}
+
+\title{A Noncircular Oval with Convex Unit-Tangent Iterates}
+\author{Dean Menezes}
+\date{August 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+For an oriented regular plane curve \(\gamma\), let \(\Tmap\gamma\) be
+obtained by moving each point one unit in the positive tangent direction.  We
+prove that there is a smooth noncircular oval \(\Gamma_0\) for which every
+iterate \(\Tmap^n\Gamma_0\) is an oval.  The construction begins with a
+complete convex hairpin \(C\) satisfying \(\Tmap C=C+(V,0)\).  Periodizing
+the sine of its steering angle gives exact centrally symmetric rear--front
+pairs \(R_H\mapsto F_H\).  After their half-perimeters are matched, a direct
+\(L^1\) estimate compares their intrinsic curvature measures.  A regularizing
+backward-shadowing theorem converts the resulting inverse pseudo-orbit into an
+exact infinite orbit.
+\end{abstract}
+
+\section{Introduction}
+
+The unit-tangent transform moves each point of an oriented plane curve one
+unit in the positive tangent direction.  Circles remain circles under this
+operation.  We ask whether any noncircular oval has the same property.
+
+Let
+\[
+  \gamma:\R/L\mathbb Z\longrightarrow\R^2
+\]
+be a smooth regular closed curve, parametrized by arclength \(s\), and let
+\(\tau_\gamma=\gamma_s\) be its unit tangent.  Define
+\begin{equation}\label{eq:Tdef}
+  (\Tmap\gamma)(s)=\gamma(s)+\tau_\gamma(s).
+\end{equation}
+The definition is independent of the regular parametrization.  If the image
+is regular, we retain the point correspondence and orientation, then
+reparametrize by arclength before applying \(\Tmap\) again.
+
+We orient convex curves counterclockwise, rotate the tangent counterclockwise
+through \(\pi/2\) to obtain the inward normal \(\nu\), and write
+\(\tau_s=k\nu\).  An \emph{oval} is a smooth embedded closed curve with
+\(k>0\) everywhere.
+
+\begin{theorem}\label{thm:main}
+There is a noncircular oval \(\Gamma_0\) such that \(\Tmap^n\Gamma_0\) is an
+oval for every integer \(n\geq0\).
+\end{theorem}
+
+Tabachnikov conjectured that a curve with this property must be a circle
+\cite[Conjecture~4]{Tabachnikov2023}; Theorem~\ref{thm:main} answers that
+question negatively.  A circle of radius \(r\) is sent to one of radius
+\(\sqrt{r^2+1}\).  Our example instead becomes increasingly elongated.  Its
+local model is a complete convex hairpin with parallel ends that \(\Tmap\)
+carries to a translate of itself.
+
+Suppose \(F=\Tmap R\).  We call \(R\) the \emph{rear track}, \(F\) the
+\emph{front track}, and the angle between corresponding tangents the
+\emph{steering angle}.  A prescribed front does not determine a rear until the
+initial direction of the unit segment has been chosen.  Once that direction is
+fixed, the first-order steering equation determines the rear track locally.
+For a closed front, closed rear tracks are periodic solutions, or fixed points
+of the bicycle monodromy; there may be none, one, or several.  In the
+low-curvature class used here, there is a unique periodic solution on the
+branch \(0<\delta<\pi/2\).  We denote this selected inverse by \(\Bmap\); the
+notation refers only to this branch.
+
+The proof has four steps.
+
+\begin{enumerate}[label=\arabic*.,leftmargin=*]
+\item An order-preserving operator and explicit barriers produce a complete
+      strictly convex hairpin \(C\) with \(\Tmap C=C+(V,0)\).
+\item The steering mass \(y=\sin\delta\) of this hairpin is a positive,
+      exponentially localized pulse of mass \(\pi\).  Periodizing \(y\)
+      gives exact centrally symmetric pairs \(\Tmap R_H=F_H\).
+\item After matching half-perimeters, the rear curvature measure of \(R_H\)
+      and the front curvature of \(F_{P(H)}\) are both compared with the same
+      periodization of the isolated hairpin curvature.  Their \(L^1\)
+      difference is exponentially small.
+\item Curvature interpolation turns these discrepancies into summable normal
+      paths.  Exact Jacobi estimates for \(\Bmap\) keep the paths in a uniform
+      low-curvature class and yield a convergent sequence of terminal
+      pullbacks.
+\end{enumerate}
+
+\section{One tangent step: rear and front tracks}\label{sec:bicycle}
+
+Let $F=\Tmap R$.  Parametrize $F$ by front arclength $s$, write $x$ for rear
+arclength, and choose tangent angles $\Theta,\Psi$ so that
+\[
+  \tau_F=(\cos\Theta,\sin\Theta),
+  \qquad
+  \tau_R=(\cos\Psi,\sin\Psi).
+\]
+Put $\delta=\Theta-\Psi$.  Resolving the front velocity in the rear Frenet
+frame gives
+\begin{equation}\label{eq:bicycle-s}
+  \frac{dx}{ds}=\cos\delta,
+  \qquad
+  \frac{d\Psi}{ds}=\sin\delta.
+\end{equation}
+If $K=\Theta_s$ and $k=\Psi_x$ are the front and rear curvatures, then
+\begin{equation}\label{eq:bicycle-curv}
+  K=\delta_s+\sin\delta,
+  \qquad
+  k=\tan\delta.
+\end{equation}
+If the front is strictly convex and $\phi=\Theta$ is used as parameter, with
+radius of curvature $q=1/K$, then
+\begin{equation}\label{eq:bicycle-angle}
+  \delta_\phi=1-q(\phi)\sin\delta.
+\end{equation}
+These are the standard bicycle equations; see, for example,
+Levi--Tabachnikov~\cite{LeviTabachnikov}.  Equation~\eqref{eq:bicycle-angle}
+also makes the preceding qualification precise: an initial value
+\(\delta(\phi_0)\) determines a rear track, while a closed rear track is a
+periodic solution.
+
+\begin{lemma}[Low-curvature inverse]\label{lem:lowcurv}
+Let $F$ be a smooth strictly convex closed curve with
+\[
+  0<K\leq\kappa<1.
+\]
+There is a unique closed rear track on the branch $0<\delta<\pi/2$.  It is
+smooth and strictly convex, and
+\begin{equation}\label{eq:rear-k-bound}
+  k_R\leq\frac{\kappa}{\sqrt{1-\kappa^2}}.
+\end{equation}
+If $F$ is centrally symmetric, so is the selected rear track.
+\end{lemma}
+
+\begin{proof}
+Set \(d_0=\arcsin\kappa\).  In \eqref{eq:bicycle-angle}, the vector field is
+positive at \(0\) and nonpositive at \(d_0\).  Thus the time-\(2\pi\)
+map sends \([0,d_0]\) into itself and has a fixed point.  If \(\delta_1\)
+and \(\delta_2\) are two solutions in this interval, their difference
+satisfies
+\[
+  w'=-q(\phi)\cos\xi(\phi)\,w
+\]
+for a value \(\xi(\phi)\) between \(\delta_1(\phi)\) and
+\(\delta_2(\phi)\).  One full turn strictly decreases \(|w|\), so the
+periodic solution is unique.  Its rear tangent angle is strictly increasing,
+and
+\[
+   k_R=\tan\delta\leq\tan d_0
+      =\frac{\kappa}{\sqrt{1-\kappa^2}}.
+\]
+Half-turn symmetry follows from uniqueness.
+\end{proof}
+
+\begin{lemma}[Convex consecutive tracks]\label{lem:strictness}
+Let $\gamma$ be a smooth closed convex curve.  If $\Tmap\gamma$ is also
+convex, then $\gamma$ is strictly convex.
+\end{lemma}
+
+\begin{proof}
+Let $k\geq0$ be the curvature of $\gamma$ and put
+\[
+  u=\frac{k}{\sqrt{1+k^2}}.
+\]
+A Frenet calculation gives, at corresponding points,
+\[
+  K=u_x+u,
+\]
+where \(K\geq0\) is the curvature of \(\Tmap\gamma\).  Therefore
+\[
+   \bigl(e^x u(x)\bigr)'=e^xK(x)\geq0.
+\]
+If \(u(x_0)=0\) at some point, periodicity would force \(u\equiv0\),
+contrary to the turning number of a closed convex curve.  Hence \(k>0\).
+\end{proof}
+
+\section{A translating hairpin}\label{sec:translator}
+
+A \emph{hairpin} is a complete embedded strictly convex curve whose tangent
+turns through \(\pi\) and whose two ends are asymptotic to parallel lines.  We
+construct one satisfying \(\Tmap C=C+(V,0)\).
+
+Parametrize the curve by tangent angle $0<\theta<\pi$ and write
+\[
+  \tau(\theta)=(\cos\theta,\sin\theta),
+  \qquad
+  C_\theta=\rho(\theta)\tau(\theta),
+  \qquad
+  f(\theta)=\rho(\theta)\sin\theta.
+\]
+If $C=(X,Z)$, then
+\begin{equation}\label{eq:XZ}
+  X'=f\cot\theta,
+  \qquad
+  Z'=f.
+\end{equation}
+The tangent angle of $C+\tau$ is
+\[
+  g(\theta)=\theta+d(\theta),
+  \qquad
+  d(\theta)=\arctan\frac{\sin\theta}{f(\theta)}.
+\]
+
+\begin{lemma}[Translator equation]\label{lem:translator-equation}
+Suppose that $f$ is smooth on $(0,\pi)$, bounded above, and bounded below by a
+constant greater than $1$.  If
+\begin{equation}\label{eq:translator-integral}
+  \int_\theta^{\theta+d(\theta)}f(t)\,dt=\sin\theta,
+  \qquad
+  d(\theta)=\arctan\frac{\sin\theta}{f(\theta)},
+\end{equation}
+then $g=\theta+d$ is an increasing diffeomorphism of $(0,\pi)$ and
+\begin{equation}\label{eq:translator-vector}
+  C(\theta)+\tau(\theta)=C(g(\theta))+(V,0)
+\end{equation}
+for a constant $V$.
+\end{lemma}
+
+\begin{proof}
+Differentiating \eqref{eq:translator-integral} gives
+\[
+  f(g)g'=f+\cos\theta>0.
+\]
+The integral identity gives the vertical component of
+\eqref{eq:translator-vector}.  For the horizontal component, put
+$V(\theta)=X(\theta)+\cos\theta-X(g(\theta))$.  Using
+$\tan(g-\theta)=\sin\theta/f(\theta)$ and the displayed formula for $g'$
+gives $V'=0$.
+\end{proof}
+
+For a bounded measurable function
+\(f:(0,\pi)\to\mathbb R\) satisfying
+\[
+   1<m\leq f\leq M<\infty,
+\]
+let
+\[
+   A_f(t)=\int_0^t f(u)\,du.
+\]
+For \(0<\theta<\pi\), define
+\begin{equation}\label{eq:Df-def}
+   D_f(\theta)
+   =A_f^{-1}\bigl(A_f(\theta)+\sin\theta\bigr)-\theta.
+\end{equation}
+This is well defined because
+\[
+   A_f(\pi)-A_f(\theta)
+      \geq m(\pi-\theta)>\sin\theta.
+\]
+Set
+\begin{equation}\label{eq:Poperator}
+   (\mathcal Pf)(\theta)=\sin\theta\cot D_f(\theta),
+   \qquad 0<\theta<\pi.
+\end{equation}
+The endpoints \(0\) and \(\pi\) are not part of the domain.  Excluding them
+allows the monotone limit to have an endpoint layer even though every finite
+iterate extends continuously to \([0,\pi]\).
+
+\begin{lemma}[Monotone translator operator]\label{lem:Pmonotone}
+The map \(\mathcal P\) sends bounded profiles with
+\(1<m\leq f\leq M\) to positive continuous functions on \((0,\pi)\).
+It is order preserving:
+\[
+   f\leq h\quad\Longrightarrow\quad \mathcal Pf\leq\mathcal Ph.
+\]
+A bounded profile \(f\) satisfies \(f=\mathcal Pf\) on \((0,\pi)\) if
+and only if it satisfies the translator equation
+\eqref{eq:translator-integral} there.
+\end{lemma}
+
+\begin{proof}
+The primitive \(A_f\) is continuous and strictly increasing, so
+\(D_f\), and hence \(\mathcal Pf\), is continuous on the open interval.
+Also
+\[
+   0<D_f(\theta)\leq\frac{\sin\theta}{m}<1<\frac\pi2,
+\]
+so \(\mathcal Pf>0\).
+
+If \(f\leq h\), then, for fixed \(\theta\), the integral of \(h\) reaches
+\(\sin\theta\) no later than the integral of \(f\).  Hence
+\(D_h\leq D_f\), and the monotonicity of cotangent gives
+\(\mathcal Pf\leq\mathcal Ph\).
+
+The fixed-point equation \(f=\mathcal Pf\) is equivalent to
+\[
+   \tan D_f(\theta)=\frac{\sin\theta}{f(\theta)}.
+\]
+Since \(0<D_f<\pi/2\), this says precisely that \(D_f=d\) in
+\eqref{eq:translator-integral}.  The definition of \(D_f\) now gives the
+integral equation.  Conversely, that equation gives \(D_f=d\), and hence
+\(f=\mathcal Pf\).
+\end{proof}
+
+Put
+\[
+   u_0(\theta)=\frac23(1-\cos\theta),
+   \qquad
+   v_-(\theta)=-\cos\theta,
+   \qquad
+   v_+(\theta)=\cos\theta+2,
+\]
+and, for \(\eps>0\), define
+\begin{equation}\label{eq:barriers}
+   f_\eps^\pm(\theta)
+      =\eps^{-1}+u_0(\theta)+\eps v_\pm(\theta).
+\end{equation}
+
+The barriers satisfy
+\[
+   f_\eps^+(\theta)-f_\eps^-(\theta)
+      =2\eps(1+\cos\theta)\geq0.
+\]
+For sufficiently small positive \(\eps\), their continuous extensions to
+\([0,\pi]\) satisfy
+\[
+   \min_{0\leq\theta\leq\pi} f_\eps^-(\theta)
+      =\eps^{-1}-\eps,
+   \qquad
+   \min_{0\leq\theta\leq\pi} f_\eps^+(\theta)
+      =\eps^{-1}+3\eps.
+\]
+Thus both barriers belong to the domain of \(\mathcal P\), and
+\(f_\eps^-\leq f_\eps^+\).
+
+\begin{lemma}[Explicit barriers]\label{lem:barriers}
+For all sufficiently small \(\eps>0\),
+\begin{equation}\label{eq:barrier-ineq}
+   f_\eps^-\leq\mathcal Pf_\eps^-
+   \leq\mathcal Pf_\eps^+\leq f_\eps^+
+   \qquad(0<\theta<\pi).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+For a profile \(f\), set
+\[
+   d_f=\arctan\frac{\sin\theta}{f(\theta)},
+   \qquad
+   \mathcal R(f)
+   =\int_\theta^{\theta+d_f}f(t)\,dt-\sin\theta.
+\]
+The integral \(D\mapsto\int_\theta^{\theta+D}f\) is strictly increasing.
+Since \(D_f\) is the value at which it equals \(\sin\theta\), while
+\(f(\theta)=\sin\theta\cot d_f\), one has
+\[
+ \mathcal R(f)\geq0
+ \iff D_f\leq d_f
+ \iff \mathcal Pf(\theta)\geq f(\theta),
+\]
+and similarly with the inequalities reversed.  Thus the sign of
+\(\mathcal R(f)\) is the sign of \(\mathcal Pf-f\).
+For \(f=\eps^{-1}+u_0+\eps v\), divide by the common second-order zero
+and expand in \(\eps\):
+\begin{equation}\label{eq:barrier-expansion}
+   \frac{2\mathcal R(f)}{d_f^2\sin\theta}
+   =\eps\left(
+       \frac{v'(\theta)}{\sin\theta}+\frac29\cos\theta
+     \right)+O(\eps^2),
+\end{equation}
+where the quotient is interpreted continuously at \(0\) and \(\pi\),
+and the remainder is uniform in \(\theta\).
+
+An exact factorization controls the apparent endpoint singularities.  Each
+barrier has the form
+\[
+   f(\theta)=A+B\cos\theta.
+\]
+Write \(c=\cos\theta\), \(s=\sin\theta\),
+\(F=A+Bc\), and \(d=\arctan(s/F)\).  Direct integration gives
+\begin{equation}\label{eq:barrier-exact-residual}
+   \mathcal R(f)
+   =Ad+B\{s(\cos d-1)+c\sin d\}-s.
+\end{equation}
+Since \(F=s\cot d\), this becomes
+\begin{equation}\label{eq:barrier-factorization}
+ \frac{2\mathcal R(f)}{d^2s}
+ =\Phi_0(d^2)+B\Phi_1(d^2)+\frac{Bc}{F}\Phi_2(d^2),
+\end{equation}
+where
+\[
+ \Phi_0(r)=\frac{2(\sqrt r/\tan\sqrt r-1)}r,
+ \qquad
+ \Phi_1(r)=\frac{2(\cos\sqrt r-1)}r,
+\]
+\[
+ \Phi_2(r)=\frac{2(\sin\sqrt r-\sqrt r)}
+                  {r\tan\sqrt r}.
+\]
+All three functions extend analytically through \(r=0\), with
+\[
+ \Phi_0(0)=-\frac23,
+ \qquad \Phi_1(0)=-1,
+ \qquad \Phi_2(0)=-\frac13.
+\]
+If \(v(\theta)=\alpha+\beta c\), then
+\[
+ F=\eps^{-1}\{1+\eps u_0(c)+\eps^2v(c)\},
+ \qquad B=-\frac23+\eps\beta.
+\]
+Also,
+\[
+ \left(\frac{s}{F}\right)^2
+ =\frac{\eps^2(1-c^2)}{\{1+\eps u_0(c)+\eps^2v(c)\}^2},
+ \qquad
+ \frac{Bc}{F}
+ =\frac{\eps Bc}{1+\eps u_0(c)+\eps^2v(c)}.
+\]
+Thus the right side of \eqref{eq:barrier-factorization} is smooth in
+\((\eps,c)\) on a neighborhood of
+\([0,\eps_0]\times[-1,1]\).  Its value at \(\eps=0\) is zero, and its
+\(\eps\)-derivative there is
+\[
+   -\beta+\frac29c
+   =\frac{v'(\theta)}{\sin\theta}+\frac29\cos\theta.
+\]
+Taylor's theorem on this compact rectangle proves
+\eqref{eq:barrier-expansion} with a uniform remainder.
+
+For \(v_-=-\cos\theta\), the coefficient in parentheses is
+\[
+   1+\frac29\cos\theta\geq\frac79.
+\]
+For \(v_+=\cos\theta+2\), it is
+\[
+   -1+\frac29\cos\theta\leq-\frac79.
+\]
+Thus \(\mathcal R(f_\eps^-)\geq0\) and
+\(\mathcal R(f_\eps^+)\leq0\) for sufficiently small \(\eps\).
+The middle inequality follows from Lemma~\ref{lem:Pmonotone}.
+\end{proof}
+
+\begin{theorem}[Translating hairpin]\label{thm:hairpin}
+For every sufficiently small \(\eps>0\), equation
+\eqref{eq:translator-integral} has a solution
+\(f_\eps\in C^\infty(0,\pi)\) satisfying
+\[
+   f_\eps^-\leq f_\eps\leq f_\eps^+.
+\]
+The corresponding curve is a complete embedded strictly convex hairpin in a
+strip of finite width, and
+\[
+   \Tmap C=C+(V,0)
+\]
+for some \(V>0\).
+\end{theorem}
+
+\begin{proof}
+Start with \(f_0=f_\eps^-\) on \((0,\pi)\), and define
+\(f_{n+1}=\mathcal Pf_n\).  The barrier lemma and monotonicity give
+\[
+   f_\eps^-\leq f_0\leq f_1\leq\cdots\leq f_\eps^+.
+\]
+Let \(f=\lim_n f_n\) pointwise on \((0,\pi)\), and set
+\[
+   A_n(t)=\int_0^t f_n(u)\,du,
+   \qquad
+   A(t)=\int_0^t f(u)\,du.
+\]
+Monotone convergence gives
+\[
+   \sup_{0\leq t\leq\pi}|A_n(t)-A(t)|
+   \leq\int_0^\pi(f-f_n)\longrightarrow0.
+\]
+The primitives have a common positive lower bound for their slopes.  Their
+inverses therefore converge uniformly on compact subintervals of their common
+ranges.  For every \(0<\theta<\pi\),
+\[
+   D_{f_n}(\theta)
+   \longrightarrow
+   A^{-1}(A(\theta)+\sin\theta)-\theta
+   =D_f(\theta).
+\]
+Passing to the limit in
+\(f_{n+1}(\theta)=\sin\theta\cot D_{f_n}(\theta)\) gives
+\(f=\mathcal Pf\) on the open interval.  Lemma~\ref{lem:Pmonotone}
+therefore gives the translator equation.
+
+The primitive \(A\) is continuous and strictly increasing; hence \(D_f\)
+is continuous.  The identity \(f=\sin\theta\cot D_f\) then makes \(f\)
+continuous on \((0,\pi)\).  The relation
+\[
+   A(\theta+D_f(\theta))-A(\theta)=\sin\theta
+\]
+may now be differentiated.  Successive differentiations give
+\(D_f,f\in C^\infty(0,\pi)\).
+
+No endpoint values are assigned; the construction uses only the profile on
+\((0,\pi)\) and the uniform barrier bounds.
+
+Define \(C\) by \eqref{eq:XZ}.  Its radius of curvature is
+\(f/\sin\theta>0\).  Since \(Z'>0\), the curve is embedded.  The barrier
+bounds imply that its arclength is infinite at both ends, that
+\(X(\theta)\to-\infty\) at both ends, and that \(Z\) has finite one-sided
+limits.  Hence the ends are asymptotic to parallel horizontal lines.
+Lemma~\ref{lem:translator-equation} gives the translation law.  At
+\(\theta=\pi/2\), one has \(g(\theta)>\theta\) and \(\cot t<0\) on the
+interval between them; therefore
+\[
+   V=-\int_{\pi/2}^{g(\pi/2)}f(t)\cot t\,dt>0.
+\]
+\end{proof}
+
+Fix such a hairpin so wide that its curvature is below \(1/20\).  Regard it
+as the rear track and its translate as the front track.  Parametrize
+the front by arclength $s$, let $\delta(s)$ be the steering angle, and put
+\begin{equation}\label{eq:yc}
+  y(s)=\sin\delta(s),
+  \qquad
+  c(s)=\cos\delta(s)=\sqrt{1-y(s)^2}.
+\end{equation}
+Choose front and rear arclength origins so that one positive function
+$K_*:\R\to(0,\infty)$ is the intrinsic curvature of both translated copies.
+If $x=x(s)$ is the corresponding rear arclength, then
+\begin{equation}\label{eq:isolated-identities}
+  x'=c,
+  \qquad
+  K_*(s)=y+\frac{y'}c,
+  \qquad
+  K_*(x(s))=\frac yc.
+\end{equation}
+
+\begin{lemma}[Hairpin pulse estimates]\label{lem:pulse}
+The function \(y\) and all its derivatives decay exponentially at both
+ends.  More precisely, there are \(a_-,a_+>0\) such
+that, for every \(j\geq0\),
+\[
+  |y^{(j)}(s)|\leq C_j e^{a_-s}\quad(s\leq0),
+  \qquad
+  |y^{(j)}(s)|\leq C_j e^{-a_+s}\quad(s\geq0),
+\]
+and
+\begin{equation}\label{eq:relative-y-derivatives}
+   |y^{(j)}(s)|\leq D_jy(s).
+\end{equation}
+It also satisfies
+\begin{equation}\label{eq:mass-defect}
+   \int_{\R}y(s)\,ds=\pi,
+   \qquad
+   \Delta:=\int_{\R}(1-c(s))\,ds>0,
+\end{equation}
+and
+\begin{equation}\label{eq:Kstar-lower}
+   K_*(s)\geq b_0y(s)
+\end{equation}
+for some constant \(b_0>0\).
+\end{lemma}
+
+\begin{proof}
+\emph{Tail bounds.}
+Let \(u\) be rear arclength, let \(\theta(u)\) be the rear tangent angle,
+and write
+\[
+   \kappa(u)=\theta_u=\frac{\sin\theta(u)}{f(\theta(u))}.
+\]
+The barrier enclosure gives fixed constants \(1<m<M\) with
+\(m\leq f\leq M\).  The half-angle variable
+\[
+   r(u)=\tan\frac{\theta(u)}2
+\]
+satisfies the exact equation
+\begin{equation}\label{eq:half-angle-growth}
+   (\log r)_u
+   =\frac{\theta_u}{\sin\theta}
+   =\frac1{f(\theta)}.
+\end{equation}
+Hence \(r\), \(\sin\theta\), and \(\kappa\) have two-sided exponential
+bounds at the two ends.  In particular, \(\kappa^2\) is integrable; indeed,
+\[
+   \int_\R\kappa(u)^2\,du
+   =\int_0^\pi\frac{\sin\theta}{f(\theta)}\,d\theta<\infty.
+\]
+
+\emph{The shifted curvature equation.}
+Let \(\sigma(u)\) be front arclength at the corresponding point.  Since
+\[
+   \sigma'(u)=\sqrt{1+\kappa(u)^2},
+\]
+the function \(\sigma(u)-u\) is bounded.  Choose the front and rear
+arclength origins so that the intrinsic curvature of both translated copies
+is the same function \(K_*\).  Then \(K_*(u)=\kappa(u)\), and the Frenet
+formula for the front curvature is
+\begin{equation}\label{eq:translator-curvature-identity}
+   K_*(\sigma(u))
+   =\frac{K_*'(u)+K_*(u)+K_*(u)^3}
+          {(1+K_*(u)^2)^{3/2}}.
+\end{equation}
+
+\emph{Relative derivatives.}
+We prove that
+\begin{equation}\label{eq:relative-Kstar-derivatives}
+   |K_*^{(j)}(u)|\leq C_jK_*(u)
+   \qquad(j\geq0).
+\end{equation}
+Equation~\eqref{eq:half-angle-growth} first gives a quantitative
+bounded-shift Harnack estimate.  For every \(D>0\), there is \(C_D\) such
+that
+\begin{equation}\label{eq:bounded-shift-Harnack}
+ C_D^{-1}K_*(u)\leq K_*(u+h)\leq C_DK_*(u)
+ \qquad(|h|\leq D).
+\end{equation}
+To prove this, note that \(r(u+h)/r(u)\) lies in a compact subinterval of
+\((0,\infty)\), depending only on \(D,m,M\).  The function
+\(2r/(1+r^2)=\sin\theta\) changes by a bounded factor under such a
+multiplicative change of \(r\), and \(m\leq f\leq M\).  Since
+\(\sigma(u)-u\) is bounded, \eqref{eq:bounded-shift-Harnack} gives
+\[
+   K_*(\sigma(u))\leq CK_*(u).
+\]
+Solving \eqref{eq:translator-curvature-identity} for \(K_*'\) now gives
+\(|K_*'|\leq CK_*\).
+
+We spell out the induction.  Assume
+\eqref{eq:relative-Kstar-derivatives} through order \(j\).  From
+\(\sigma'=\sqrt{1+K_*^2}\), every derivative \(\sigma^{(r)}\),
+\(1\leq r\leq j+1\), is uniformly bounded; for \(r\geq2\) it is a finite
+sum of products involving derivatives of \(K_*\) of order at most
+\(r-1\).  Fa\`a di Bruno's formula gives
+\[
+ \partial_u^q(K_*\circ\sigma)
+ =\sum_{\ell=1}^q
+   K_*^{(\ell)}(\sigma(u))
+   B_{q,\ell}(\sigma',\ldots,\sigma^{(q-\ell+1)}),
+\]
+where the \(B_{q,\ell}\) are Bell polynomials.  By the induction
+hypothesis, \eqref{eq:bounded-shift-Harnack}, and the preceding bounds on
+\(\sigma^{(r)}\), every term is \(O(K_*(u))\) for \(q\leq j\).
+
+Differentiate
+\[
+   K_*'
+   =(1+K_*^2)^{3/2}K_*\circ\sigma-K_*-K_*^3
+\]
+exactly \(j\) times.  Derivatives of the prefactor
+\((1+K_*^2)^{3/2}\) are bounded; every term of positive derivative order
+contains at least one derivative of \(K_*\) and is therefore
+\(O(K_*)\).  The composed factor is \(O(K_*)\) by the previous paragraph,
+and every derivative of \(K_*^3\) is also \(O(K_*)\).  Hence
+\(|K_*^{(j+1)}|\leq C_{j+1}K_*\), which closes the induction.  The
+exponential bounds for \(K_*\) therefore extend to every derivative.
+
+\emph{The steering pulse.}
+Let \(s=\sigma(u)\), and let \(x(s)=u\) be the inverse correspondence.
+Since \(\tan\delta=K_*(u)\),
+\begin{equation}\label{eq:y-from-Kstar}
+   y(s)=\sin\delta(s)
+       =\frac{K_*(x(s))}{\sqrt{1+K_*(x(s))^2}},
+   \qquad
+   c(s)=\frac1{\sqrt{1+K_*(x(s))^2}}.
+\end{equation}
+The derivatives of \(x=\sigma^{-1}\) are uniformly bounded and, beyond
+first order, are smooth expressions in derivatives of \(K_*\).  Combining
+\eqref{eq:y-from-Kstar} with
+\eqref{eq:relative-Kstar-derivatives} and the chain rule gives
+\eqref{eq:relative-y-derivatives} and exponential decay of every derivative
+of \(y\).
+
+\emph{Mass and the lower comparison.}
+The mass identity is exact:
+\[
+   y(s)\,ds
+   =\frac{K_*(u)}{\sqrt{1+K_*(u)^2}}
+      \sqrt{1+K_*(u)^2}\,du
+   =K_*(u)\,du.
+\]
+The rear tangent turns through \(\pi\), so \(\int_\R y=\pi\).  The
+integral defining \(\Delta\) is finite because
+\(1-c=O(y^2)\), and it is positive because \(y\not\equiv0\).
+
+By \eqref{eq:relative-Kstar-derivatives}, \(|(\log K_*)'|\leq C\), and
+\(|s-x(s)|\) is bounded.  The exact identity
+\[
+   K_*(x(s))=\frac{y(s)}{c(s)}
+\]
+therefore gives
+\[
+   K_*(s)\geq e^{-C|s-x(s)|}K_*(x(s))
+       \geq b_0y(s)
+\]
+for a fixed \(b_0>0\), which proves \eqref{eq:Kstar-lower}.
+\end{proof}
+
+\section{Exact two-cap pairs}\label{sec:pairs}
+
+For $H>0$, periodize the steering mass:
+\begin{equation}\label{eq:YH}
+  Y_H(s)=\sum_{m\in\mathbb Z}y(s-mH).
+\end{equation}
+For all sufficiently large \(H\), \(0<Y_H<1\).  Set
+\begin{equation}\label{eq:cap-definitions}
+  \delta_H=\arcsin Y_H,
+  \qquad
+  c_H=\sqrt{1-Y_H^2},
+\end{equation}
+\begin{equation}\label{eq:cap-curvatures}
+  K_H=Y_H+\frac{Y_H'}{c_H},
+  \qquad
+  k_H(x_H(s))=\frac{Y_H(s)}{c_H(s)},
+  \qquad
+  x_H'=c_H.
+\end{equation}
+
+The next lemma controls periodization and tail overlap, including their
+derivatives with respect to the period.
+
+\begin{lemma}[Exponential periodization]\label{lem:periodization}
+Let \(z>0\) be smooth, exponentially decaying with all derivatives, and
+suppose \(|z^{(j)}|\leq C_jz\).  Put
+\[
+   Z_H(s)=\sum_{m\in\mathbb Z}z(s-mH),
+   \qquad I_H=[-H/2,H/2].
+\]
+For every pair of nonnegative integers \(r,q\), there are
+\(C_{r,q},\beta_{r,q}>0\) such that
+\begin{equation}\label{eq:periodization-H-derivatives}
+   \left\|\partial_H^q(Z_H-z)\right\|_{C^r(I_H)}
+      \leq C_{r,q}e^{-\beta_{r,q}H}.
+\end{equation}
+Here \(s\) is held fixed when \(H\) is differentiated.  Furthermore, for
+fixed \(j,k\),
+\begin{equation}\label{eq:overlap-pointwise}
+   \sum_{m\ne n}
+   |z^{(j)}(s-mH)|\,|z^{(k)}(s-nH)|
+   \leq Ce^{-\beta H}Z_H(s).
+\end{equation}
+This relative overlap estimate also remains valid after any fixed number of
+\(H\)-derivatives.
+\end{lemma}
+
+\begin{proof}
+For \(s\in I_H\) and \(m\ne0\),
+\[
+   |s-mH|\geq(|m|-1/2)H.
+\]
+Termwise differentiation gives
+\[
+   \partial_H^q\partial_s^r z(s-mH)
+   =(-m)^q z^{(r+q)}(s-mH).
+\]
+The exponential tails dominate the polynomial factor \(|m|^q\), proving
+\eqref{eq:periodization-H-derivatives}.
+
+For the overlap estimate, write \(n=m+\ell\).  The two pulse centers are
+\(|\ell|H\) apart.  Hence at least one of \(s-mH\) and \(s-nH\) lies at least
+\(|\ell|H/2\) into a tail.  The relative derivative bounds reduce each fixed derivative to the estimate
+for \(z_mz_n\).  Summing first over \(m\), then over
+\(\ell\ne0\), proves the claim.  Differentiation in \(H\) introduces only
+polynomial factors in the translation indices, and the same geometric series
+absorbs them.
+\end{proof}
+
+\begin{lemma}[Front periodization error]\label{lem:front-periodization-error}
+For a period \(L\), put
+\[
+   y_m(s)=y(s-mL),
+   \qquad
+   Y_L=\sum_m y_m,
+   \qquad
+   G(z)=\frac1{\sqrt{1-z^2}}.
+\]
+Then, for all sufficiently large \(L\),
+\begin{equation}\label{eq:front-periodization-error}
+ \left|K_L(s)-\sum_mK_*(s-mL)\right|
+ \leq C\sum_{m\ne n}y_m(s)y_n(s)
+ \leq Ce^{-\beta L}Y_L(s).
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+The isolated identity gives
+\[
+   K_*(s-mL)=y_m(s)+G(y_m(s))y_m'(s),
+\]
+whereas
+\[
+   K_L=Y_L+G(Y_L)Y_L'.
+\]
+Therefore
+\[
+ K_L-\sum_mK_*(s-mL)
+   =\sum_m y_m'\bigl(G(Y_L)-G(y_m)\bigr).
+\]
+For large \(L\), the functions \(Y_L\) and \(y_m\) take values in a
+fixed interval \([0,a]\), where \(a<1\).  The function \(G\) is
+uniformly Lipschitz on this interval, and \(|y_m'|\leq Dy_m\).  Hence
+\[
+\begin{aligned}
+ \left|K_L-\sum_mK_*(s-mL)\right|
+ &\leq C\sum_m y_m\sum_{n\ne m}y_n\\
+ &=C\sum_{m\ne n}y_my_n.
+\end{aligned}
+\]
+The second inequality in \eqref{eq:front-periodization-error} is
+\eqref{eq:overlap-pointwise}.
+\end{proof}
+
+\begin{proposition}[Exact two-cap pairs]\label{prop:pairs}
+For all sufficiently large \(H\), equations
+\eqref{eq:YH}--\eqref{eq:cap-curvatures} define smooth strictly convex
+centrally symmetric closed curves \(R_H,F_H\) such that
+\[
+   \Tmap R_H=F_H.
+\]
+The front perimeter is \(2H\), the rear perimeter is \(2P(H)\), where
+\begin{equation}\label{eq:PH}
+   P(H)=\int_0^Hc_H(s)\,ds,
+\end{equation}
+and
+\begin{equation}\label{eq:P-asymptotic}
+   P(H)=H-\Delta+O(e^{-\beta H}),
+   \qquad
+   P'(H)=1+O(e^{-\beta H}).
+\end{equation}
+If the translating hairpin is chosen sufficiently wide, one constant
+\(\kappa_0<1\) bounds the curvatures of both closed curves for all
+sufficiently large \(H\).
+\end{proposition}
+
+\begin{proof}
+Choose \(\Theta_H\) with \(\Theta_H'=K_H\), and define the unit-speed
+front by \(F_H'=\tau(\Theta_H)\).  Because \(\delta_H\) is periodic and
+\(\int_0^H Y_H=\pi\),
+\[
+   \int_0^H K_H\,ds
+   =\int_0^H(\delta_H'+Y_H)\,ds
+   =\pi.
+\]
+The front tangent reverses after one \(H\)-period.  Hence the displacement
+during the second period is the negative of the first, and \(F_H\) closes
+after two periods.  Set \(\Psi_H=\Theta_H-\delta_H\) and
+\[
+   R_H=F_H-\tau(\Psi_H).
+\]
+Then \(\Psi_H'=Y_H\) and
+\[
+   R_H'=c_H\tau(\Psi_H),
+\]
+so \(R_H\) is the rear track with curvature \(k_H\), has half-perimeter
+\(P(H)\), and also closes after two periods.  Both curves are centrally
+symmetric.
+
+The rear curvature is positive.  Lemma~\ref{lem:front-periodization-error}
+gives
+\[
+   K_H(s)
+   =\sum_m K_*(s-mH)+E_H(s),
+   \qquad
+   |E_H(s)|\leq Ce^{-\beta H}Y_H(s).
+\]
+Since \(K_*\geq b_0y\),
+\[
+   K_H(s)\geq\bigl(b_0-Ce^{-\beta H}\bigr)Y_H(s)>0
+\]
+for all sufficiently large \(H\).  A closed locally convex curve of turning
+number one is the boundary of a strictly convex body; hence both tracks are
+embedded ovals.
+
+Set
+\[
+   \Phi(z)=1-\sqrt{1-z^2}.
+\]
+On the centered cell,
+\[
+   H-P(H)=\int_{-H/2}^{H/2}\Phi(Y_H(s))\,ds.
+\]
+Equation~\eqref{eq:periodization-H-derivatives}, smoothness of \(\Phi\) on a
+fixed interval \([0,a]\) with \(a<1\), and the omitted exponential tails give
+\[
+   H-P(H)=\int_\R \Phi(y(s))\,ds+O(e^{-\beta H})
+          =\Delta+O(e^{-\beta H}).
+\]
+To differentiate, hold \(s\) fixed in the centered integral:
+\[
+\begin{aligned}
+   \frac d{dH}(H-P(H))
+   ={}&\frac12\Phi(Y_H(H/2))
+      +\frac12\Phi(Y_H(-H/2))\\
+     &+\int_{-H/2}^{H/2}
+       \Phi'(Y_H(s))\,\partial_HY_H(s)\,ds.
+\end{aligned}
+\]
+The endpoint terms are exponentially small.  The last integral is also
+\(O(e^{-\beta H})\) by \eqref{eq:periodization-H-derivatives}, after
+replacing \(\beta\) by a smaller positive constant.  This yields the
+derivative estimate in \eqref{eq:P-asymptotic}.
+
+Choose the translating hairpin so wide that its intrinsic curvature is bounded
+well below one.  The periodization and overlap estimates then keep both
+\(K_H\) and \(k_H\) below one fixed \(\kappa_0<1\) for all sufficiently
+large \(H\).
+\end{proof}
+
+\begin{lemma}[Uniform transverse width]\label{lem:width}
+After a rigid motion, let the tangent angle of \(F_H\) on the centered
+half-period increase from \(0\) to \(\pi\).  Its displacement perpendicular
+to the asymptotic sides is
+\[
+   W_H=\int_{-H/2}^{H/2}\sin\Theta_H(s)\,ds.
+\]
+There is a constant \(C\) such that
+\[
+   0<W_H\leq C
+\]
+for all sufficiently large \(H\).
+\end{lemma}
+
+\begin{proof}
+Let \(\Theta_*\) be the tangent angle of the isolated translated hairpin,
+normalized by \(\Theta_*(-\infty)=0\).  The periodization estimates and the
+formula for \(K_H\) give, on the centered cell,
+\[
+   \|K_H-K_*\|_\infty\leq Ce^{-\beta H}.
+\]
+Also \(\Theta_*(-H/2)=O(e^{-\beta H})\).  With
+\(\Theta_H(-H/2)=0\), integration therefore gives
+\[
+   \|\Theta_H-\Theta_*\|_{L^\infty(I_H)}
+      \leq CH e^{-\beta H}
+      \leq C'e^{-\beta'H}.
+\]
+Consequently,
+\[
+\begin{aligned}
+   W_H
+   &\leq\int_{I_H}\sin\Theta_*(s)\,ds
+       +H\|\Theta_H-\Theta_*\|_\infty\\
+   &\leq\int_\R\sin\Theta_*(s)\,ds+1
+\end{aligned}
+\]
+for all large \(H\).  The last integral is the finite strip width of the
+translating hairpin.
+\end{proof}
+
+\section{Curvature-measure matching}\label{sec:matching}
+
+The isolated rear and front are translates, so their intrinsic curvatures are
+the same function \(K_*\) after independent choices of arclength origin.  Use
+the front origin to fix the phase of \(y\) and its periodizations, and set
+\(x_H(0)=x(0)\) for the closed rear.  For a period \(L\), write
+\[
+   \overline K_L(u)=\sum_{j\in\mathbb Z}K_*(u-jL).
+\]
+Lemma~\ref{lem:front-periodization-error} already compares the front
+curvature \(K_L\) with \(\overline K_L\).  We compare the rear curvature
+measure with the same profile.
+
+\begin{lemma}[Common phase and fundamental interval]\label{lem:phase-fundamental}
+Let \(I_H=[-H/2,H/2]\) and \(J_H=x_H(I_H)\).  Then \(J_H\) has length
+\(P(H)\), its translates by \(P(H)\mathbb Z\) tile \(\mathbb R\), and both
+the rear and front comparisons use \(\overline K_{P(H)}\) with the same
+central phase.
+\end{lemma}
+
+\begin{proof}
+Since \(x_H'=c_H>0\), the image \(J_H\) is an interval and
+\[
+ |J_H|=\int_{I_H}c_H(s)\,ds=P(H).
+\]
+Its translates therefore tile the line.  The choices of intrinsic origins and
+\(x_H(0)=x(0)\) identify the central isolated term in both comparisons with
+\(K_*\).
+\end{proof}
+
+Set \(P=P(H)\).  The infinite-time argument uses only the next estimate.
+
+\begin{theorem}[Curvature-measure matching]\label{thm:L1match}
+There are constants $C,\beta>0$ such that
+\begin{equation}\label{eq:L1match}
+  \int_{\R/P(H)\mathbb Z}
+  \abs{k_H(u)-K_{P(H)}(u)}\,du
+  \leq Ce^{-\beta H}
+\end{equation}
+for all sufficiently large $H$.
+\end{theorem}
+
+\begin{proof}
+Put $\alpha=\min(a_-,a_+)$.  Exponential tails imply, for every
+$0<\beta<\alpha$,
+\begin{equation}\label{eq:convolution}
+  \int_\R y(s)y(s-r)\,ds\leq C_\beta e^{-\beta\abs r}.
+\end{equation}
+The integrand is bounded by
+\(Ce^{-\alpha(\abs s+\abs{s-r})}\).  Consequently, for pulses
+$y_m(s)=y(s-mL)$,
+\begin{equation}\label{eq:pairwise-L1}
+  \int_{-L/2}^{L/2}\sum_{m\ne n}y_m(s)y_n(s)\,ds
+  \leq Ce^{-\beta L}.
+\end{equation}
+This follows by writing $n=m+q$, unfolding the sum over $m$ to $\R$, and
+summing \eqref{eq:convolution} over $q\ne0$.
+
+We compare both curvatures with \(\overline K_P\).
+
+Let $I_H=[-H/2,H/2]$, use the phase convention above, and put
+$J_H=x_H(I_H)$.  The interval $J_H$ has length $P$.  Positivity and the tail
+bounds give
+\[
+  \norm{Y_H-y}_{L^1(I_H)}+
+  \norm{Y_H-y}_{L^\infty(I_H)}\leq Ce^{-\alpha H/2}.
+\]
+Since $c_H=\sqrt{1-Y_H^2}$ and $c=\sqrt{1-y^2}$ stay uniformly positive,
+\[
+  \norm{c_H-c}_{L^1(I_H)}\leq Ce^{-\alpha H/2},
+  \qquad
+  \norm{x_H-x}_{L^\infty(I_H)}\leq Ce^{-\alpha H/2}.
+\]
+The identity $K_*(x(s))=y(s)/c(s)$ and the exact measure formula
+\begin{equation}\label{eq:rear-measure}
+  k_H(x_H(s))\,dx_H=Y_H(s)\,ds
+\end{equation}
+now give
+\[
+\begin{aligned}
+&\norm{k_H(u)\,du-\overline K_P(u)\,du}_{\mathrm{TV}}\\
+&\quad=
+\int_{I_H}\abs{Y_H-c_H\overline K_P(x_H)}\,ds.
+\end{aligned}
+\]
+Split the integrand as
+\[
+\begin{aligned}
+Y_H-c_H\overline K_P(x_H)
+={}&(Y_H-y)
+ +\bigl(y-c_HK_*(x_H)\bigr)\\
+&-c_H\sum_{j\ne0}K_*(x_H-jP).
+\end{aligned}
+\]
+The first term is exponentially small.  For the second, use
+\(y=cK_*(x)\), boundedness of \(K_*\) and \(K_*'\), and the preceding
+estimates.  For some \(\beta>0\),
+\[
+ \int_{I_H}|y-c_HK_*(x_H)|\,ds
+ \leq CH e^{-\alpha H/2}
+ \leq Ce^{-\beta H}.
+\]
+For the last term, change variables $u=x_H(s)$:
+\[
+\begin{aligned}
+\int_{I_H}c_H\sum_{j\ne0}K_*(x_H-jP)\,ds
+&=\int_{J_H}\sum_{j\ne0}K_*(u-jP)\,du\\
+&=\int_{\R\setminus J_H}K_*(v)\,dv.
+\end{aligned}
+\]
+Lemma~\ref{lem:phase-fundamental} gives the last equality.  We have \(x_H(s)=s+O(1)\) and
+\(P=H+O(1)\).  Hence the endpoints of \(J_H\) are \(\pm H/2+O(1)\),
+and the exponential tails of \(K_*\) make the last integral exponentially
+small.  Therefore
+\begin{equation}\label{eq:rear-common}
+  \norm{k_H-\overline K_P}_{L^1(\R/P\mathbb Z)}
+  \leq Ce^{-\beta H}.
+\end{equation}
+
+For the front of period \(L=P\),
+Lemma~\ref{lem:front-periodization-error} and
+\eqref{eq:pairwise-L1} yield
+\begin{equation}\label{eq:front-common}
+  \norm{K_P-\overline K_P}_{L^1(\R/P\mathbb Z)}
+  \leq Ce^{-\beta P}\leq C'e^{-\beta'H}.
+\end{equation}
+Combining \eqref{eq:rear-common} and \eqref{eq:front-common} proves
+\eqref{eq:L1match}.
+\end{proof}
+
+\section{Regularizing backward shadowing}\label{sec:shadow}
+
+Throughout this section, curves are centrally symmetric, centered at the
+origin, and supplied with a marked point and tangent direction.  These
+markings fix intrinsic-arclength phase and rotation.
+
+\begin{lemma}[Compatible markings]\label{lem:compatible-markings}
+Let \(\Tmap R=F\) be a centered centrally symmetric rear--front pair, and
+fix an intrinsic point of \(R\).  Given a centered marked curve \(G\), there
+is a unique rotation of the whole pair for which the tangent of \(R\) at the
+chosen point agrees with the marked tangent of \(G\).  This rotation preserves
+\(\Tmap R=F\), all intrinsic curvature functions, and every estimate below.
+A constant shift of arclength changes only the marked phase and leaves
+\(W\) and the quantities \(S_j\) unchanged.
+\end{lemma}
+
+\begin{proof}
+Rotate \(R\) and \(F\) by the same angle.  The unit-tangent transform
+commutes with rigid motions, whereas intrinsic curvature and arclength are
+rotation invariant.  A constant arclength shift is a reparametrization, so it
+changes neither the geometric path nor any normal-variation norm.
+\end{proof}
+
+We use Lemma~\ref{lem:compatible-markings} whenever consecutive model curves
+are compared: rotate the whole later pair so that the marked tangent of its
+selected rear agrees with the marked tangent of the earlier front.
+
+For a smooth path, write
+\[
+  X_t=\xi\tau+\eta\nu.
+\]
+The tangential component only changes the parametrization; the normal
+component \(\eta\) changes the geometric curve.  Set
+\[
+  W(\Gamma)=\int_0^1\norm{\eta_t}_{L^1}\,dt,
+  \qquad
+  S_j(\Gamma)=\int_0^1\norm{\partial_s^j\eta_t}_{L^\infty}\,dt.
+\]
+In this section, \emph{marked geometric \(C^2\) convergence} means uniform
+convergence, in one transported periodic parameter, of
+\[
+   X,\qquad \tau,\qquad \kappa,\qquad g=|X_u|,
+\]
+with the limiting speed \(g\) bounded away from zero.  Paths may be piecewise
+smooth in the path parameter.  The functionals \(W,S_0,S_1,S_2\) are
+additive under concatenation, and rounding finitely many path corners changes
+them by an arbitrarily small amount.
+
+Parametrize a countable concatenation on subintervals whose endpoints
+accumulate only at \(t=1\).  Summability of the \(S_j\)-lengths
+gives a continuous extension at \(t=1\); equivalently, the concatenation is an
+absolutely continuous path in the marked geometric topology.
+
+\begin{lemma}[Curvature interpolation]\label{lem:curv-interp}
+Let \(G_0,G_1\) be marked centrally symmetric ovals with the same
+half-perimeter \(L\) and the same marked tangent direction.  Suppose their
+intrinsic half-periodic curvatures \(\kappa^{(0)},\kappa^{(1)}\) satisfy
+\(0<\kappa^{(i)}\leq\kappa_*\) for \(i=0,1\).  There is a path
+\(\Gamma\) from \(G_0\) to \(G_1\) whose curvature is at most
+\(\kappa_*\) and such that
+\begin{equation}\label{eq:interp-estimate}
+  W(\Gamma)+S_0(\Gamma)+S_1(\Gamma)
+  \leq C(1+L)^2
+  \norm{\kappa^{(1)}-\kappa^{(0)}}_{L^1(0,L)}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Set \(\kappa_t=(1-t)\kappa^{(0)}+t\kappa^{(1)}\).  Let \(\theta_t(0)\) be the
+common marked tangent angle, and define
+\[
+   \theta_t(s)=\theta_t(0)+\int_0^s\kappa_t(r)\,dr.
+\]
+For \(0\leq s\leq L\), put
+\begin{equation}\label{eq:explicit-curvature-interpolation}
+ X_t(s)=\int_0^s\tau(\theta_t(r))\,dr
+       -\frac12\int_0^L\tau(\theta_t(r))\,dr,
+\end{equation}
+and extend by
+\[
+   X_t(s+L)=-X_t(s).
+\]
+Because \(\int_0^L\kappa_t=\pi\), this extension is smooth.  Formula
+\eqref{eq:explicit-curvature-interpolation} makes closure, central symmetry,
+centering, and the marked tangent phase explicit.  Its curvature is
+\(\kappa_t\), so the whole path is strictly convex and has curvature at most
+\(\kappa_*\).
+
+Set \(\epsilon=\norm{\kappa^{(1)}-\kappa^{(0)}}_{L^1}\).  Then
+\(\norm{\dot\theta_t}_\infty\leq\epsilon\), and differentiating
+\eqref{eq:explicit-curvature-interpolation} gives
+\(\norm{\dot X_t}_\infty\leq(3/2)L\epsilon\).  If
+\(\dot X_t=\xi\tau+\eta\nu\), unit-speed parametrization gives
+\(\dot\theta_t=\eta_s+\kappa_t\xi\).  Hence
+\[
+  \norm{\eta}_\infty\leq C L\epsilon,
+  \qquad
+  \norm{\eta_s}_\infty\leq C(1+L)\epsilon.
+\]
+Integrating over the full perimeter proves \eqref{eq:interp-estimate}.
+\end{proof}
+
+\begin{lemma}[Smooth dependence of the selected rear]\label{lem:path-inverse}
+Let \(F_t\), \(0\leq t\leq1\), be a smooth path of strictly convex closed
+fronts whose curvatures satisfy \(0<K_t\leq\widehat\kappa<1\).  Then their
+selected rear tracks form a smooth path.
+\end{lemma}
+
+\begin{proof}
+Parametrize each front by its tangent angle
+\(\phi\in\mathbb R/2\pi\mathbb Z\), and let \(q_t=1/K_t\) be its radius of
+curvature.  The selected steering angle satisfies
+\[
+   \delta_\phi=1-q_t(\phi)\sin\delta.
+\]
+Its periodic linearization is
+\[
+   w_\phi+q_t\cos\delta\,w=f.
+\]
+On the selected strip \(0\leq\delta\leq\arcsin\widehat\kappa\), the
+zeroth-order coefficient is bounded below by
+\[
+   \widehat\kappa^{-1}\sqrt{1-\widehat\kappa^2}>0.
+\]
+The periodic linear operator is invertible, with a positive Green kernel and
+uniform bounds.  The hyperbolic fixed point of the Poincar\'e map therefore
+depends smoothly on \(t\), as does the reconstructed rear track.
+\end{proof}
+
+\begin{lemma}[Inverse Jacobi estimates]\label{lem:jacobi}
+Fix $\widehat\kappa<1$.  Let $\Gamma$ be a smooth path of strictly convex
+fronts of curvature at most $\widehat\kappa$, and let $\Bmap\Gamma$ be the
+path of selected rears.  There are constants depending only on
+$\widehat\kappa$ such that
+\begin{align}
+  W(\Bmap\Gamma)&\leq W(\Gamma),\label{eq:Wnonexp}\\
+  S_0(\Bmap\Gamma)&\leq C_0W(\Gamma),\label{eq:S0gain}\\
+  S_1(\Bmap\Gamma)&\leq C_1\bigl(W(\Gamma)+S_0(\Gamma)\bigr),\label{eq:S1gain}\\
+  S_2(\Bmap\Gamma)&\leq C_2\bigl(W(\Gamma)+S_0(\Gamma)+S_1(\Gamma)\bigr).
+  \label{eq:S2gain}
+\end{align}
+The selected inverse gains one derivative: a $C^r$ front, $r\geq2$, has a
+$C^{r+1}$ selected rear.
+\end{lemma}
+
+\begin{proof}
+Let $R_t$ be the rear path, parametrize $R=R_0$ by rear arclength $x$, and
+write
+$\dot R=\xi\tau+\eta_R\nu$.  Put $F=R+\tau$ and let $\eta_F$ be the front
+normal velocity.  Since
+$\dot\tau=(\eta_{R,x}+k\xi)\nu$ and
+$\nu_F=-\sin\delta\,\tau+\cos\delta\,\nu$, the tangential terms cancel:
+\begin{equation}\label{eq:inverse-jacobi}
+  (1+\partial_x)\eta_R
+  =\sec\delta\,\eta_F\circ s.
+\end{equation}
+On a rear circle of length $\ell$, the periodic inverse of
+$1+\partial_x$ is
+\[
+  (\mathcal R_\ell f)(x)
+  =\frac{1}{1-e^{-\ell}}
+    \int_{x-\ell}^x e^{-(x-t)}f(t)\,dt.
+\]
+Its kernel is positive and has integral one.  Because
+$dx=\cos\delta\,ds$, \eqref{eq:Wnonexp} follows.
+
+Lemma~\ref{lem:lowcurv} bounds \(\delta\) away from \(\pi/2\) and gives a
+uniform upper bound for the rear curvature.  Total turning then bounds the rear
+perimeter away from zero.  Hence \(\mathcal R_\ell\) maps \(L^1\) uniformly
+into \(L^\infty\), which proves \eqref{eq:S0gain}.  From
+\[
+  \eta_{R,x}=\sec\delta\,\eta_F\circ s-\eta_R
+\]
+we get \eqref{eq:S1gain}.  Differentiating once gives
+\[
+  \eta_{R,xx}
+  =(\sec\delta)_x\eta_F\circ s
+   +\sec^2\delta\,(\eta_F)_s\circ s
+   -\eta_{R,x}.
+\]
+The identity
+\(\delta_x=\sec\delta(K-\sin\delta)\) bounds the coefficient uniformly and
+proves \eqref{eq:S2gain}.
+
+For the regularity assertion, the rear tangent angle in front arclength satisfies
+$\Psi_s=\sin(\Theta-\Psi)$.  If the front is $C^r$, then $\Theta$ is
+$C^{r-1}$, the equation gives $\Psi\in C^r$, and one integration in rear
+arclength gives a $C^{r+1}$ rear curve.
+\end{proof}
+
+\begin{lemma}[Completeness of summable normal paths]\label{lem:complete}
+Let \(G_j\) be marked regular curves joined by piecewise smooth paths \(\Gamma_j\).
+Suppose all intermediate curvatures are bounded by a common constant and
+\[
+   \sum_j\bigl(S_0(\Gamma_j)+S_1(\Gamma_j)+S_2(\Gamma_j)\bigr)<\infty.
+\]
+Then \(G_j\) converges in marked geometric \(C^2\) to a regular \(C^2\)
+curve.
+\end{lemma}
+
+\begin{proof}
+Concatenate the paths, rephasing the next path at each junction so that its
+parameter agrees with the one transported from the preceding path; the
+quantities \(S_j\) are unchanged by such a constant arclength shift.  If the
+original velocity is \(\xi\tau+\eta\nu\) and the speed in a periodic
+parameter is \(g\), solve
+\[
+   \phi_t(t,u)=-\frac{\xi(t,\phi(t,u))}{g(t,\phi(t,u))},
+   \qquad \phi(0,u)=u.
+\]
+The reparametrized path has velocity \(\eta\nu\).  This transports the
+chosen parameter and changes neither the geometric path nor its normal
+component.  We may therefore assume
+\[
+   X_t=\eta\nu.
+\]
+If \(u\) is the transported periodic parameter and \(g=|X_u|\), then, for
+our inward normal convention,
+\begin{equation}\label{eq:normal-flow-identities}
+   \tau_t=\eta_s\nu,
+   \qquad
+   \kappa_t=\eta_{ss}+\kappa^2\eta,
+   \qquad
+   (\log g)_t=-\kappa\eta.
+\end{equation}
+These formulas use the inward-normal convention fixed in the introduction.
+
+The assumed summability makes \(X\), \(\tau\), \(\kappa\), and \(\log g\)
+uniformly Cauchy along the concatenated path.  Since the total variation of
+\(\log g\) is finite and every initial speed is positive, the limiting speed
+\(g\) is positive.  Passing to the limit in
+\[
+   X_u=g\tau,
+   \qquad
+   \tau_u=g\kappa\nu
+\]
+shows that the limit is a regular \(C^2\) curve.  The transported marker and
+tangent direction converge as part of the same parametrized convergence.
+\end{proof}
+
+\begin{lemma}[Stopped curvature estimate]\label{lem:stopped-curvature}
+Let \(\Gamma=(C_t)_{0\leq t\leq1}\) be a smooth path written in normal
+gauge, \(X_t=\eta\nu\).  Suppose
+\[
+ \max\kappa_{C_0}\leq\kappa_b<\kappa_e
+\]
+and
+\[
+ S_2(\Gamma)+\kappa_e^2S_0(\Gamma)
+ <\kappa_e-\kappa_b.
+\]
+Then \(\max\kappa_{C_t}<\kappa_e\) for every \(t\).
+\end{lemma}
+
+\begin{proof}
+If \(T\) were the first exit time, then on \([0,T]\) the inward-normal
+flow identity would give
+\[
+ \|\kappa(T)-\kappa(0)\|_\infty
+ \leq\int_0^T
+   \bigl(\|\eta_{ss}\|_\infty+
+         \kappa_e^2\|\eta\|_\infty\bigr)\,dt
+ <\kappa_e-\kappa_b,
+\]
+contradicting \(\max\kappa(T)=\kappa_e\).
+\end{proof}
+
+\begin{lemma}[Selected inverse on the closed strip]\label{lem:closed-strip-inverse}
+Let \(F\) be a regular convex \(C^2\) closed curve with
+\(0\leq K\leq\widehat\kappa<1\).  There is a unique periodic steering
+solution
+\[
+ 0\leq\delta\leq\arcsin\widehat\kappa
+\]
+of \(\delta_s=K-\sin\delta\).  It defines a regular convex rear track.
+After normalized-arclength identification of the parameter circles, this
+rear depends continuously in \(C^2\) on the front.  If the front is
+\(C^r\), \(r\geq2\), the rear is \(C^{r+1}\).
+\end{lemma}
+
+\begin{proof}
+The vector field points into the displayed interval, so its Poincar\'e map
+has a fixed point.  The difference of two solutions satisfies
+\(w_s+c(s)w=0\), where
+\(c(s)\geq\sqrt{1-\widehat\kappa^2}>0\); periodicity forces \(w=0\).
+Also \(x_s=\cos\delta\geq\sqrt{1-\widehat\kappa^2}\), so the rear is
+regular and has nonnegative curvature \(\tan\delta\).  When the perimeter
+varies, write the equation in normalized arclength.  Continuous dependence for
+this scalar periodic ODE then gives convergence of \(\delta\), the coordinate
+change \(x\), and the reconstructed rear.  In front
+arclength \(\Psi_s=\sin(\Theta-\Psi)\); the same derivative count as in
+Lemma~\ref{lem:jacobi} gives the asserted regularity gain.
+\end{proof}
+
+\begin{theorem}[Regularizing backward shadowing]\label{thm:shadow}
+Let \(Q_n\) be marked centrally symmetric ovals, and put
+\(A_n=\Bmap Q_{n+1}\).  Assume that \(Q_n\) and \(A_n\) have the same
+half-perimeter \(L_n\) and the same marked tangent direction.  Assume also
+that all their curvatures are bounded by one constant \(\kappa_0<1\).  Define
+\[
+ e_n=(1+L_n)^2
+   \|\kappa_{Q_n}-\kappa_{A_n}\|_{L^1(0,L_n)},
+ \qquad
+ r_n=\sum_{m=n}^{\infty}e_m.
+\]
+Suppose that
+\begin{equation}\label{eq:shadow-hyp}
+   r_0<\infty.
+\end{equation}
+After discarding finitely many initial indices, the terminal pullbacks
+\[
+   Z_n^{(N)}=\Bmap^{N-n}Q_N
+\]
+are defined for all \(N\geq n\) and converge in geometric \(C^2\) to
+curves \(X_n\) satisfying
+\[
+   X_n=\Bmap X_{n+1},
+   \qquad
+   \Tmap X_n=X_{n+1}.
+\]
+Every \(X_n\) is a smooth oval.  On the retained tail, a constant
+\(C=C(\kappa_0)\), independent of \(n\) and \(N\), satisfies
+\begin{equation}\label{eq:shadow-model-distance}
+ d_{\mathrm H}(X_n,Q_n)+|\Per(X_n)-2L_n|\leq Cr_n.
+\end{equation}
+Here \(d_{\mathrm H}\) denotes Hausdorff distance.  For every \(N\geq n\), there
+is a concatenated normal path
+\(\Gamma_{n,N}:Z_n^{(N)}\rightsquigarrow X_n\) satisfying
+\begin{equation}\label{eq:shadow-terminal-tail-low}
+ S_0(\Gamma_{n,N})+S_1(\Gamma_{n,N})\leq Cr_N.
+\end{equation}
+If \(N\geq n+1\), the same path also satisfies
+\begin{equation}\label{eq:shadow-terminal-tail}
+ S_2(\Gamma_{n,N})\leq Cr_N.
+\end{equation}
+The orbit is unique among exact inverse orbits that remain in the \(C^2\)
+closures of the shrinking tubes constructed in the proof.
+
+There is also a number \(\eta_*=\eta_*(\kappa_0)>0\) such that no initial
+indices need be discarded when \(r_0\leq\eta_*\).
+\end{theorem}
+
+\begin{proof}
+\emph{Defect paths and tube constants.}
+Let \(C_{\mathrm{int}}=C_{\mathrm{int}}(\kappa_0)\) be the constant in
+Lemma~\ref{lem:curv-interp}, put
+\[
+   d_n=C_{\mathrm{int}}e_n,
+   \qquad
+   a_n=\sum_{m=n}^\infty d_m=C_{\mathrm{int}}r_n.
+\]
+Lemma~\ref{lem:curv-interp} gives a defect path
+\(\Lambda_n:Q_n\rightsquigarrow A_n\) satisfying
+\[
+   0<\kappa\leq\kappa_0,
+   \qquad
+   W(\Lambda_n)+S_0(\Lambda_n)+S_1(\Lambda_n)\leq d_n.
+\]
+
+Set
+\[
+   \bar\kappa=\frac{2\kappa_0+1}{3},
+   \qquad
+   \widehat\kappa=\frac{\kappa_0+2}{3},
+\]
+so that \(\kappa_0<\bar\kappa<\widehat\kappa<1\).  Let
+\(C_0,C_1,C_2\) be the constants in Lemma~\ref{lem:jacobi} for the ceiling
+\(\widehat\kappa\), and set
+\begin{equation}\label{eq:tube-constants}
+ M_0=\max\{1,C_0\},
+ \qquad
+ M_1=\max\{1,C_1(1+M_0)\}.
+\end{equation}
+Define
+\begin{equation}\label{eq:tube-curvature-constants}
+\begin{aligned}
+ C_{\mathrm{tube}}
+    &=C_2(1+M_0+M_1)+\widehat\kappa^2C_0,\\
+ C_{\mathrm{inc}}
+    &=C_2(1+M_0+M_1)+\widehat\kappa^2M_0.
+\end{aligned}
+\end{equation}
+All these constants depend only on \(\kappa_0\).  Define \(\mathcal D_n\) to
+be the set of curves that can be joined to \(Q_n\) by a piecewise smooth path
+satisfying
+\[
+   0<\kappa\leq\widehat\kappa,
+\]
+\[
+   W\leq a_n,
+   \qquad
+   S_0\leq M_0a_n,
+   \qquad
+   S_1\leq M_1a_n.
+\]
+\emph{Invariant tubes.}
+Discard finitely many initial indices so that
+\begin{equation}\label{eq:tube-smallness}
+   C_{\mathrm{tube}}a_{n+1}<\bar\kappa-\kappa_0
+\end{equation}
+for every remaining \(n\).  We prove that
+\begin{equation}\label{eq:tube-invariance}
+   \Bmap(\mathcal D_{n+1})\subseteq\mathcal D_n.
+\end{equation}
+
+Let \(C\in\mathcal D_{n+1}\), and let \(\Gamma\) be an admissible path
+from \(Q_{n+1}\) to \(C\).  By Lemma~\ref{lem:path-inverse},
+\(\Bmap\Gamma\) is a smooth path.  Lemma~\ref{lem:jacobi} gives
+\[
+   W(\Bmap\Gamma)\leq a_{n+1},
+\]
+\[
+   S_0(\Bmap\Gamma)\leq C_0a_{n+1},
+\]
+\[
+   S_1(\Bmap\Gamma)
+      \leq C_1(1+M_0)a_{n+1}.
+\]
+The second-derivative estimate gives
+\[
+ S_2(\Bmap\Gamma)+\widehat\kappa^2S_0(\Bmap\Gamma)
+ \leq C_{\mathrm{tube}}a_{n+1}.
+\]
+The output starts at \(A_n\), whose curvature is at most \(\kappa_0\).
+Equations \eqref{eq:tube-smallness} and
+Lemma~\ref{lem:stopped-curvature} keep the entire inverse path below
+\(\bar\kappa\), hence below \(\widehat\kappa\).  Concatenate it with
+\(\Lambda_n\).  Since \(a_n=d_n+a_{n+1}\),
+\[
+   W\leq a_n,
+\]
+\[
+   S_0\leq d_n+C_0a_{n+1}\leq M_0a_n,
+\]
+\[
+   S_1\leq d_n+C_1(1+M_0)a_{n+1}\leq M_1a_n.
+\]
+These inequalities prove \eqref{eq:tube-invariance}.  They also give the
+endpoint margin
+\begin{equation}\label{eq:endpoint-margin}
+   \max\kappa_C
+      \leq\kappa_0+C_{\mathrm{tube}}a_{n+1}
+      \leq\bar\kappa
+\end{equation}
+for every \(C\in\Bmap(\mathcal D_{n+1})\).  Every finite terminal
+pullback therefore exists and lies in its corresponding tube.
+
+\emph{Cauchy convergence.}
+Fix \(n\) and compare terminal indices \(N\) and \(N+1\).  The path
+\(\Lambda_N\) joins \(Q_N\) to \(A_N=\Bmap Q_{N+1}\), and
+\(\Bmap^{N-n}\Lambda_N\) joins \(Z_n^{(N)}\) to
+\(Z_n^{(N+1)}\).  Before any inverse is applied,
+\[
+   W+S_0+S_1\leq d_N.
+\]
+If \(N\geq n+1\), the first inverse step gives
+\[
+   W\leq d_N,
+   \qquad
+   S_0\leq M_0d_N,
+   \qquad
+   S_1\leq M_1d_N,
+\]
+\[
+   S_2\leq C_2(1+M_0+M_1)d_N.
+\]
+The same bounds hold after every subsequent inverse step.  At each depth,
+the output path starts at a finite pullback whose curvature is at most
+\(\bar\kappa\).  Discard finitely many more levels so that
+\[
+   C_{\mathrm{inc}}d_N<\widehat\kappa-\bar\kappa
+\]
+for every remaining \(N\).
+Lemma~\ref{lem:stopped-curvature} then keeps every propagated path below
+\(\widehat\kappa\).  Consequently, for every \(N\geq n\), the increment
+path satisfies
+\begin{equation}\label{eq:increment-low}
+   S_0+S_1\leq Cd_N,
+\end{equation}
+and, when \(N\geq n+1\), it also satisfies
+\begin{equation}\label{eq:increment}
+   S_2\leq Cd_N.
+\end{equation}
+
+Fix \(n\).  Begin the Cauchy argument with terminal indices
+\(N\geq n+1\).  Equations \eqref{eq:increment-low}--\eqref{eq:increment} and
+\(\sum d_N<\infty\) satisfy the hypotheses of Lemma~\ref{lem:complete};
+denote the resulting limit by \(X_n\).  Concatenating the increment paths
+gives \eqref{eq:shadow-terminal-tail-low}.  If \(N\geq n+1\), it also
+gives \eqref{eq:shadow-terminal-tail}.  Every finite pullback at level \(n\)
+is joined to \(Q_n\) by a defining tube path with
+\(S_0\leq M_0a_n\) and \(W\leq a_n\).  Passing to the limit gives
+\[
+ d_{\mathrm H}(X_n,Q_n)\leq M_0a_n,
+ \qquad
+ |\Per(X_n)-2L_n|\leq\widehat\kappa a_n;
+\]
+the second inequality is the absolute first-variation estimate for
+perimeter along a normal path.  Since \(a_n=C_{\mathrm{int}}r_n\), this proves
+\eqref{eq:shadow-model-distance}.  Continuity of
+\(\Tmap\gamma=\gamma+\tau_\gamma\) in \(C^1\) gives
+\(\Tmap X_n=X_{n+1}\).
+
+\emph{Convexity and regularity.}
+Every finite terminal pullback is strictly convex and has turning number one.
+Marked geometric \(C^2\) convergence therefore implies
+\[
+   \kappa_{X_n}\geq0.
+\]
+The unit tangents converge uniformly as maps \(S^1\to S^1\).  For all
+large indices, each approximating tangent is joined to the limiting tangent by
+the shorter arc of \(S^1\); hence the limiting tangent still has degree one.
+Its tangent angle is nondecreasing and increases by \(2\pi\) in one circuit.
+
+A regular closed plane curve with nonnegative curvature and turning number one
+bounds a convex body: in each direction, its scalar projection has one interval
+of increase and one of decrease, and therefore attains its maximum on a
+supporting line.  Thus \(X_n\) is convex, and its
+curvature is at most \(\bar\kappa<1\).
+
+We establish smoothness before upgrading convexity to strict convexity.
+Along every finite rear--front pair the steering angle satisfies
+\(0<\delta\leq\arctan\bar\kappa\).  The curves and their unit tangents
+converge, so the limiting pair has a steering angle in the closed strip
+\[
+   0\leq\delta\leq\arctan\bar\kappa<\frac\pi2.
+\]
+Lemma~\ref{lem:closed-strip-inverse} shows that \(X_n\) is the unique
+regular-branch selected rear of \(X_{n+1}\).  Thus
+\(X_n=\Bmap X_{n+1}\) also holds at the limit.  Iterating the regularity gain
+in \(X_n=\Bmap^rX_{n+r}\) makes every \(X_n\) smooth.
+Apply Lemma~\ref{lem:strictness} to the smooth consecutive convex curves
+\(X_n\) and \(X_{n+1}=\Tmap X_n\).  Every \(X_n\) is strictly convex.
+
+\emph{Uniqueness.}
+Let \((Y_n)\) and \((\widetilde Y_n)\) be two exact inverse
+orbits with \(Y_N,\widetilde Y_N\in\overline{\mathcal D_N}^{\,C^2}\) for
+every large \(N\).  Approximate the two curves at level \(N\) by elements
+of \(\mathcal D_N\), concatenate their admissible paths through \(Q_N\),
+and propagate the resulting comparison path backward.  The same estimates
+give \(C^2\)-distance at most \(Ca_N\) at every fixed earlier level.
+First pass to the approximating limit, using
+Lemma~\ref{lem:closed-strip-inverse} at each of the finitely many inverse
+steps.  Then let \(N\to\infty\).
+Since \(a_N\to0\), the two exact orbits coincide.
+
+\emph{Uniform smallness.}
+Only two smallness conditions require the deletion of initial indices:
+\eqref{eq:tube-smallness} and the propagated-increment inequality.  Since
+\(d_n\leq a_0=C_{\mathrm{int}}r_0\), the choice
+\begin{equation}\label{eq:eta-star-explicit}
+ \eta_*=\frac1{2C_{\mathrm{int}}}
+ \min\left\{
+   \frac{\bar\kappa-\kappa_0}{C_{\mathrm{tube}}},
+   \frac{\widehat\kappa-\bar\kappa}{C_{\mathrm{inc}}}
+ \right\}
+\end{equation}
+makes both inequalities valid from level zero whenever
+\(r_0\leq\eta_*\).
+\end{proof}
+
+The shadowing theorem is independent of the hairpin construction: it applies
+to any low-curvature inverse pseudo-orbit with summable intrinsic-curvature
+defects.
+
+\section{Proof of the main theorem}\label{sec:application}
+
+\begin{lemma}[Large-separation threshold]\label{lem:synchronize}
+For the fixed translating hairpin, there is \(H_*<\infty\) such that every
+initial separation \(H_0\geq H_*\) satisfies the properties below.
+\begin{enumerate}[label=\roman*.,leftmargin=*]
+\item The map \(P\) is strictly increasing on the entire cap sequence,
+      \(P(H)\leq H-\Delta/2\), and the recursion
+      \(P(H_{n+1})=H_n\) has a unique solution with
+      \[
+        H_n\geq H_0+\frac{\Delta}{2}n.
+      \]
+\item Proposition~\ref{prop:pairs}, Lemma~\ref{lem:width}, and
+      Theorem~\ref{thm:L1match} apply at every level with one common
+      curvature ceiling \(\kappa_0<1\).
+\item If \(e_n\) and \(r_n\) are the defect and tail quantities in
+      Theorem~\ref{thm:shadow}, then
+      \begin{equation}\label{eq:synchronized-tail}
+       r_0\leq C(1+H_0)^2e^{-\beta' H_0}\longrightarrow0
+       \qquad(H_0\to\infty).
+      \end{equation}
+      In particular, after increasing \(H_*\), one has
+      \(r_0\leq\eta_*(\kappa_0)\), so the shadowing theorem applies from
+      level zero.
+\item Let \(C_{\mathrm{sh}}\) be the constant in
+      \eqref{eq:shadow-model-distance} and \(C_W\) the constant in
+      Lemma~\ref{lem:width}.  Increase \(H_*\), if necessary, so that
+      \begin{equation}\label{eq:synchronized-noncircle}
+       \frac{2H_0-C_{\mathrm{sh}}r_0}{\pi}
+          > C_W+2C_{\mathrm{sh}}r_0.
+      \end{equation}
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+Take \(H_*\) larger than the finitely many geometric thresholds in
+Proposition~\ref{prop:pairs}, Lemma~\ref{lem:width}, and
+Theorem~\ref{thm:L1match}, and so large that
+\[
+ P'(H)\geq\frac12,
+ \qquad
+ |P(H)-(H-\Delta)|\leq\frac\Delta2.
+\]
+These inequalities make \(P\) invertible on \([H_*,\infty)\) and imply the
+stated growth of \(H_n\).
+After decreasing the exponent if necessary, the matching theorem gives
+\[
+ e_n\leq C(1+H_n)^2e^{-\beta H_{n+1}}.
+\]
+The bound \(H_n\geq H_0+n\Delta/2\) reduces the sum to a polynomially
+weighted geometric series and proves \eqref{eq:synchronized-tail}.  Since its
+right side tends to zero, the third assertion follows from the uniformity
+clause in Theorem~\ref{thm:shadow}.  The left side of
+\eqref{eq:synchronized-noncircle} tends to infinity, while its right side
+tends to \(C_W\); one final increase of \(H_*\) proves the fourth assertion.
+\end{proof}
+
+Choose \(H_0\geq H_*\) as in Lemma~\ref{lem:synchronize}.
+\emph{Construction of the pseudo-orbit.}
+Define recursively
+\begin{equation}\label{eq:Hrec}
+  P(H_{n+1})=H_n.
+\end{equation}
+Then
+\[
+  H_{n+1}=H_n+\Delta+O(e^{-\beta H_n}),
+  \qquad
+  H_n\geq H_0+\frac\Delta2n.
+\]
+Choose compatible representatives by Lemma~\ref{lem:compatible-markings}.
+Fix the centered orientation and marked phase of \(Q_0=F_{H_0}\).
+Inductively, rotate the entire exact pair
+\(R_{H_{n+1}}\mapsto F_{H_{n+1}}\) so that the marked tangent of
+\(R_{H_{n+1}}\), at the phase used in Theorem~\ref{thm:L1match}, agrees with
+the marked tangent of \(Q_n\).  Put
+\[
+  Q_{n+1}=F_{H_{n+1}}
+\]
+with this rotation, and set
+\[
+  A_n=\Bmap Q_{n+1}=R_{H_{n+1}}.
+\]
+Central symmetry keeps every representative centered at the origin, and
+rotation does not alter any curvature or matching estimate.  Hence \(Q_n\)
+and \(A_n\) have the same marked tangent phase and the same half-perimeter
+\(H_n\).  The matching theorem gives
+\[
+  \norm{\kappa_{Q_n}-\kappa_{A_n}}_{L^1(0,H_n)}
+  \leq Ce^{-\beta H_{n+1}}.
+\]
+Therefore the quantities \(e_n,r_n\) of
+Theorem~\ref{thm:shadow} satisfy \eqref{eq:synchronized-tail}.  The common
+curvature ceiling follows from Proposition~\ref{prop:pairs}, and the choice
+of \(H_0\) ensures \(r_0\leq\eta_*(\kappa_0)\).  The shadowing theorem
+therefore applies from level zero and gives a smooth exact orbit
+\[
+  \Tmap X_n=X_{n+1}.
+\]
+
+\emph{Excluding a circle.}
+By Lemma~\ref{lem:width}, the transverse width of \(Q_0=F_{H_0}\) is
+bounded uniformly for all sufficiently large \(H_0\), whereas
+\(\Per(Q_0)=2H_0\).  The stated estimate \eqref{eq:shadow-model-distance} and
+Lemma~\ref{lem:synchronize} show that
+\[
+   d_{\mathrm H}(X_0,Q_0)+|\Per(X_0)-2H_0|
+      \leq Cr_0\longrightarrow0
+\]
+as the initial separation \(H_0\to\infty\).  A Hausdorff perturbation of
+size \(d\) changes every directional width by at most \(2d\).  Therefore the
+transverse width of \(X_0\) is at most \(C_W+2C_{\mathrm{sh}}r_0\), whereas a
+circle with this perimeter would have width at least
+\((2H_0-C_{\mathrm{sh}}r_0)/\pi\).  This contradicts \eqref{eq:synchronized-noncircle} and completes the proof of
+Theorem~\ref{thm:main}.
+
+\clearpage
+\appendix
+\section{Numerically generated geometry}\label{app:schematic}
+
+The figures are numerical illustrations and play no role in the proof.  Their
+coordinates were generated from the six-mode cosine profile with
+\(\Lambda=25.0400224235038\).  The corresponding translation is
+\(V\approx0.01945183447\); the cap-pair plot uses \(H=160\).
+
+\input{v10_figure_coords.tex}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  x=0.043cm,
+  y=0.043cm,
+  >=Latex,
+  rear/.style={very thick,blue!65!black},
+  front/.style={very thick,dashed,red!70!black},
+  ann/.style={gray!70!black,semithick},
+  tang/.style={gray!70!black,semithick,-{Latex[length=1.7mm]}}
+]
+  \draw[rear] plot[smooth] coordinates {\HairpinC};
+  \draw[front] plot[smooth] coordinates {\HairpinTC};
+  \draw[ann,<->] (-111,-40.3757)--(-111,40.3757)
+    node[midway,fill=white,inner sep=1pt,font=\small] {$W$};
+  \draw[tang] (56,-39.90)--(73,-39.60);
+  \draw[tang] (132,0)--(132,14);
+  \draw[tang] (56,39.90)--(39,39.60);
+  \node[font=\small,blue!65!black] at (-72,-31) {$C$};
+  \node[font=\small,red!70!black] at (-58,31) {$\Tmap C=C+(V,0)$};
+  \draw[ann,-{Latex[length=1.7mm]}] (-12,-52)--(34,-52);
+  \node[font=\small,gray!70!black] at (11,-59) {translation by $(V,0)$};
+\end{tikzpicture}
+\caption{The sampled hairpin profile and its horizontal translate by
+\(V\approx0.01945183447\).  The solid curve is \(C\); the dashed curve is
+\(C+(V,0)\).  The arrows show the positive tangent direction, and \(W\)
+marks the strip width.}
+\label{fig:hairpin-numerical}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  x=0.084cm,
+  y=0.084cm,
+  >=Latex,
+  rear/.style={very thick,blue!65!black},
+  front/.style={very thick,dashed,red!70!black},
+  ann/.style={gray!70!black,semithick},
+  tang/.style={gray!70!black,semithick,-{Latex[length=1.7mm]}}
+]
+  \draw[rear] plot[smooth cycle] coordinates {\CapRear};
+  \draw[front] plot[smooth cycle] coordinates {\CapFront};
+  \draw[ann,<->] (-33,43)--(33,43)
+    node[midway,fill=white,inner sep=1pt,font=\small]
+    {large separation parameter $H$};
+  \draw[tang] (-62,0)--(-62,8);
+  \draw[tang] (0,36)--(10,36);
+  \draw[tang] (62,0)--(62,-8);
+  \draw[tang] (0,-36)--(-10,-36);
+  \node[font=\small] at (-56,5) {cap};
+  \node[font=\small] at (56,5) {cap};
+  \node[font=\small,blue!65!black] at (-28,-27) {$R_H$};
+  \node[font=\small,red!70!black] at (19,27) {$F_H=\Tmap R_H$};
+\end{tikzpicture}
+\caption{A numerical reconstruction of the periodized rear--front pair at
+\(H=160\).  The solid curve is \(R_H\); the dashed curve is
+\(F_H=\Tmap R_H\), up to numerical quadrature error.  The two labeled ends
+are the cap regions.}
+\label{fig:cappair-numerical}
+\end{figure}
+
+\clearpage
+\begin{thebibliography}{9}
+
+\bibitem{LeviTabachnikov}
+M.~Levi and S.~Tabachnikov,
+\newblock On bicycle tire tracks geometry, hatchet planimeter, Menzin's
+conjecture, and oscillation of unicycle tracks,
+\newblock \emph{Experimental Mathematics} \textbf{18} (2009), no.~2,
+173--186,
+\newblock \href{https://doi.org/10.1080/10586458.2009.10128894}
+{doi:10.1080/10586458.2009.10128894}.
+
+\bibitem{Tabachnikov2023}
+S.~Tabachnikov,
+\newblock Iterating skew evolutes and skew involutes: a linear analog of
+bicycle kinematics,
+\newblock \emph{Moscow Mathematical Journal} \textbf{23} (2023), no.~4,
+625--640,
+\newblock \href{https://doi.org/10.17323/1609-4514-2023-23-4-625-640}
+{doi:10.17323/1609-4514-2023-23-4-625-640}.
+
+\end{thebibliography}
+
+\end{document}

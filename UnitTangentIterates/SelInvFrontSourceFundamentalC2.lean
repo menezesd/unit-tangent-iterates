@@ -1,0 +1,258 @@
+import Mathlib
+import UnitTangentIterates.SelInvFrontCostFundamentalC2
+import UnitTangentIterates.RearJacobiSourceCost
+import UnitTangentIterates.NormalPathC2IncrementFlow
+
+/-!
+# The `C²` estimate with the source of the inverse Jacobi ODE discharged
+
+`SelInvFrontCostC2.dist_selInv_le_of_front_cost_C2` still asks the caller for a
+bound `Dd` on the arclength derivative of the source of the inverse Jacobi ODE
+of the family of selected rears, dominated by the cost density of the fronts
+with a constant `dd`.  `RearJacobiSourceCost.lean` produces that bound from the
+front data alone, with the explicit constant
+
+`jacobiSourceConst κ̂ P₀ = (1/P₀ + 2κ̂²)/(1−κ̂²)^{3/2}` ,
+
+as soon as the normal speed of the path is differentiable in the parameter with
+derivative dominated by the cost density — which is what the sup condition of a
+normal path says.  This file substitutes it, so that the bound on the source and
+its constant disappear from the statement; the constant of the estimate is then
+determined by the tube data and the lower bound `P₀` for the perimeter.
+
+This is the fundamental-domain form: the bound on the tangential drift is asked
+on one rear period only.
+
+Main result: `dist_selInv_le_of_front_source_fundamental_C2`.
+-/
+
+noncomputable section
+
+open Set Function Complex MeasureTheory MarkedSpace MarkedTopology PathMetric
+  PathMetric.NormalPath RearTrack ArclengthInverse RearFamilyFrame RearOwnArclength
+  RearOwnMotion
+
+namespace SelInvFrontSourceFundamentalC2
+
+open UniformFrameBounds GaugePathDistVariable RearOwnPathDistSmooth
+  RearOwnHigherRegularity SelectedInverseJacobiODE RearOwnPathDistIntrinsic
+  FrontFromPath SelectedInverseRearOwn SelectedInverseRearOwnTerminal
+  MarkingDeviationC2 MarkingFlowDefectC2 RearOwnTangentialCostC2
+  NormalPathC2IncrementVariableSpeed GaugeFlowVariableSpeedPath GaugeFlowDerivCost
+  GaugeMarkedDataOfRearFamily GaugeFlowUniqueness FlowDerivative
+  GaugeFlowTimeDerivative GaugeFlowSupJacobi SelInvFrontCostC2 RearJacobiSourceCost
+
+variable {V A : ℝ → ℝ → ℂ} {δ dn Kn Kdn sf : ℝ → ℝ → ℝ} {P Pd : ℝ → ℝ}
+  {P0 P1 kh Klip Plip : ℝ}
+
+/-- **The `C²` comparison of the two marked selected inverses, with the bound on
+the source of the inverse Jacobi ODE produced from the front data.**
+
+The hypotheses are those of
+`SelInvFrontCostC2.dist_selInv_le_of_front_cost_C2`, with the bound `Dd` on the
+arclength derivative of the source and its constant `dd` replaced by the
+differentiability of the normal speed of the path in the parameter, together
+with the bound on that derivative by the cost density; the constant of the
+estimate is then `jacobiSourceConst κ̂ P₀`. -/
+theorem dist_selInv_le_of_front_source_fundamental_C2 {p q : Data} (Γ : NormalPath p q)
+    {c kmin dlt cq kminq dltq Md MP CK CP : ℝ}
+    (hc : 0 < c) (hkmin : 0 < kmin) (hp : IsTubeMember c kmin dlt p)
+    (hub : ∀ u, ((starRingEnd ℂ) (p.2.1 u) * p.2.2 u).im ≤ kh * ‖p.2.1 u‖ ^ 3)
+    (hinjR : ∀ Θ' K' dl : ℝ → ℝ,
+      (∀ s, HasDerivAt (ev p) (Complex.exp (Complex.I * (Θ' s : ℂ))) s) →
+      (∀ s, HasDerivAt Θ' (K' s) s) →
+      Function.Periodic dl (perim p) →
+      (∀ s, dl s ∈ Icc 0 (Real.arcsin kh)) →
+      (∀ s, HasDerivAt dl (K' s - Real.sin (dl s)) s) →
+      InjOn (rearTrack (ev p) Θ' dl) (Ico 0 (perim p)))
+    (hcq : 0 < cq) (hkminq : 0 < kminq) (hq : IsTubeMember cq kminq dltq q)
+    (hubq : ∀ u, ((starRingEnd ℂ) (q.2.1 u) * q.2.2 u).im ≤ kh * ‖q.2.1 u‖ ^ 3)
+    (hinjRq : ∀ Θ' K' dl : ℝ → ℝ,
+      (∀ s, HasDerivAt (ev q) (Complex.exp (Complex.I * (Θ' s : ℂ))) s) →
+      (∀ s, HasDerivAt Θ' (K' s) s) →
+      Function.Periodic dl (perim q) →
+      (∀ s, dl s ∈ Icc 0 (Real.arcsin kh)) →
+      (∀ s, HasDerivAt dl (K' s - Real.sin (dl s)) s) →
+      InjOn (rearTrack (ev q) Θ' dl) (Ico 0 (perim q)))
+    (hP0 : 0 < P0) (hkh0 : 0 ≤ kh) (hkh1 : kh < 1)
+    (hPl : ∀ t, P0 ≤ P t) (hPu : ∀ t, P t ≤ P1)
+    (hV : ∀ t u, HasDerivAt (Γ.X t) (V t u) u)
+    (hA : ∀ t u, HasDerivAt (V t) (A t u) u)
+    (hAcont : ∀ t, Continuous (A t))
+    (hspeed : ∀ t u, ‖V t u‖ = P t)
+    (hXper : ∀ t, Periodic (Γ.X t) 1) (hVper : ∀ t, Periodic (V t) 1)
+    (hAper : ∀ t, Periodic (A t) 1)
+    (hturn : ∀ t, (∫ u in (0 : ℝ)..1, ((starRingEnd ℂ) (V t u) * A t u).im / P t ^ 2)
+      = 2 * Real.pi)
+    (hnu : ∀ t u, Γ.nu t u = Complex.I * (V t u / (P t : ℂ)))
+    (hdelta : ∀ t s, δ t s = dn t (s / P t))
+    (hKeq : ∀ t s, curvOfPath V A P t s = Kn t (s / P t))
+    (hsol : ∀ t σ, HasDerivAt (dn t) (P t * (Kn t σ - Real.sin (dn t σ))) σ)
+    (hstrip : ∀ t σ, dn t σ ∈ Icc (0 : ℝ) (Real.arcsin kh))
+    (hdnper : ∀ t, Function.Periodic (dn t) 1) (hKnper : ∀ t, Function.Periodic (Kn t) 1)
+    (hKdnper : ∀ t, Function.Periodic (Kdn t) 1)
+    (hKnbd : ∀ t σ, |Kn t σ| ≤ kh) (hKdnbd : ∀ t σ, |Kdn t σ| ≤ Md)
+    (hPdbd : ∀ t, |Pd t| ≤ MP)
+    (hKnlip : ∀ a b σ, |Kn a σ - Kn b σ| ≤ Klip * |a - b|)
+    (hPlip : ∀ a b, |P a - P b| ≤ Plip * |a - b|)
+    (hKntaylor : ∀ a b σ, |Kn a σ - Kn b σ - (a - b) * Kdn b σ| ≤ CK * (a - b) ^ 2)
+    (hPtaylor : ∀ a b, |P a - P b - (a - b) * Pd b| ≤ CP * (a - b) ^ 2)
+    (hCK : 0 ≤ CK) (hCP : 0 ≤ CP)
+    (hPC4 : ContDiff ℝ (4 : ℕ) P) (hPdC3 : ContDiff ℝ (3 : ℕ) Pd)
+    (hKnC3 : ContDiff ℝ (3 : ℕ) (uncurry Kn)) (hKdnC3 : ContDiff ℝ (3 : ℕ) (uncurry Kdn))
+    (hFc4 : ContDiff ℝ (4 : ℕ) (uncurry (frontOfPath Γ.X P)))
+    (hΘc4 : ContDiff ℝ (4 : ℕ) (uncurry (angleOfPath V A P)))
+    (hsfinv : ∀ t x, rearArclength (δ t) (sf t x) = x)
+    (hmark : ∀ t, Γ.eta t 0 = 0)
+    -- the tangent-angle lift of the terminal marked selected inverse
+    {kb kL : ℝ} {Θb kb' : ℝ → ℝ}
+    (hevd : ∀ s, HasDerivAt (ev (SelectedInverseMap.selInv kh q))
+      (Complex.exp (Complex.I * (Θb s : ℂ))) s)
+    (hΘb : ∀ s, HasDerivAt Θb (kb' s) s) (hkbd : ∀ s, |kb' s| ≤ kb)
+    (hklip : ∀ s t, |kb' s - kb' t| ≤ kL * |s - t|)
+    -- the motion of the family of selected rears, in its own arclength
+    {Ydot : ℝ → ℝ → ℂ} {etaF alphaT kT gS : ℝ → ℝ → ℝ} {Kx Rb : ℝ → ℝ}
+    {Pv0 khat rr kx : ℝ}
+    (hYt : ∀ t x, HasDerivAt
+      (fun r => rearOwn (frontOfPath Γ.X P) (angleOfPath V A P) δ sf r x) (Ydot t x) t)
+    (hδC : ContDiff ℝ 1 (uncurry δ)) (hsfC : ContDiff ℝ 1 (uncurry sf))
+    (hYdotC : ContDiff ℝ (3 : ℕ) (uncurry Ydot))
+    (hangC : ContDiff ℝ (3 : ℕ)
+      (uncurry (rearOwnAngle (angleOfPath V A P) δ sf)))
+    (hkC1 : ContDiff ℝ 1 (uncurry fun t x => Real.tan (δ t (sf t x))))
+    (hper : ∀ t, Function.Periodic
+      (frameNormal Ydot (rearOwnAngle (angleOfPath V A P) δ sf) t)
+      (rearArclength (δ t) (P t)))
+    (hjac : ∀ t x, HasDerivAt
+      (fun x' => frameNormal Ydot (rearOwnAngle (angleOfPath V A P) δ sf) t x')
+      (etaF t (sf t x) / Real.cos (δ t (sf t x))
+        - frameNormal Ydot (rearOwnAngle (angleOfPath V A P) δ sf) t x) x)
+    (hlink : ∀ t u, Γ.eta t u = etaF t (P t * u))
+    (hkappa1 : rearKappa1 kh ≤ khat)
+    (halphaT : ∀ t x, HasDerivAt
+      (fun r => rearOwnAngle (angleOfPath V A P) δ sf r x) (alphaT t x) t)
+    (hkT : ∀ t x, HasDerivAt (fun r => Real.tan (δ r (sf r x))) (kT t x) t)
+    (halphaTc : Continuous (uncurry alphaT)) (hkTc : Continuous (uncurry kT))
+    (halphaTS : ∀ t s, HasDerivAt (alphaT t) (kT t s) s)
+    (hmixed : ∀ t s, ∃ W : ℂ,
+      HasDerivAt (fun r => Complex.exp (Complex.I *
+          (rearOwnAngle (angleOfPath V A P) δ sf r s : ℂ))) W t ∧
+      HasDerivAt (fun x =>
+          (frameTangential Ydot (rearOwnAngle (angleOfPath V A P) δ sf) t x : ℂ)
+            * Complex.exp (Complex.I *
+              (rearOwnAngle (angleOfPath V A P) δ sf t x : ℂ))
+          + (frameNormal Ydot (rearOwnAngle (angleOfPath V A P) δ sf) t x : ℂ)
+            * (Complex.I * Complex.exp (Complex.I *
+              (rearOwnAngle (angleOfPath V A P) δ sf t x : ℂ)))) W s)
+    (hKxbd : ∀ t x, |(curvOfPath V A P t (sf t x) - Real.sin (δ t (sf t x)))
+      / Real.cos (δ t (sf t x)) ^ 3| ≤ Kx t)
+    (hKxnn : ∀ t, 0 ≤ Kx t) (hKxm : ∀ t, Kx t ≤ kx)
+    (hkXc : Continuous (uncurry fun t x =>
+      (curvOfPath V A P t (sf t x) - Real.sin (δ t (sf t x)))
+        / Real.cos (δ t (sf t x)) ^ 3))
+    (hRbd : ∀ t, ∀ x ∈ Icc (0 : ℝ) (rearArclength (δ t) (P t)),
+      |frameTangential Ydot (rearOwnAngle (angleOfPath V A P) δ sf) t x| ≤ Rb t)
+    (hRbm : ∀ t, Rb t ≤ rr * Γ.m t) (hr : 0 ≤ rr)
+    (hxi0 : ∀ t,
+      frameTangential Ydot (rearOwnAngle (angleOfPath V A P) δ sf) t 0 = 0)
+    (hgSd : ∀ t x, HasDerivAt (fun x' => etaF t (sf t x') / Real.cos (δ t (sf t x')))
+      (gS t x) x)
+    -- the parameter derivative of the normal speed of the path
+    {etaU : ℝ → ℝ → ℝ} (hetaU : ∀ t u, HasDerivAt (Γ.eta t) (etaU t u) u)
+    (hetaUbd : ∀ t u, |etaU t u| ≤ Γ.m t)
+    (hnumA : 2 + 2 * khat * rr ≤ 1 / Pv0)
+    (hnumK : (jacobiSourceConst kh P0 + 2) + khat ^ 2 + 2 * rr * kx ≤ 1 / Pv0 ^ 2 + khat ^ 2)
+    -- the total cost of the family of selected rears, with the density chosen
+    -- proportional to that of the fronts, is at most one
+    (hsmall : RearCostDensity.rearCostConst kh khat (rearKappa2 kh)
+      (rearArclength (δ 0) (P 0)) (jacobiSourceConst kh P0) * cost Γ ≤ 1) :
+    perim (SelectedInverseMap.selInv kh p) = rearArclength (δ 0) (P 0) ∧
+      perim (SelectedInverseMap.selInv kh q) = rearArclength (δ Γ.T) (P Γ.T) ∧
+      ∃ Phi : ℝ → ℝ → ℝ,
+        (∀ u, Phi 0 u = perim (SelectedInverseMap.selInv kh p) * u) ∧
+        (∀ t, Phi t 0 = 0) ∧
+        (∀ u t, HasDerivAt (fun r => Phi r u)
+          (-frameTangential Ydot (rearOwnAngle (angleOfPath V A P) δ sf) t (Phi t u)) t) ∧
+        dist (SelectedInverseMap.selInv kh q) (SelectedInverseMap.selInv kh p)
+            ≤ markingC2Bound (2 * P1 * (kh / (1 - kh ^ 2)) * cost Γ)
+                (flowDefectC1Int (rearArclength (δ 0) (P 0)) (kh / (1 - kh ^ 2) * cost Γ))
+                (flowDefectC2Int (rearArclength (δ 0) (P 0)) (kh / (1 - kh ^ 2) * cost Γ)
+                  (gaugeGrowth2 kh * cost Γ))
+                (rearArclength (δ Γ.T) (P Γ.T)) kb kL
+              + c2ConstVar Pv0
+                  (costP1 (rearArclength (δ 0) (P 0)) khat
+                    (RearCostDensity.rearCostConst kh khat (rearKappa2 kh)
+                      (rearArclength (δ 0) (P 0))
+                    (jacobiSourceConst kh P0) * cost Γ)) khat
+                  (costG1 (rearArclength (δ 0) (P 0)) khat (rearKappa2 kh)
+                    (RearCostDensity.rearCostConst kh khat (rearKappa2 kh)
+                    (rearArclength (δ 0) (P 0))
+                    (jacobiSourceConst kh P0) * cost Γ))
+                  (khat * costG1 (rearArclength (δ 0) (P 0)) khat (rearKappa2 kh)
+                      (RearCostDensity.rearCostConst kh khat (rearKappa2 kh)
+                    (rearArclength (δ 0) (P 0))
+                    (jacobiSourceConst kh P0) * cost Γ)
+                    + rearKappa2 kh * costP1 (rearArclength (δ 0) (P 0)) khat
+                      (RearCostDensity.rearCostConst kh khat (rearKappa2 kh)
+                    (rearArclength (δ 0) (P 0))
+                    (jacobiSourceConst kh P0) * cost Γ) ^ 2)
+                * (RearCostDensity.rearCostConst kh khat (rearKappa2 kh)
+                    (rearArclength (δ 0) (P 0))
+                    (jacobiSourceConst kh P0) * cost Γ) := by
+  classical
+  have hPpos : ∀ t, 0 < P t := fun t => lt_of_lt_of_le hP0 (hPl t)
+  have hslice : ∀ t, Function.Periodic (δ t) (P t) ∧
+      (∀ s, HasDerivAt (δ t) (curvOfPath V A P t s - Real.sin (δ t s)) s) ∧
+      (∀ s, δ t s ∈ Icc (0 : ℝ) (Real.arcsin kh)) := fun t =>
+    SelectedInverseRearOwnTerminal.delta_slice_of_normalized (t := t) (hPpos t) hdelta
+      hKeq hsol hstrip hdnper
+  have hsteer : ∀ t s, HasDerivAt (δ t) (curvOfPath V A P t s - Real.sin (δ t s)) s :=
+    fun t => (hslice t).2.1
+  have hstrip0 : ∀ t s, 0 ≤ δ t s := fun t s => ((hslice t).2.2 s).1
+  have hstrip1 : ∀ t s, δ t s ≤ Real.arcsin kh := fun t s => ((hslice t).2.2 s).2
+  have hK : ∀ t s, |curvOfPath V A P t s| ≤ kh := by
+    intro t s
+    rw [hKeq t s]
+    exact hKnbd t _
+  have hδcont : Continuous (uncurry δ) := hδC.continuous
+  have hsfspace : ∀ t x, HasDerivAt (sf t) (1 / Real.cos (δ t (sf t x))) x :=
+    fun t x => SelectedChangeOfVariable.hasDerivAt_sf_space hkh0 hkh1 hδcont hstrip0 hstrip1
+      hsfinv t x
+  ------------------------------------------------------------------
+  -- the front normal velocity in the arclength of the front
+  ------------------------------------------------------------------
+  have hetaFeq : ∀ t, etaF t = fun s => Γ.eta t (s / P t) := by
+    intro t
+    funext s
+    rw [hlink t (s / P t), mul_div_cancel₀ s (ne_of_gt (hPpos t))]
+  have hetaFbd : ∀ t s, |etaF t s| ≤ Γ.m t := by
+    intro t s
+    rw [hetaFeq t]
+    exact Γ.abs_eta_le t _
+  have hetaFD : ∀ t s, HasDerivAt (etaF t) (etaU t (s / P t) / P t) s := by
+    intro t s
+    rw [hetaFeq t]
+    have hinner : HasDerivAt (fun x : ℝ => x / P t) (1 / P t) s := by
+      simpa using (hasDerivAt_id s).div_const (P t)
+    simpa [div_eq_mul_inv, mul_comm] using (hetaU t (s / P t)).comp s hinner
+  have hetaFsbd : ∀ t s, |etaU t (s / P t) / P t| ≤ Γ.m t / P0 := by
+    intro t s
+    rw [abs_div, abs_of_pos (hPpos t)]
+    exact div_le_div₀ (Γ.m_nonneg t) (hetaUbd t _) hP0 (hPl t)
+  ------------------------------------------------------------------
+  -- the bound on the source of the inverse Jacobi ODE
+  ------------------------------------------------------------------
+  have hgSbd : ∀ t x, |gS t x| ≤ jacobiSourceConst kh P0 * Γ.m t := fun t x =>
+    RearJacobiSourceCost.abs_source_deriv_le hkh0 hkh1 hP0 (hetaFD t) (hetaFbd t)
+      (hetaFsbd t) (hstrip0 t) (hstrip1 t) (hsteer t) (hK t) (hsfspace t) (hgSd t) x
+  exact SelInvFrontCostFundamentalC2.dist_selInv_le_of_front_cost_fundamental_C2
+    (Dd := fun t => jacobiSourceConst kh P0 * Γ.m t) (dd := jacobiSourceConst kh P0)
+    Γ hc hkmin hp hub hinjR hcq hkminq hq hubq hinjRq hP0 hkh0 hkh1 hPl hPu hV hA hAcont
+    hspeed hXper hVper hAper hturn hnu hdelta hKeq hsol hstrip hdnper hKnper hKdnper
+    hKnbd hKdnbd hPdbd hKnlip hPlip hKntaylor hPtaylor hCK hCP hPC4 hPdC3 hKnC3 hKdnC3
+    hFc4 hΘc4 hsfinv hmark hevd hΘb hkbd hklip hYt hδC hsfC hYdotC hangC hkC1 hper hjac
+    hlink hkappa1 halphaT hkT halphaTc hkTc halphaTS hmixed hKxbd hKxnn hKxm hkXc
+    hRbd hRbm hr hxi0 hgSd hgSbd (fun _ => le_rfl) hnumA hnumK
+    (jacobiSourceConst_nonneg hP0) hsmall
+
+end SelInvFrontSourceFundamentalC2
