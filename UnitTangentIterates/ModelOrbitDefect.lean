@@ -373,9 +373,14 @@ structure Config (alpha beta a au C CU CK DU DU2 D Km Kd B theta0 kstar kd eps0 
   /-- the pulse of the previous model is integrable, of steering mass `π` -/
   hyuint : Integrable yu
   hmassu : (∫ u : ℝ, yu u) = Real.pi
-  /-- the relative derivative bound of the previous pulse is small on its
-  strip: this is what keeps the model curvature nonnegative -/
-  hsmallU : G au * DU ≤ 1
+  /-- Positivity of the isolated and periodized model curvatures.  The first
+  branch is the convenient relative-derivative criterion used by explicit
+  pulse instances.  The second branch is the paper's geometric route, where
+  positivity follows from comparison with the translating hairpin and the
+  exponentially small periodization overlap. -/
+  hcurvNonnegU : G au * DU ≤ 1 ∨
+    ((∀ s, 0 ≤ hairpinCurvature yu yu' s) ∧
+      ∀ r, 0 ≤ modelCurvature yu yu' P r)
   /-- the sup bound of the model curvature of the previous model -/
   hkstarU : (1 + G au * DU) * au ≤ kstar
   /-- the sup bound of the curvature of the isolated hairpin -/
@@ -687,26 +692,29 @@ theorem abs_Kstar_le_pulse (s : ℝ) : |c.Kstar s| ≤ (1 + G au * DU) * c.yu s 
 /-- **The curvature of the isolated hairpin is nonnegative**, the relative
 derivative bound of its pulse being small on the strip. -/
 theorem Kstar_nonneg (s : ℝ) : 0 ≤ c.Kstar s := by
-  have hyu0 := c.hyu0 s
-  have hGle : G (c.yu s) ≤ G au := PeriodizedTurning.G_le_G_of_le hyu0 (c.yu_le_strip s) c.hau1
-  have hG0 : 0 ≤ G (c.yu s) := by simp [G]
-  have hGa0 : 0 ≤ G au := hG0.trans hGle
-  have hyu' : |c.yu' s| ≤ DU * c.yu s := c.hyu'b s
-  have hlow : -(DU * c.yu s) ≤ c.yu' s := neg_le_of_abs_le hyu'
-  have hprod : -(G au * (DU * c.yu s)) ≤ G (c.yu s) * c.yu' s := by
-    rcases le_or_gt 0 (c.yu' s) with h | h
-    · have h1 : 0 ≤ G (c.yu s) * c.yu' s := mul_nonneg hG0 h
-      have h2 : 0 ≤ G au * (DU * c.yu s) := mul_nonneg hGa0 (mul_nonneg c.hDU hyu0)
-      linarith
-    · have h1 : G au * c.yu' s ≤ G (c.yu s) * c.yu' s := by nlinarith
-      have h2 : G au * (-(DU * c.yu s)) ≤ G au * c.yu' s :=
-        mul_le_mul_of_nonneg_left hlow hGa0
+  rcases c.hcurvNonnegU with hsmall | hdirect
+  ·
+    have hyu0 := c.hyu0 s
+    have hGle : G (c.yu s) ≤ G au := PeriodizedTurning.G_le_G_of_le hyu0 (c.yu_le_strip s) c.hau1
+    have hG0 : 0 ≤ G (c.yu s) := by simp [G]
+    have hGa0 : 0 ≤ G au := hG0.trans hGle
+    have hyu' : |c.yu' s| ≤ DU * c.yu s := c.hyu'b s
+    have hlow : -(DU * c.yu s) ≤ c.yu' s := neg_le_of_abs_le hyu'
+    have hprod : -(G au * (DU * c.yu s)) ≤ G (c.yu s) * c.yu' s := by
+      rcases le_or_gt 0 (c.yu' s) with h | h
+      · have h1 : 0 ≤ G (c.yu s) * c.yu' s := mul_nonneg hG0 h
+        have h2 : 0 ≤ G au * (DU * c.yu s) := mul_nonneg hGa0 (mul_nonneg c.hDU hyu0)
+        linarith
+      · have h1 : G au * c.yu' s ≤ G (c.yu s) * c.yu' s := by nlinarith
+        have h2 : G au * (-(DU * c.yu s)) ≤ G au * c.yu' s :=
+          mul_le_mul_of_nonneg_left hlow hGa0
+        nlinarith
+    have hsm : G au * (DU * c.yu s) ≤ c.yu s := by
+      have := mul_le_mul_of_nonneg_right hsmall hyu0
       nlinarith
-  have hsm : G au * (DU * c.yu s) ≤ c.yu s := by
-    have := mul_le_mul_of_nonneg_right c.hsmallU hyu0
-    nlinarith
-  rw [c.hKstaru s]
-  linarith
+    rw [c.hKstaru s]
+    linarith
+  · exact hdirect.1 s
 
 /-- The curvature of the isolated hairpin is bounded. -/
 theorem abs_Kstar_le (s : ℝ) : |c.Kstar s| ≤ Km :=
@@ -779,9 +787,11 @@ theorem integrable_Kstar : Integrable c.Kstar :=
 
 /-- **The model curvature of the previous model is nonnegative**: its front is
 convex. -/
-theorem KP_nonneg (r : ℝ) : 0 ≤ modelCurvature c.yu c.yu' P r :=
-  modelCurvature_nonneg (Cp := CU + DU * CU + DU2 * CU) c.ha c.Ppos c.hDU c.hyu0 c.abs_yu_le
-    c.abs_yu'_le c.hyu'b c.hau1 c.hYau c.hsmallU r
+theorem KP_nonneg (r : ℝ) : 0 ≤ modelCurvature c.yu c.yu' P r := by
+  rcases c.hcurvNonnegU with hsmall | hdirect
+  · exact modelCurvature_nonneg (Cp := CU + DU * CU + DU2 * CU) c.ha c.Ppos c.hDU
+      c.hyu0 c.abs_yu_le c.abs_yu'_le c.hyu'b c.hau1 c.hYau hsmall r
+  · exact hdirect.2 r
 
 /-- **The model curvature of the previous model is bounded** by `kstar`. -/
 theorem KP_le (r : ℝ) : modelCurvature c.yu c.yu' P r ≤ kstar :=

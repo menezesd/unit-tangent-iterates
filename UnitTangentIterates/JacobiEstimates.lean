@@ -25,9 +25,15 @@ displayed facts of the paper's proof are:
   `S₀ ≤ C₀ W` (`S0_gain`).
 
 The first-order gain `S₁ ≤ C₁(W + S₀)` comes from the differentiated identity
-`η_{R,x} = sec δ η_F - η_R` (`S1_gain`), and the second-order gain from
-differentiating once more, using `δ_x = sec δ (K - sin δ)`
-(`second_derivative_identity`, `S2_bound`).
+`η_{R,x} = sec δ η_F - η_R` (`S1_gain`), and the second-order gain
+`S₂ ≤ C₂(W + S₀ + S₁)` from differentiating once more, using
+`δ_x = sec δ (K - sin δ)` (`second_derivative_identity`, then `S2_gain` with the
+explicit constant `κ̂²/c₀³ + 1/c₀ + 1`, `c₀` a lower bound for `cos δ` on the
+selected strip).  All four estimates of the paper's lemma are therefore present.
+
+The transport identity `(1 + ∂_x) η_R = sec δ · η_F ∘ s` itself is *derived from
+the Frenet geometry* in `UnitTangentIterates.InverseJacobiGeometry`; it is not
+assumed here.
 
 -/
 
@@ -235,5 +241,62 @@ theorem second_derivative_identity {etaR etaF deltaf : ℝ → ℝ} {x : ℝ}
   rw [hRx]
   field_simp
   ring
+
+/-- **The second-order gain `S₂ ≤ C₂(W + S₀ + S₁)`.**  Taking absolute values in
+`second_derivative_identity`: on the selected strip `0 ≤ δ ≤ arcsin κ̂` the
+coefficient `(sec δ)_x = sec δ tan δ · δ_x` is uniformly bounded, because
+`δ_x = sec δ (K − sin δ)` with `0 ≤ K ≤ κ̂` and `0 ≤ sin δ ≤ κ̂`, while
+`cos δ ≥ c₀ > 0`.  This is `eq:S2gain` of the lemma *Inverse Jacobi
+estimates*. -/
+theorem S2_gain {etaF etaFs etaRx etaRxx delta deltax K kap c0 B : ℝ}
+    (hkap0 : 0 ≤ kap) (hkap1 : kap ≤ 1)
+    (hc0pos : 0 < c0) (hcos : c0 ≤ Real.cos delta)
+    (hd0 : 0 ≤ delta) (hd1 : delta ≤ Real.arcsin kap)
+    (hK0 : 0 ≤ K) (hK : K ≤ kap)
+    (hdx : deltax = (K - Real.sin delta) / Real.cos delta)
+    (hid : etaRxx = Real.sin delta / Real.cos delta ^ 2 * deltax * etaF
+      + etaFs / Real.cos delta - etaRx)
+    (hF : |etaF| ≤ B) (hFs : |etaFs| ≤ B) (hRx : |etaRx| ≤ B) :
+    |etaRxx| ≤ (kap ^ 2 / c0 ^ 3 + 1 / c0 + 1) * B := by
+  have hB0 : 0 ≤ B := le_trans (abs_nonneg _) hF
+  have hcospos : 0 < Real.cos delta := lt_of_lt_of_le hc0pos hcos
+  have harc : Real.arcsin kap ≤ Real.pi / 2 := Real.arcsin_le_pi_div_two kap
+  have hpi := Real.pi_pos
+  have hsin0 : 0 ≤ Real.sin delta :=
+    Real.sin_nonneg_of_nonneg_of_le_pi hd0 (by linarith)
+  have hsinkap : Real.sin delta ≤ kap := by
+    have hmono : Real.sin delta ≤ Real.sin (Real.arcsin kap) :=
+      Real.sin_le_sin_of_le_of_le_pi_div_two (by linarith) harc hd1
+    rwa [Real.sin_arcsin (by linarith) hkap1] at hmono
+  have hc0sq : c0 ^ 2 ≤ Real.cos delta ^ 2 :=
+    pow_le_pow_left₀ hc0pos.le hcos 2
+  -- the steering derivative in rear arclength
+  have hnum : |K - Real.sin delta| ≤ kap := by
+    rw [abs_le]; constructor <;> linarith
+  have hdxabs : |deltax| ≤ kap / c0 := by
+    rw [hdx, abs_div, abs_of_pos hcospos]
+    exact div_le_div₀ hkap0 hnum hc0pos hcos
+  -- the three terms
+  have hs1 : |Real.sin delta / Real.cos delta ^ 2| ≤ kap / c0 ^ 2 := by
+    rw [abs_div, abs_of_nonneg hsin0,
+      abs_of_nonneg (by positivity : (0:ℝ) ≤ Real.cos delta ^ 2)]
+    exact div_le_div₀ hkap0 hsinkap (by positivity) hc0sq
+  have ht1 : |Real.sin delta / Real.cos delta ^ 2 * deltax * etaF|
+      ≤ kap / c0 ^ 2 * (kap / c0) * B := by
+    rw [abs_mul, abs_mul]
+    exact mul_le_mul (mul_le_mul hs1 hdxabs (abs_nonneg _) (by positivity)) hF
+      (abs_nonneg _) (by positivity)
+  have ht2 : |etaFs / Real.cos delta| ≤ B / c0 := by
+    rw [abs_div, abs_of_pos hcospos]
+    exact div_le_div₀ hB0 hFs hc0pos hcos
+  have htri1 := abs_sub (Real.sin delta / Real.cos delta ^ 2 * deltax * etaF
+    + etaFs / Real.cos delta) etaRx
+  have htri2 := abs_add_le (Real.sin delta / Real.cos delta ^ 2 * deltax * etaF)
+    (etaFs / Real.cos delta)
+  have hconst : kap / c0 ^ 2 * (kap / c0) * B + B / c0 + B
+      = (kap ^ 2 / c0 ^ 3 + 1 / c0 + 1) * B := by
+    field_simp
+  rw [hid]
+  linarith [ht1, ht2, hRx, htri1, htri2, hconst.ge, hconst.le]
 
 end JacobiEstimates

@@ -1,6 +1,6 @@
 import Mathlib
 import UnitTangentIterates.UnitTangent
-import UnitTangentIterates.MainTheoremConditional
+import UnitTangentIterates.Oval
 
 /-!
 # The speed and the curvature of the unit-tangent transform
@@ -243,5 +243,32 @@ theorem curvature_pos_of_transform_curvature_nonneg {L : ℝ} (hL : 0 < L)
     (fun s => (hk s).differentiableAt) hnn (fun s => ?_) hne
   have h := hK s
   rwa [transform_curvature_eq_deriv_u_add_u hk s] at h
+
+/-- **Lemma 2.2 with its last hypothesis discharged from the turning number.**
+The paper's proof of *Convex consecutive tracks* rules out `k ≡ 0` by appealing
+to the turning number of a closed convex curve: if the curvature vanished
+identically the tangent angle would be constant, whereas over one period it
+advances by `2π`.  This records that step, so the only inputs are the
+nonnegativity of `k`, the convexity of the transform, and the turning
+identity. -/
+theorem curvature_pos_of_transform_curvature_nonneg_of_turning {L : ℝ} (hL : 0 < L)
+    (hper : Periodic k L) (hk : ∀ s, HasDerivAt k (k' s) s) (hnn : ∀ s, 0 ≤ k s)
+    (hK : ∀ s, 0 ≤ (k s + k' s / (1 + k s ^ 2)) / Real.sqrt (1 + k s ^ 2))
+    {theta : ℝ → ℝ} (hth : ∀ s, HasDerivAt theta (k s) s)
+    (hturn : theta (0 + L) = theta 0 + 2 * Real.pi) :
+    ∀ x, 0 < k x := by
+  refine curvature_pos_of_transform_curvature_nonneg hL hper hk hnn hK ?_
+  by_contra hcon
+  push_neg at hcon
+  have hd : ∀ x, HasDerivAt theta 0 x := by
+    intro x
+    have h := hth x
+    rwa [hcon x] at h
+  have hconst : theta (0 + L) = theta 0 :=
+    is_const_of_deriv_eq_zero (fun x => (hd x).differentiableAt)
+      (fun x => (hd x).deriv) (0 + L) 0
+  rw [hturn] at hconst
+  have := Real.pi_pos
+  linarith
 
 end UnitTangentSpeed

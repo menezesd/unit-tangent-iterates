@@ -390,7 +390,7 @@ tangential rate and run with the time profile of `PathMetricCircle.lean`, is a
 normal path of the path metric of `PathMetric.lean`, of cost at most
 `interpPathCost`.  The terminal curve is the curve of `κ¹` read in the gauge
 parameter `ψ`, a reparametrization of period one (`ψ(u+1) = ψ(u) + 2L`). -/
-theorem exists_normalPath_interp {kstar kd dsup : ℝ}
+theorem normalPath_interp_of_gauge_full {kstar kd dsup : ℝ}
     (hk0 : Continuous k0) (hk1 : Continuous k1)
     (hk0'c : Continuous k0') (hk1'c : Continuous k1')
     (hper0 : Function.Periodic k0 L) (hper1 : Function.Periodic k1 L)
@@ -400,12 +400,23 @@ theorem exists_normalPath_interp {kstar kd dsup : ℝ}
     (hd : ∀ r, |k1 r - k0 r| ≤ dsup)
     (hkd0 : ∀ r, |k0' r| ≤ kd) (hkd1 : ∀ r, |k1' r| ≤ kd)
     (hk0nn : ∀ r, 0 ≤ k0 r) (hk1nn : ∀ r, 0 ≤ k1 r)
-    (hk0le : ∀ r, k0 r ≤ kstar) (hk1le : ∀ r, k1 r ≤ kstar) :
-    ∃ psi : ℝ → ℝ, Continuous psi ∧ (∀ u, psi (u + 1) = psi u + 2 * L) ∧
-      ∀ p q : Data, (∀ u, p.1 u = interpCurve k0 θ₀ L (2 * L * u)) →
-        (∀ u, q.1 u = interpCurve k1 θ₀ L (psi u)) →
-        ∃ Γ : NormalPath p q, Γ.T = 1 ∧
-          NormalPath.cost Γ ≤ interpPathCost kstar kd dsup L (curvDist k0 k1 L) := by
+    (hk0le : ∀ r, k0 r ≤ kstar) (hk1le : ∀ r, k1 r ≤ kstar)
+    (Phi : ℝ → ℝ → ℝ)
+    (hPhi0 : ∀ u, Phi 0 u = 2 * L * u)
+    (hPhid : ∀ u t, HasDerivAt (fun r => Phi r u)
+      (gaugeField k0 k1 θ₀ L t (Phi t u)) t)
+    (hPhinormal : ∀ t ∈ Icc (0 : ℝ) 1, ∀ u,
+      HasDerivAt (fun r => interpCurve (kappaInterp k0 k1 r) θ₀ L (Phi r u))
+        ((normalVel k0 k1 θ₀ L t (Phi t u) : ℂ) *
+          NormalGaugeFrame.frameNormalVector
+            (tangentAngle (kappaInterp k0 k1 t) θ₀ (Phi t u))) t)
+    (p q : Data) (hp : ∀ u, p.1 u = interpCurve k0 θ₀ L (2 * L * u))
+    (hq : ∀ u, q.1 u = interpCurve k1 θ₀ L (Phi 1 u)) :
+    ∃ Γ : NormalPath p q, Γ.T = 1 ∧
+      Γ.X = pathCurve k0 k1 θ₀ L Phi ∧
+      Γ.eta = pathEta k0 k1 θ₀ L Phi ∧
+      Γ.m = (fun t => w t * interpPathCost kstar kd dsup L (curvDist k0 k1 L)) ∧
+      NormalPath.cost Γ ≤ interpPathCost kstar kd dsup L (curvDist k0 k1 L) := by
   classical
   have heps : 0 ≤ curvDist k0 k1 L := integral_abs_sub_nonneg hk0 hk1 hL.le
   have hkstar : 0 ≤ kstar := le_trans (hk0nn 0) (hk0le 0)
@@ -420,12 +431,6 @@ theorem exists_normalPath_interp {kstar kd dsup : ℝ}
   have hCW := costTermW_le_interpPathCost (kd := kd) (dsup := dsup) hkstar hkd hdsup hL.le heps
   have hCS1 := costTermS1_le_interpPathCost (kd := kd) (dsup := dsup) hkstar hkd hdsup hL.le heps
   have hCS2 := costTermS2_le_interpPathCost (kd := kd) (dsup := dsup) hkstar hL.le heps
-  -- the gauge flow
-  obtain ⟨Phi, hPhi0, hPhid, hPhitrans, hPhicont, hPhiper, hPhinormal⟩ :=
-    exists_interpolation_gauge_flow (θ₀ := θ₀) (kstar := kstar) hk0 hk1 hper0 hper1 htot0 htot1
-      hL hk0nn hk1nn hk0le hk1le
-  refine ⟨fun u => Phi 1 u, hPhicont 1, fun u => hPhitrans 1 u, ?_⟩
-  intro p q hp hq
   -- the frame bundle of the interpolation
   set D := interpFrame k0 k1 k0' k1' θ₀ L kstar kd hk0 hk1 hk0'c hk1'c hper0 hper1 htot0 htot1
     hL hd0 hd1 hk0nn hk1nn hk0le hk1le hkd0 hkd1 with hD_def
@@ -588,7 +593,7 @@ theorem exists_normalPath_interp {kstar kd dsup : ℝ}
             m_stop := ?_
             abs_eta_le := ?_
             le_m_L1 := ?_
-            le_m_sup := ?_ }, rfl, ?_⟩
+            le_m_sup := ?_ }, rfl, rfl, rfl, rfl, ?_⟩
   · -- the initial curve
     intro u
     rw [hp u, pathCurve, B_zero, kappaInterp_zero_fun, hPhi0]
@@ -667,6 +672,104 @@ theorem exists_normalPath_interp {kstar kd dsup : ℝ}
     show (∫ t in (0:ℝ)..(1:ℝ), w t * interpPathCost kstar kd dsup L (curvDist k0 k1 L))
         ≤ interpPathCost kstar kd dsup L (curvDist k0 k1 L)
     rw [intervalIntegral.integral_mul_const, integral_w, one_mul]
+
+/-- Backwards-compatible projection of `normalPath_interp_of_gauge_full`. -/
+theorem normalPath_interp_of_gauge {kstar kd dsup : ℝ}
+    (hk0 : Continuous k0) (hk1 : Continuous k1)
+    (hk0'c : Continuous k0') (hk1'c : Continuous k1')
+    (hper0 : Function.Periodic k0 L) (hper1 : Function.Periodic k1 L)
+    (htot0 : (∫ r in (0:ℝ)..L, k0 r) = Real.pi)
+    (htot1 : (∫ r in (0:ℝ)..L, k1 r) = Real.pi) (hL : 0 < L)
+    (hd0 : ∀ r, HasDerivAt k0 (k0' r) r) (hd1 : ∀ r, HasDerivAt k1 (k1' r) r)
+    (hd : ∀ r, |k1 r - k0 r| ≤ dsup)
+    (hkd0 : ∀ r, |k0' r| ≤ kd) (hkd1 : ∀ r, |k1' r| ≤ kd)
+    (hk0nn : ∀ r, 0 ≤ k0 r) (hk1nn : ∀ r, 0 ≤ k1 r)
+    (hk0le : ∀ r, k0 r ≤ kstar) (hk1le : ∀ r, k1 r ≤ kstar)
+    (Phi : ℝ → ℝ → ℝ)
+    (hPhi0 : ∀ u, Phi 0 u = 2 * L * u)
+    (hPhid : ∀ u t, HasDerivAt (fun r => Phi r u)
+      (gaugeField k0 k1 θ₀ L t (Phi t u)) t)
+    (hPhinormal : ∀ t ∈ Icc (0 : ℝ) 1, ∀ u,
+      HasDerivAt (fun r => interpCurve (kappaInterp k0 k1 r) θ₀ L (Phi r u))
+        ((normalVel k0 k1 θ₀ L t (Phi t u) : ℂ) *
+          NormalGaugeFrame.frameNormalVector
+            (tangentAngle (kappaInterp k0 k1 t) θ₀ (Phi t u))) t)
+    (p q : Data) (hp : ∀ u, p.1 u = interpCurve k0 θ₀ L (2 * L * u))
+    (hq : ∀ u, q.1 u = interpCurve k1 θ₀ L (Phi 1 u)) :
+    ∃ Γ : NormalPath p q, Γ.T = 1 ∧
+      Γ.eta = pathEta k0 k1 θ₀ L Phi ∧
+      NormalPath.cost Γ ≤ interpPathCost kstar kd dsup L (curvDist k0 k1 L) := by
+  obtain ⟨Gamma, hT, -, heta, -, hcost⟩ := normalPath_interp_of_gauge_full
+    hk0 hk1 hk0'c hk1'c hper0 hper1 htot0 htot1 hL hd0 hd1 hd
+    hkd0 hkd1 hk0nn hk1nn hk0le hk1le Phi hPhi0 hPhid hPhinormal p q hp hq
+  exact ⟨Gamma, hT, heta, hcost⟩
+
+/-- Strengthened interpolation constructor retaining the complete gauge flow
+and the definitional normal-rate equality. -/
+theorem exists_normalPath_interp_with_gauge {kstar kd dsup : ℝ}
+    (hk0 : Continuous k0) (hk1 : Continuous k1)
+    (hk0'c : Continuous k0') (hk1'c : Continuous k1')
+    (hper0 : Function.Periodic k0 L) (hper1 : Function.Periodic k1 L)
+    (htot0 : (∫ r in (0:ℝ)..L, k0 r) = Real.pi)
+    (htot1 : (∫ r in (0:ℝ)..L, k1 r) = Real.pi) (hL : 0 < L)
+    (hd0 : ∀ r, HasDerivAt k0 (k0' r) r) (hd1 : ∀ r, HasDerivAt k1 (k1' r) r)
+    (hd : ∀ r, |k1 r - k0 r| ≤ dsup)
+    (hkd0 : ∀ r, |k0' r| ≤ kd) (hkd1 : ∀ r, |k1' r| ≤ kd)
+    (hk0nn : ∀ r, 0 ≤ k0 r) (hk1nn : ∀ r, 0 ≤ k1 r)
+    (hk0le : ∀ r, k0 r ≤ kstar) (hk1le : ∀ r, k1 r ≤ kstar) :
+    ∃ Phi : ℝ → ℝ → ℝ,
+      (∀ u, Phi 0 u = 2 * L * u) ∧
+      (∀ u t, HasDerivAt (fun r => Phi r u)
+        (gaugeField k0 k1 θ₀ L t (Phi t u)) t) ∧
+      (∀ t u, Phi t (u + 1) = Phi t u + 2 * L) ∧
+      (∀ t, Continuous fun u => Phi t u) ∧
+      (∀ t, Function.Periodic
+        (fun u => interpCurve (kappaInterp k0 k1 t) θ₀ L (Phi t u)) 1) ∧
+      (∀ t ∈ Icc (0 : ℝ) 1, ∀ u,
+        HasDerivAt (fun r => interpCurve (kappaInterp k0 k1 r) θ₀ L (Phi r u))
+          ((normalVel k0 k1 θ₀ L t (Phi t u) : ℂ) *
+            NormalGaugeFrame.frameNormalVector
+              (tangentAngle (kappaInterp k0 k1 t) θ₀ (Phi t u))) t) ∧
+      ∀ p q : Data, (∀ u, p.1 u = interpCurve k0 θ₀ L (2 * L * u)) →
+        (∀ u, q.1 u = interpCurve k1 θ₀ L (Phi 1 u)) →
+        ∃ Γ : NormalPath p q, Γ.T = 1 ∧
+          Γ.eta = pathEta k0 k1 θ₀ L Phi ∧
+          NormalPath.cost Γ ≤ interpPathCost kstar kd dsup L (curvDist k0 k1 L) := by
+  obtain ⟨Phi, hPhi0, hPhid, hPhitrans, hPhicont, hPhiper, hPhinormal⟩ :=
+    exists_interpolation_gauge_flow (θ₀ := θ₀) (kstar := kstar)
+      hk0 hk1 hper0 hper1 htot0 htot1 hL hk0nn hk1nn hk0le hk1le
+  refine ⟨Phi, hPhi0, hPhid, hPhitrans, hPhicont, hPhiper, hPhinormal, ?_⟩
+  intro p q hp hq
+  exact normalPath_interp_of_gauge hk0 hk1 hk0'c hk1'c hper0 hper1
+    htot0 htot1 hL hd0 hd1 hd hkd0 hkd1 hk0nn hk1nn hk0le hk1le
+    Phi hPhi0 hPhid hPhinormal p q hp hq
+
+/-- Backwards-compatible projection of
+`exists_normalPath_interp_with_gauge`, retaining the original API. -/
+theorem exists_normalPath_interp {kstar kd dsup : ℝ}
+    (hk0 : Continuous k0) (hk1 : Continuous k1)
+    (hk0'c : Continuous k0') (hk1'c : Continuous k1')
+    (hper0 : Function.Periodic k0 L) (hper1 : Function.Periodic k1 L)
+    (htot0 : (∫ r in (0:ℝ)..L, k0 r) = Real.pi)
+    (htot1 : (∫ r in (0:ℝ)..L, k1 r) = Real.pi) (hL : 0 < L)
+    (hd0 : ∀ r, HasDerivAt k0 (k0' r) r) (hd1 : ∀ r, HasDerivAt k1 (k1' r) r)
+    (hd : ∀ r, |k1 r - k0 r| ≤ dsup)
+    (hkd0 : ∀ r, |k0' r| ≤ kd) (hkd1 : ∀ r, |k1' r| ≤ kd)
+    (hk0nn : ∀ r, 0 ≤ k0 r) (hk1nn : ∀ r, 0 ≤ k1 r)
+    (hk0le : ∀ r, k0 r ≤ kstar) (hk1le : ∀ r, k1 r ≤ kstar) :
+    ∃ psi : ℝ → ℝ, Continuous psi ∧ (∀ u, psi (u + 1) = psi u + 2 * L) ∧
+      ∀ p q : Data, (∀ u, p.1 u = interpCurve k0 θ₀ L (2 * L * u)) →
+        (∀ u, q.1 u = interpCurve k1 θ₀ L (psi u)) →
+        ∃ Γ : NormalPath p q, Γ.T = 1 ∧
+          NormalPath.cost Γ ≤ interpPathCost kstar kd dsup L (curvDist k0 k1 L) := by
+  obtain ⟨Phi, hPhi0, hPhid, hPhitrans, hPhicont, hPhiper, hPhinormal, hpath⟩ :=
+    exists_normalPath_interp_with_gauge (θ₀ := θ₀) (kstar := kstar)
+      hk0 hk1 hk0'c hk1'c hper0 hper1 htot0 htot1 hL hd0 hd1 hd
+      hkd0 hkd1 hk0nn hk1nn hk0le hk1le
+  refine ⟨Phi 1, hPhicont 1, hPhitrans 1, ?_⟩
+  intro p q hp hq
+  obtain ⟨Γ, hT, heta, hcost⟩ := hpath p q hp hq
+  exact ⟨Γ, hT, hcost⟩
 
 /-! ### The path pseudodistance -/
 

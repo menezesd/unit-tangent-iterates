@@ -79,6 +79,53 @@ theorem rearKappa1_nonneg (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) : 0 ≤ rearKappa1 k
 theorem rearKappa2_nonneg (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) : 0 ≤ rearKappa2 kh :=
   gaugeGrowth2_nonneg hkh0 hkh1
 
+/-- Uniformize the variable-speed constants produced for one selected-rear
+path by replacing its initial rear period and accumulated cost with common
+ceilings. -/
+theorem uniformize_variableSpeed_certificate
+    {p q : Data} (Γ : NormalPath p q)
+    {P0 ell Qmax khat kh M Mtotal : ℝ}
+    (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) (hkhat : 0 ≤ khat)
+    (hell : 0 ≤ ell) (hellQ : ell ≤ Qmax)
+    (hM : 0 ≤ M) (hMM : M ≤ Mtotal)
+    (hΓ : IsVariableSpeedNormalPath P0 (costP1 ell khat M) khat
+      (costG1 ell khat (rearKappa2 kh) M)
+      (khat * costG1 ell khat (rearKappa2 kh) M +
+        rearKappa2 kh * costP1 ell khat M ^ 2) Γ) :
+    IsVariableSpeedNormalPath P0 (costP1 Qmax khat Mtotal) khat
+      (costG1 Qmax khat (rearKappa2 kh) Mtotal)
+      (khat * costG1 Qmax khat (rearKappa2 kh) Mtotal +
+        rearKappa2 kh * costP1 Qmax khat Mtotal ^ 2) Γ := by
+  apply NormalPathC2IncrementVariableSpeed.IsVariableSpeedNormalPath.mono Γ hΓ hkhat
+  · exact costP1_le hell hellQ hkhat hM hMM
+  · exact costG1_le hell hellQ hkhat (rearKappa2_nonneg hkh0 hkh1) hM hMM
+  · exact mixedCost_le hell hellQ hkhat (rearKappa2_nonneg hkh0 hkh1) hM hMM
+
+/-- Uniform transport conclusion obtained from the raw output of the rear
+gauge construction.  This is the exact adapter from
+`GaugeRearFamilyFromFront` to recursive pullback transport. -/
+theorem uniform_transport_of_raw_gauge
+    {p q : Data} (Γ : NormalPath p q)
+    {B : Data → Data} {P0 ell Qmax khat kh M Mtotal Kfac : ℝ}
+    (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) (hkhat : 0 ≤ khat)
+    (hell : 0 ≤ ell) (hellQ : ell ≤ Qmax)
+    (hM : 0 ≤ M) (hMM : M ≤ Mtotal)
+    (hraw : ∃ Δ : NormalPath (B p) (B q),
+      cost Δ ≤ Kfac * cost Γ ∧
+      IsVariableSpeedNormalPath P0 (costP1 ell khat M) khat
+        (costG1 ell khat (rearKappa2 kh) M)
+        (khat * costG1 ell khat (rearKappa2 kh) M +
+          rearKappa2 kh * costP1 ell khat M ^ 2) Δ) :
+    ∃ Δ : NormalPath (B p) (B q),
+      cost Δ ≤ Kfac * cost Γ ∧
+      IsVariableSpeedNormalPath P0 (costP1 Qmax khat Mtotal) khat
+        (costG1 Qmax khat (rearKappa2 kh) Mtotal)
+        (khat * costG1 Qmax khat (rearKappa2 kh) Mtotal +
+          rearKappa2 kh * costP1 Qmax khat Mtotal ^ 2) Δ := by
+  obtain ⟨Δ, hcost, hgeom⟩ := hraw
+  exact ⟨Δ, hcost, uniformize_variableSpeed_certificate Δ hkh0 hkh1 hkhat
+    hell hellQ hM hMM hgeom⟩
+
 /-- The curvature of a selected rear, `tan δ`, is at most `κ̂/(1 − κ̂²)`: the
 strip bound gives `κ̂/√(1−κ̂²)`, and `√(1−κ̂²) ≥ 1−κ̂²`. -/
 theorem abs_tan_le_rearKappa1 {dd : ℝ} (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) (hd0 : 0 ≤ dd)

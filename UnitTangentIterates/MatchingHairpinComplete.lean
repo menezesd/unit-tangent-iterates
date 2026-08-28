@@ -1,6 +1,8 @@
 import Mathlib
 import UnitTangentIterates.MatchingHairpin
 import UnitTangentIterates.HairpinFrontCurvature
+import UnitTangentIterates.HairpinPulseDataInterior
+import UnitTangentIterates.CurvFieldDerivBound
 
 /-!
 # Curvature-measure matching for the hairpin, with every error produced
@@ -175,11 +177,26 @@ the periodized front `K_P = Y_P + G(Y_P)Y_P'` of the same period satisfy
 
 with `C₄ = Lip(a)·D·(8C²/(α−β))e^{2βB}` the front periodization error.  No
 error term is assumed. -/
-theorem hairpin_matching_complete (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < f t)
-    (hdelta : ∀ θ ∈ Ioo (0:ℝ) π, g θ - θ = Real.arctan (curvField f θ))
-    (hgmem : ∀ θ ∈ Ioo (0:ℝ) π, g θ ∈ Ioo (0:ℝ) π)
-    (hnextd : ∀ θ ∈ Ioo (0:ℝ) π, f (g θ) * gp θ = f θ + Real.cos θ)
-    (hg : ∀ θ ∈ Ioo (0:ℝ) π, HasDerivAt g (gp θ) θ) :
+theorem hairpin_matching_complete {m Am A M F1 : ℝ} {theta x : ℝ → ℝ}
+    (hf : ContDiffOn ℝ ∞ f (Ioo 0 π)) (hm : 0 < m)
+    (hlow : ∀ t ∈ Ioo (0:ℝ) π, m ≤ f t)
+    (hupp : ∀ t ∈ Ioo (0:ℝ) π, f t ≤ Am)
+    (hF1 : ∀ t ∈ Ioo (0:ℝ) π, |deriv f t| ≤ F1)
+    (hmem : ∀ u, theta u ∈ Ioo 0 π)
+    (hvalθ : ∀ u, Hairpin.hairpinArclength f (π / 2) (theta u) = u)
+    (hderiv : ∀ u, HasDerivAt theta (curvField f (theta u)) u)
+    (hxinv : ∀ s, frontArclength f theta (x s) = s)
+    (hxderiv : ∀ s, HasDerivAt (fun s => theta (x s))
+      (pulseField f (theta (x s))) s)
+    (hsm : StrictMono theta)
+    (hsurj : ∀ z ∈ Ioo (0:ℝ) π, ∃ u, theta u = z)
+    (hA : 0 ≤ A) (hM : 0 < M)
+    (hdecay : ∀ u, curvField f (theta u) ≤ A * Real.exp (-|u| / M))
+    (relativeConst : ℕ → ℝ) (hrc0 : ∀ j, 0 ≤ relativeConst j)
+    (hrelj : ∀ j ≤ 4, ∀ s,
+      |iteratedDeriv j (fun r => pulseField f (theta (x r))) s|
+        ≤ relativeConst j * pulseField f (theta (x s)))
+    (dphase : CanonicalTranslatorLocalPhase.InteriorPhaseData f theta x g gp) :
     ∃ (theta x ytil ypt : ℝ → ℝ) (alpha C D b Kd s0 x0 : ℝ),
       0 < alpha ∧ 0 ≤ C ∧ 0 ≤ D ∧ 0 ≤ b ∧ b < 1 ∧
       s0 = Hairpin.hairpinArclength f (π / 2) (g (π / 2)) ∧ x0 = x (-s0) ∧
@@ -206,9 +223,19 @@ theorem hairpin_matching_complete (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < 
               + lipConst ((1 + b) / 2) * D * (8 * C ^ 2 / (alpha - beta))
                   * Real.exp (2 * beta * ((1 + b) / 2 * (∫ s : ℝ, ytil s))))
             * Real.exp (-(beta * H)) := by
-  obtain ⟨theta, x, yp, alpha, C0, D, b, halpha, hC0, hD0, hb0, hb1, hK0, hKint, hKbd0,
-    hmem, hvalθ, hderiv, hxinv, hxderiv, hycont, hy0, hyb, hsup, hy, hypc, hypexp, hrel⟩ :=
-    FrontPeriodizationHairpin.exists_hairpin_pulse_data hf hfpos
+  have hfpos : ∀ t ∈ Ioo (0:ℝ) π, 0 < f t := fun t ht =>
+    lt_of_lt_of_le hm (hlow t ht)
+  have hmA : m ≤ Am := le_trans (hlow _ (hmem 0)) (hupp _ (hmem 0))
+  have hF0 : 0 ≤ F1 := le_trans (abs_nonneg _) (hF1 _ (hmem 0))
+  have hD1 : (0:ℝ) ≤ (Am + F1) / m ^ 2 :=
+    HairpinRelative.relK_const_nonneg hm (le_trans hm.le hmA) hF0
+  have hrelK := HairpinRelative.relK_of_profile_barriers hf hm hlow hupp hF1 hmem
+    hderiv
+  obtain ⟨yp, alpha, C0, D, b, halpha, hC0, hD0, hb0, hb1, hK0, hKint, hKbd0,
+    -, -, -, -, -, hycont, hy0, hyb, hsup, hy, hypc, hypexp, hrel⟩ :=
+    FrontPeriodizationHairpin.exists_hairpin_pulse_data_of_interior hf hm hlow
+      hmem hvalθ hderiv hxinv hxderiv hsm hsurj hA hM hdecay relativeConst hrc0
+      hrelj
   set s0 : ℝ := Hairpin.hairpinArclength f (π / 2) (g (π / 2)) with hs0
   set C : ℝ := C0 * Real.exp (alpha * |s0|) with hCdef
   have hexp1 : (1:ℝ) ≤ Real.exp (alpha * |s0|) :=
@@ -248,10 +275,8 @@ theorem hairpin_matching_complete (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < 
   have hytrel : ∀ s, |ypt s| ≤ D * ytil s := fun s => hrel _
   -- the isolated curvature and its bounds
   have hmem' : ∀ u, theta u ∈ Icc (0:ℝ) π := fun u => ⟨(hmem u).1.le, (hmem u).2.le⟩
-  have hKcont : Continuous fun u => curvField f (theta u) := by
-    have hthetac : Continuous theta :=
-      Differentiable.continuous fun u => (hderiv u).differentiableAt
-    exact ((contDiff_curvField hf hfpos).continuous).comp hthetac
+  have hKcont : Continuous fun u => curvField f (theta u) :=
+    HairpinRelative.continuous_curv_along_theta hf hfpos hmem hderiv
   have hKbd : ∀ s, |curvField f (theta s)| ≤ C * Real.exp (-alpha * |s|) := by
     intro s
     refine (hKbd0 s).trans ?_
@@ -264,11 +289,12 @@ theorem hairpin_matching_complete (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < 
     have h3 : curvField f (theta u) ≤ |curvField f (theta u)| := le_abs_self _
     nlinarith [hK0 u]
   obtain ⟨Kstar', Kd, hKderiv, hKd'⟩ :=
-    MatchingHairpin.exists_curv_derivative_bounds hf hfpos hmem' hderiv hbd
+    HairpinRelative.exists_curv_derivative_bounds_of_interior hf hfpos hmem
+      hderiv hD1 hrelK hbd
   -- the front relation
   have hident : ∀ s, curvField f (theta s) = ytil s + G (ytil s) * ypt s := fun s =>
-    front_curvature_identity_shifted hf hfpos hdelta hgmem hnextd hg hmem hvalθ hderiv
-      hxinv hxderiv hy s
+    CanonicalTranslatorLocalPhase.front_curvature_identity_shifted dphase
+      dphase.x_zero hy s
   refine ⟨theta, x, ytil, ypt, alpha, C, D, b, Kd, s0, x0, halpha, hC, hD0, hb0, hb1,
     rfl, rfl, hmem, hvalθ, hderiv, hxinv, fun s => rfl, hident, ?_⟩
   intro H beta hbeta0 hbeta hHthr hHshift hHbeta
@@ -342,7 +368,8 @@ theorem hairpin_matching_complete (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < 
       * Real.exp (2 * beta * B)) (x0 := x0)
     halpha hb0 hb1 hytc hyt0 hytb hytsup hH hHshift
     (fun t => by
-      have h := HairpinPulseIdentity.hasDerivAt_pulseInverse hf hfpos hderiv hxinv (t - s0)
+      have h := HairpinPulseIdentity.hasDerivAt_pulseInverse_of_comp hKcont hxinv
+        (t - s0)
       simpa [hxt, hyt] using h.comp t ((hasDerivAt_id t).sub_const s0))
     (by rw [hxt, hx0def]; norm_num)
     (fun t => HairpinPulseIdentity.pulseField_eq_speed_mul_curvField f (theta (x (t - s0))))

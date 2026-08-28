@@ -124,6 +124,53 @@ theorem injOn_rearTrack_of_curvature_pos {P kmin kap : ℝ} (hP : 0 < P)
     rw [rearTangent_periodic hδper hturn s]
   exact ConvexEmbedded.injOn_Ico_of_turning_one hX hv hΨcont hΨmono hΨturn hRper a
 
+/-- **Embeddedness with flat front-curvature pieces.**  Nonnegative,
+nontrivial periodic front curvature makes the periodic selected steering
+strictly positive, so the rear tangent angle is strictly increasing even
+though the front tangent angle need only be nondecreasing. -/
+theorem injOn_rearTrack_of_curvature_nonnegative {P kap : ℝ} (hP : 0 < P)
+    (hkap0 : 0 ≤ kap) (hkap1 : kap < 1)
+    (hF : ∀ s, HasDerivAt F (Complex.exp (Complex.I * (Theta s : ℂ))) s)
+    (hΘ : ∀ s, HasDerivAt Theta (K s) s)
+    (hK : ∀ s, 0 ≤ K s) (hKne : ∃ s, K s ≠ 0)
+    (hturn : ∀ s, Theta (s + P) = Theta s + 2 * Real.pi)
+    (hFper : Periodic F P) (hδper : Periodic delta P)
+    (hδmem : ∀ s, delta s ∈ Icc 0 (Real.arcsin kap))
+    (hδode : ∀ s, HasDerivAt delta (K s - Real.sin (delta s)) s) (a : ℝ) :
+    InjOn (rearTrack F Theta delta) (Ico a (a + P)) := by
+  have hδpos : ∀ s, 0 < delta s :=
+    LowCurvatureAssembly.steering_pos_of_nonnegative_nonzero hP hδper hδode
+      (fun s => (hδmem s).1) hK hKne
+  have hsinpos : ∀ s, 0 < Real.sin (delta s) := by
+    intro s
+    apply Real.sin_pos_of_pos_of_lt_pi (hδpos s)
+    exact lt_of_le_of_lt (le_trans (hδmem s).2
+      (Real.arcsin_le_pi_div_two kap)) (by linarith [Real.pi_pos])
+  have hX : ∀ s, HasDerivAt (rearTrack F Theta delta)
+      ((Real.cos (delta s) : ℂ) *
+        Complex.exp (Complex.I * (rearAngle Theta delta s : ℂ))) s :=
+    fun s => hasDerivAt_rearTrack (hF s) (hΘ s) (hδode s)
+  have hv : ∀ s, 0 < Real.cos (delta s) :=
+    fun s => rear_speed_ge hkap1 hkap0 (hδmem s).1 (hδmem s).2
+  have hΨd : ∀ s, HasDerivAt (rearAngle Theta delta) (Real.sin (delta s)) s :=
+    fun s => hasDerivAt_rearAngle (hΘ s) (hδode s)
+  have hΨcont : Continuous (rearAngle Theta delta) :=
+    continuous_iff_continuousAt.mpr fun s => (hΨd s).continuousAt
+  have hΨmono : StrictMono (rearAngle Theta delta) := by
+    refine strictMono_of_deriv_pos fun s => ?_
+    rw [(hΨd s).deriv]
+    exact hsinpos s
+  have hΨturn : ∀ s, rearAngle Theta delta (s + P) =
+      rearAngle Theta delta s + 2 * Real.pi := by
+    intro s
+    simp only [rearAngle, hturn s, hδper s]
+    ring
+  have hRper : Periodic (rearTrack F Theta delta) P := by
+    intro s
+    simp only [rearTrack, hFper s]
+    rw [rearTangent_periodic hδper hturn s]
+  exact ConvexEmbedded.injOn_Ico_of_turning_one hX hv hΨcont hΨmono hΨturn hRper a
+
 /-- **The embeddedness hypothesis of the path-distance bounds, discharged for a
 member of the tube.**  It is enough that the tangent angle of the front turn by
 `2π` over one period for one of its lifts. -/

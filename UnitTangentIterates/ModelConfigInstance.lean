@@ -354,7 +354,7 @@ theorem exists_config_of_pulse (hlam : 0 < lam) (hlam' : lam ≤ 1 / 100) (theta
       hyu''b := fun s => by rw [hDU2def]; exact abs_pulD2_le hlam s
       hyuint := integrable_pul hlam
       hmassu := integral_pul hlam
-      hsmallU := ?_
+      hcurvNonnegU := Or.inl ?_
       hkstarU := by rw [hkstardef]; linarith [hkstar_split]
       hKmU := le_rfl
       hCKU := le_rfl
@@ -393,7 +393,7 @@ theorem exists_config_of_pulse (hlam : 0 < lam) (hlam' : lam ≤ 1 / 100) (theta
     calc pul lam s ≤ 4 * A * Real.exp (-(2 * lam) * |s|) := h1
       _ ≤ 4 * A * Real.exp (-alpha * |s|) := by nlinarith
       _ = CU * Real.exp (-alpha * |s|) := by rw [hCUdef]
-  · -- `hsmallU`
+  · -- the small-relative-derivative branch of `hcurvNonnegU`
     have : DU ≤ 2 / 100 := by rw [hDUdef]; linarith
     nlinarith [hGau0, hGau]
 

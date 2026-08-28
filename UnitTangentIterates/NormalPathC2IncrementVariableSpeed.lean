@@ -353,6 +353,29 @@ moving curve is such a family, against its own cost density. -/
 def IsVariableSpeedNormalPath (P0 P1 khat G1 Cg : ℝ) {p q : Data} (Γ : NormalPath p q) : Prop :=
   IsVariableSpeedFamily P0 P1 khat G1 Cg Γ.X Γ.m
 
+/-- Enlarging the speed, speed-derivative, and mixed-derivative ceilings
+preserves a variable-speed certificate. -/
+theorem IsVariableSpeedNormalPath.mono
+    {P1 P1' G1 G1' Cg Cg' : ℝ} (Γ : NormalPath p q)
+    (h : IsVariableSpeedNormalPath P0 P1 khat G1 Cg Γ)
+    (hk : 0 ≤ khat) (hP1 : P1 ≤ P1') (hG1 : G1 ≤ G1')
+    (hCg : Cg ≤ Cg') :
+    IsVariableSpeedNormalPath P0 P1' khat G1' Cg' Γ := by
+  obtain ⟨g, gu, gt, gut, theta, kappa, etas, kt, hgnn, hgub, hguB, hkap,
+    hXu, hgud, hthetau, hgt, hgtc, hgtbd, hgut, hgutc, hgutbd,
+    hthetat, hetasc, hetas, hkappat, hktc, hkt⟩ := h
+  refine ⟨g, gu, gt, gut, theta, kappa, etas, kt, hgnn,
+    (fun t u => (hgub t u).trans hP1),
+    (fun t u => (hguB t u).trans hG1), hkap, hXu, hgud, hthetau,
+    hgt, hgtc, ?_, hgut, hgutc, ?_, hthetat, hetasc, hetas,
+    hkappat, hktc, hkt⟩
+  · intro t u
+    exact (hgtbd t u).trans (mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_left hP1 hk) (Γ.m_nonneg t))
+  · intro t u
+    exact (hgutbd t u).trans
+      (mul_le_mul_of_nonneg_right hCg (Γ.m_nonneg t))
+
 /-- **The marked distance of the two ends of a normal path with slices of
 variable speed is at most its cost**, up to the explicit constant
 `c2ConstVar P₀ P₁ κ̂ G₁ C_g`.  Neither end has to be a member of the tube: only

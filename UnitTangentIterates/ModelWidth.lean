@@ -1,4 +1,5 @@
 import Mathlib
+import UnitTangentIterates.Width
 import UnitTangentIterates.TwoCapMarked
 import UnitTangentIterates.WidthUniform
 
@@ -47,6 +48,47 @@ theorem inner_neg_I (x : ℂ) : (inner ℝ x (-Complex.I) : ℝ) = -x.im := by
 
 theorem im_exp_mul_I (θ : ℝ) : (Complex.exp (Complex.I * (θ : ℂ))).im = Real.sin θ := by
   rw [mul_comm, Complex.exp_ofReal_mul_I_im]
+
+/-! ### Width under a unit complex rotation -/
+
+/-- Multiplication by a unit complex number preserves the real inner product. -/
+theorem real_inner_mul_left (a x y : ℂ) (ha : ‖a‖ = 1) :
+    (inner ℝ (a * x) (a * y) : ℝ) = inner ℝ x y := by
+  have hn : Complex.normSq a = 1 := by
+    rw [← Complex.sq_norm, ha]
+    norm_num
+  have haa : a * starRingEnd ℂ a = 1 := by
+    rw [Complex.mul_conj, hn]
+    norm_num
+  simp only [real_inner_eq_re_inner (𝕜 := ℂ), RCLike.inner_apply, map_mul]
+  congr 1
+  calc
+    a * y * ((starRingEnd ℂ) a * (starRingEnd ℂ) x) =
+        (a * (starRingEnd ℂ) a) * (y * (starRingEnd ℂ) x) := by ring
+    _ = y * (starRingEnd ℂ) x := by rw [haa, one_mul]
+
+/-- Rotating both a planar set and its measuring direction does not change
+the support function. -/
+theorem support_mul_range (a : ℂ) (F : ℝ → ℂ) (e : ℂ) (ha : ‖a‖ = 1) :
+    Width.support (range fun s => a * F s) (a * e) =
+      Width.support (range F) e := by
+  unfold Width.support
+  congr 1
+  ext r
+  constructor
+  · rintro ⟨z, ⟨s, rfl⟩, rfl⟩
+    exact ⟨F s, ⟨s, rfl⟩, (real_inner_mul_left a (F s) e ha).symm⟩
+  · rintro ⟨z, ⟨s, rfl⟩, rfl⟩
+    exact ⟨a * F s, ⟨s, rfl⟩, real_inner_mul_left a (F s) e ha⟩
+
+/-- Rotating both a planar curve and its measuring direction does not change
+its width. -/
+theorem width_mul_range (a : ℂ) (F : ℝ → ℂ) (e : ℂ) (ha : ‖a‖ = 1) :
+    Width.width (range fun s => a * F s) (a * e) =
+      Width.width (range F) e := by
+  rw [Width.width, Width.width, support_mul_range a F e ha]
+  have hneg : -(a * e) = a * (-e) := by ring
+  rw [hneg, support_mul_range a F (-e) ha]
 
 /-- An integral of a nonpositive function over an increasing interval is
 nonpositive. -/
@@ -178,6 +220,27 @@ theorem width_range_eq_integral (hH : 0 < H)
   have hsincont : Continuous fun s => Real.sin (Θ s) := Real.continuous_sin.comp hΘc
   rw [width_range_eq hH hF hΘc hFper hhalf hcell,
     integral_eq_sub_of_hasDerivAt (fun s _ => hpderiv s) (hsincont.intervalIntegrable _ _)]
+
+/-- Direction-aware form of `width_range_eq_integral`.  If a unit rotation
+puts a curve into the normalized frame in which the tangent angle is `Θ`,
+then the normalized vertical-width formula is the width of the original curve
+in the correspondingly rotated unit direction `e`. -/
+theorem width_range_eq_integral_unit_rotation
+    (a e : ℂ) (ha : ‖a‖ = 1) (hae : a * e = Complex.I)
+    (hH : 0 < H)
+    (hF : ∀ s, HasDerivAt (fun r => a * F r)
+      (Complex.exp (Complex.I * (Θ s : ℂ))) s)
+    (hΘc : Continuous Θ) (hFper : Periodic F (2 * H))
+    (hhalf : ∀ s, Θ (s + H) = Θ s + Real.pi)
+    (hcell : ∀ s ∈ Icc (-(H / 2)) (H / 2), 0 ≤ Real.sin (Θ s)) :
+    Width.width (range F) e =
+      ∫ s in (-(H / 2))..(H / 2), Real.sin (Θ s) := by
+  let G : ℝ → ℂ := fun s => a * F s
+  have hGper : Periodic G (2 * H) := fun s => by simp [G, hFper s]
+  have hwidth := width_range_eq_integral hH hF hΘc hGper hhalf hcell
+  rw [← hae] at hwidth
+  rw [width_mul_range a F e ha] at hwidth
+  exact hwidth
 
 /-! ### The width of the model front -/
 

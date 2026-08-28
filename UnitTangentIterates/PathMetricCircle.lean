@@ -39,6 +39,55 @@ theorem w_nonneg (t : ℝ) : 0 ≤ w t := le_max_left _ _
 
 theorem continuous_w : Continuous w := by unfold w; fun_prop
 
+private def clamp01 (t : ℝ) : ℝ := max 0 (min t 1)
+
+private theorem clamp01_mem (t : ℝ) : clamp01 t ∈ Set.Icc (0 : ℝ) 1 := by
+  exact ⟨le_max_left _ _, max_le (by norm_num) (min_le_right _ _)⟩
+
+private theorem w_eq_clamp01 (t : ℝ) :
+    w t = 6 * clamp01 t * (1 - clamp01 t) := by
+  rcases le_total t 0 with ht | ht
+  · unfold w clamp01
+    rw [max_eq_left (by nlinarith), min_eq_left (by linarith : t ≤ 1), max_eq_left ht]
+    ring
+  · rcases le_total t 1 with ht1 | ht1
+    · unfold w clamp01
+      rw [max_eq_right (by nlinarith), min_eq_left ht1, max_eq_right ht]
+    · unfold w clamp01
+      rw [max_eq_left (by nlinarith), min_eq_right ht1,
+        max_eq_right (by norm_num : (0 : ℝ) ≤ 1)]
+      ring
+
+/-- The stopped polynomial speed is globally Lipschitz. -/
+theorem lipschitzWith_w : LipschitzWith 6 w := by
+  have hc : LipschitzWith 1 clamp01 := by
+    have hmin : LipschitzWith 1 (fun x : ℝ => min x 1) := LipschitzWith.id.min_const _
+    simpa [clamp01] using hmin.const_max 0
+  refine LipschitzWith.of_dist_le_mul fun x y => ?_
+  have hx := clamp01_mem x
+  have hy := clamp01_mem y
+  have hfac : |1 - clamp01 x - clamp01 y| ≤ 1 := by
+    rw [abs_le]
+    constructor <;> linarith [hx.1, hx.2, hy.1, hy.2]
+  have hcxy : |clamp01 x - clamp01 y| ≤ |x - y| := by
+    simpa [Real.dist_eq] using hc.dist_le_mul x y
+  rw [Real.dist_eq, w_eq_clamp01, w_eq_clamp01]
+  norm_num
+  have heq :
+      6 * clamp01 x * (1 - clamp01 x) - 6 * clamp01 y * (1 - clamp01 y) =
+        6 * (clamp01 x - clamp01 y) * (1 - clamp01 x - clamp01 y) := by ring
+  rw [heq, abs_mul, abs_mul, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 6)]
+  calc
+    6 * |clamp01 x - clamp01 y| * |1 - clamp01 x - clamp01 y|
+        ≤ 6 * |clamp01 x - clamp01 y| * 1 :=
+      mul_le_mul_of_nonneg_left hfac (mul_nonneg (by norm_num) (abs_nonneg _))
+    _ ≤ 6 * |x - y| := by nlinarith
+
+/-- The stopped polynomial speed has its sharp global maximum at `1 / 2`. -/
+theorem w_le_three_halves (t : ℝ) : w t ≤ 3 / 2 := by
+  rw [w_eq_clamp01]
+  nlinarith [sq_nonneg (clamp01 t - 1 / 2)]
+
 theorem w_eq_zero {t : ℝ} (ht : t ∉ Ioo (0:ℝ) 1) : w t = 0 := by
   rw [mem_Ioo, not_and_or, not_lt, not_lt] at ht
   refine max_eq_left ?_

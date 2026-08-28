@@ -50,6 +50,13 @@ def pulse (K x : ℝ → ℝ) : ℝ → ℝ := fun s => K (x s) / Real.sqrt (1 +
 /-- Its derivative, `y' = (K'∘x)/(1+(K∘x)²)²`. -/
 def pulseD (K K' x : ℝ → ℝ) : ℝ → ℝ := fun s => K' (x s) / (1 + K (x s) ^ 2) ^ 2
 
+/-- The second front-arclength derivative of the pulse, written only in terms
+of the first two rear-arclength curvature derivatives. -/
+def pulseDD (K K' K'' x : ℝ → ℝ) : ℝ → ℝ := fun s =>
+  K'' (x s) / (Real.sqrt (1 + K (x s) ^ 2) * (1 + K (x s) ^ 2) ^ 2)
+    - 4 * K (x s) * K' (x s) ^ 2 /
+      (Real.sqrt (1 + K (x s) ^ 2) * (1 + K (x s) ^ 2) ^ 3)
+
 variable {K K' x : ℝ → ℝ} {alpha CK CK1 DK Km : ℝ}
 
 /-! ### The front arclength -/
@@ -222,6 +229,30 @@ theorem hasDerivAt_pulse (hKd : ∀ u, HasDerivAt K (K' u) u) (s : ℝ) :
     rw [hs2]
   rw [← hval]
   exact h
+
+/-- The exact second derivative after changing from rear to front arclength. -/
+theorem hasDerivAt_pulseD (hKd : ∀ u, HasDerivAt K (K' u) u)
+    {K'' : ℝ → ℝ} (hKdd : ∀ u, HasDerivAt K' (K'' u) u) (s : ℝ) :
+    HasDerivAt (pulseD K K' x) (pulseDD K K' K'' x s) s := by
+  let q : ℝ := 1 + K (x s) ^ 2
+  let r : ℝ := Real.sqrt q
+  have hq : 0 < q := by dsimp [q]; positivity
+  have hr : 0 < r := by exact Real.sqrt_pos.2 hq
+  have hx := hasDerivAt_x hKc hxinv s
+  have hn : HasDerivAt (fun t => K' (x t)) (K'' (x s) * (1 / r)) s := by
+    simpa [r, q] using (hKdd (x s)).comp s hx
+  have hkx : HasDerivAt (fun t => K (x t)) (K' (x s) * (1 / r)) s := by
+    simpa [r, q] using (hKd (x s)).comp s hx
+  have hden : HasDerivAt (fun t => (1 + K (x t) ^ 2) ^ 2)
+      (4 * K (x s) * K' (x s) * (1 / r) * q) s := by
+    convert ((hasDerivAt_const s (1 : ℝ)).add (hkx.pow 2)).pow 2 using 1 <;>
+      simp [q] <;> ring
+  have h := hn.div hden (by positivity : q ^ 2 ≠ 0)
+  convert h using 1
+  dsimp [pulseDD, pulseD, q, r]
+  have hrsq : Real.sqrt (1 + K (x s) ^ 2) ^ 2 = 1 + K (x s) ^ 2 :=
+    Real.sq_sqrt (by positivity)
+  field_simp
 
 theorem continuous_pulse : Continuous (pulse K x) := by
   have hx : Continuous x := continuous_x hKc hxinv

@@ -1,0 +1,512 @@
+import UnitTangentIterates.ConfiguredPhysicalDiagonalLargeSeparation
+import UnitTangentIterates.ConfiguredPhysicalDiagonalRowBudget
+import UnitTangentIterates.ConfiguredGaugeEndpointCoefficientGrowth
+import UnitTangentIterates.TubeConstants
+
+/-!
+# Large separation with the gauge endpoint correction included
+
+This is the scalar output used by the physical enriched construction.  Its
+row conversion reserves both the path-distance conversion and the terminal
+marking correction before the separation shift is selected.
+-/
+
+noncomputable section
+
+set_option maxHeartbeats 2000000
+
+open Function Set
+
+namespace ConfiguredCombinedPhysicalDiagonalLargeSeparation
+
+open ConfiguredGaugeEndpointLinearRadius
+  ConfiguredGaugeEndpointCoefficientGrowth
+  ConfiguredRowCeilingPolynomialEnvelopes
+  ConfiguredPolynomialDiagonalStableRowDefectProvider
+  ConfiguredStableVariableTerminalCapstone
+  ConstructedConfiguredInductiveTubeBudget.WeightedData
+
+/-- A priori period cap for the gauge flow.  The selected columns are only
+known to lie within the diagonal row radius of the configured model, so the
+cap includes that radius rather than asserting the false exact model period. -/
+def ellCap (D : ConstructedConfiguredSequenceWeighted.Data) : ℕ → ℝ :=
+  fun n ↦ 3 * (1 + D.Hs n)
+
+/-- A priori upper speed cap after reserving a radius no larger than the base
+separation. -/
+def speedCap (D : ConstructedConfiguredSequenceWeighted.Data) : ℕ → ℝ :=
+  fun n ↦ 3 * (1 + D.Hs n)
+
+/-- The physical terminal length cap, with the same row-radius allowance. -/
+def lengthCap (D : ConstructedConfiguredSequenceWeighted.Data) : ℕ → ℝ :=
+  fun n ↦ 3 * (1 + D.Hs n)
+
+def configuredLinearInputBounds
+    (D : ConstructedConfiguredSequenceWeighted.Data) :
+    LinearInputBounds D.Hs (ellCap D) (speedCap D) (lengthCap D) where
+  ellCoeff := 3
+  maxCoeff := 3
+  lengthCoeff := 3
+  ellCoeff_nonneg := by norm_num
+  maxCoeff_nonneg := by norm_num
+  lengthCoeff_nonneg := by norm_num
+  H_nonneg n := (D.model.separation_pos n).le
+  ell_nonneg n := by
+    unfold ellCap
+    exact mul_nonneg (by norm_num)
+      (add_nonneg zero_le_one (D.model.separation_pos n).le)
+  max_nonneg n := by
+    unfold speedCap
+    exact mul_nonneg (by norm_num)
+      (add_nonneg zero_le_one (D.model.separation_pos n).le)
+  length_nonneg n := by
+    unfold lengthCap
+    exact mul_nonneg (by norm_num)
+      (add_nonneg zero_le_one (D.model.separation_pos n).le)
+  ell_le n := by rfl
+  max_le n := by rfl
+  length_le n := by rfl
+
+/-- The scalar large-separation radius makes every configured row upper bound
+fit the common linear cap used in the endpoint coefficient. -/
+theorem outputUpper_le_cap
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {Cdiag diagonal : ℕ → ℝ} {Cw : ℝ}
+    (L : ExponentialDiagonalLargeSeparation.Output D Cdiag diagonal Cw)
+    (n : ℕ) :
+    ConfiguredPhysicalDiagonalRowBudget.outputUpper D L n ≤
+      speedCap (shift D L.N) n := by
+  have hr := L.speed_tail n
+  have hH0 := (shift D L.N).separation_lower n
+  unfold ConfiguredPhysicalDiagonalRowBudget.outputUpper
+    ConfiguredPhysicalDiagonalRowBudget.outputRadius speedCap
+  linarith
+
+/-- Endpoint conversion computed from the configured a priori caps. -/
+def endpointConversion
+    (D : ConstructedConfiguredSequenceWeighted.Data) (kh M : ℝ) : ℕ → ℝ :=
+  endpointLinearCoeff (ellCap D) (speedCap D)
+    (fun _ ↦ GaugeMarkedDataOfRearFamily.rearKappa1 kh)
+    (fun _ ↦ GaugeMarkedDataOfRearFamily.rearKappa2 kh)
+    (lengthCap D) (fun _ ↦ D.kstar) (fun _ ↦ D.kd) M
+
+/-- The complete row conversion used for physical retained terminals. -/
+def combinedConversion
+    (D : ConstructedConfiguredSequenceWeighted.Data) (MA NA kh M : ℝ) :
+    ℕ → ℝ :=
+  ConfiguredGaugeEndpointLinearRadius.combinedConversion
+    (ConfiguredPhysicalDiagonalRowBudget.conversion D MA NA)
+    (endpointConversion D kh M)
+
+/-- Complete conversion with distinct recursive path-curvature and physical
+selected-inverse caps. -/
+def combinedConversionWithKhat
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    (MA NA khat kh M : ℝ) : ℕ → ℝ :=
+  ConfiguredGaugeEndpointLinearRadius.combinedConversion
+    (ConfiguredPhysicalDiagonalRowBudget.conversionWithKhat D khat MA NA)
+    (endpointConversion D kh M)
+
+theorem endpointConversion_nonneg
+    (D : ConstructedConfiguredSequenceWeighted.Data) {kh M : ℝ}
+    (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) :
+    ∀ n, 0 ≤ endpointConversion D kh M n := by
+  apply endpointLinearCoeff_nonneg
+  · intro n
+    unfold speedCap
+    exact mul_nonneg (by norm_num)
+      (add_nonneg zero_le_one (D.model.separation_pos n).le)
+  · intro n
+    exact GaugeMarkedDataOfRearFamily.rearKappa1_nonneg hkh0 hkh1
+
+theorem combinedConversion_nonneg
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {MA NA kh M : ℝ} (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) :
+    ∀ n, 0 ≤ combinedConversion D MA NA kh M n := by
+  apply ConfiguredGaugeEndpointLinearRadius.combinedConversion_nonneg
+  · intro n
+    exact NormalPathC2IncrementVariableSpeed.c2ConstVar_nonneg _ _ _ _ _
+  · exact endpointConversion_nonneg D hkh0 hkh1
+
+theorem combinedConversionWithKhat_nonneg
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {MA NA khat kh M : ℝ} (hkhat : 0 ≤ khat)
+    (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) :
+    ∀ n, 0 ≤ combinedConversionWithKhat D MA NA khat kh M n := by
+  apply ConfiguredGaugeEndpointLinearRadius.combinedConversion_nonneg
+  · intro n
+    exact NormalPathC2IncrementVariableSpeed.c2ConstVar_nonneg _ _ _ _ _
+  · exact endpointConversion_nonneg D hkh0 hkh1
+
+/-- The combined conversion has the exact quadratic-times-small-exponential
+majorant required by `ExponentialDiagonalLargeSeparation`. -/
+theorem exists_combinedConversion_growth_majorant
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {MA NA kh M gamma : ℝ}
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA)
+    (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) (hM : 0 ≤ M)
+    (hgamma : 0 < gamma) :
+    ∃ C0 : ℝ, 0 ≤ C0 ∧ ∀ n,
+      combinedConversion D MA NA kh M n ≤
+        C0 * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) := by
+  obtain ⟨Cpath, hCpath0, hCpath⟩ :=
+    exists_wide_c2ConstVar_growth_majorant D hMA hNA hgamma
+  obtain ⟨Cend, hCend0, hCend⟩ :=
+    exists_endpointLinearCoeff_growth_majorant
+      (configuredLinearInputBounds D)
+      (GaugeMarkedDataOfRearFamily.rearKappa1_nonneg hkh0 hkh1)
+      (GaugeMarkedDataOfRearFamily.rearKappa2_nonneg hkh0 hkh1)
+      hM D.kstar_nonneg D.kd_nonneg hgamma
+  refine ⟨Cpath + Cend, add_nonneg hCpath0 hCend0, ?_⟩
+  intro n
+  unfold combinedConversion
+  calc
+    _ ≤ Cpath * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) +
+        Cend * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) :=
+      add_le_add (hCpath n) (by simpa [endpointConversion] using hCend n)
+    _ = (Cpath + Cend) * (1 + D.Hs n) ^ 2 *
+        Real.exp (gamma * D.Hs n) := by ring
+
+theorem exists_combinedConversionWithKhat_growth_majorant
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {MA NA khat kh M gamma : ℝ}
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) (hkhat : 0 ≤ khat)
+    (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) (hM : 0 ≤ M)
+    (hgamma : 0 < gamma) :
+    ∃ C0 : ℝ, 0 ≤ C0 ∧ ∀ n,
+      combinedConversionWithKhat D MA NA khat kh M n ≤
+        C0 * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) := by
+  obtain ⟨Cpath, hCpath0, hCpath⟩ :=
+    exists_wide_c2ConstVar_growth_majorant_withKhat
+      D hkhat hMA hNA hgamma
+  obtain ⟨Cend, hCend0, hCend⟩ :=
+    exists_endpointLinearCoeff_growth_majorant
+      (configuredLinearInputBounds D)
+      (GaugeMarkedDataOfRearFamily.rearKappa1_nonneg hkh0 hkh1)
+      (GaugeMarkedDataOfRearFamily.rearKappa2_nonneg hkh0 hkh1)
+      hM D.kstar_nonneg D.kd_nonneg hgamma
+  refine ⟨Cpath + Cend, add_nonneg hCpath0 hCend0, ?_⟩
+  intro n
+  unfold combinedConversionWithKhat
+  calc
+    _ ≤ Cpath * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) +
+        Cend * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) :=
+      add_le_add (hCpath n) (by simpa [endpointConversion] using hCend n)
+    _ = (Cpath + Cend) * (1 + D.Hs n) ^ 2 *
+        Real.exp (gamma * D.Hs n) := by ring
+
+/-- Common recursive selected-inverse cap generated by the half-curvature
+endpoint and the tube-invariance ceiling chain. -/
+def sourceKh : ℝ := TubeConstants.khat (1 / 2)
+
+@[simp] theorem sourceKh_eq : sourceKh = 5 / 6 := by
+  norm_num [sourceKh, TubeConstants.khat]
+
+theorem sourceKh_nonnegative : 0 ≤ sourceKh := by rw [sourceKh_eq]; norm_num
+
+theorem sourceKh_lt_one : sourceKh < 1 := by rw [sourceKh_eq]; norm_num
+
+theorem half_le_sourceKh : (1 : ℝ) / 2 ≤ sourceKh := by
+  rw [sourceKh_eq]
+  norm_num
+
+/-- Analytic derivative ceiling for recursive rear-family paths. -/
+def analyticKhat (D : ConstructedConfiguredSequenceWeighted.Data) : ℝ :=
+  max D.kstar (GaugeMarkedDataOfRearFamily.rearKappa1 sourceKh)
+
+theorem analyticKhat_nonnegative
+    (D : ConstructedConfiguredSequenceWeighted.Data) : 0 ≤ analyticKhat D :=
+  D.kstar_nonneg.trans (le_max_left _ _)
+
+theorem kstar_le_analyticKhat
+    (D : ConstructedConfiguredSequenceWeighted.Data) :
+    D.kstar ≤ analyticKhat D := le_max_left _ _
+
+theorem rearKappa1_sourceKh_le_analyticKhat
+    (D : ConstructedConfiguredSequenceWeighted.Data) :
+    GaugeMarkedDataOfRearFamily.rearKappa1 sourceKh ≤ analyticKhat D :=
+  le_max_right _ _
+
+@[simp] theorem rearKappa1_sourceKh :
+    GaugeMarkedDataOfRearFamily.rearKappa1 sourceKh = 30 / 11 := by
+  rw [sourceKh_eq]
+  norm_num [GaugeMarkedDataOfRearFamily.rearKappa1]
+
+/-- Epsilon-facing scalar constructor with no endpoint-fit or growth callback.
+It also returns the explicit endpoint cost cap used in the coefficient. -/
+theorem exists_widthData_and_combinedOutput_of_eps
+    {eps MA NA kh : ℝ} (heps : 0 < eps) (heps10 : eps ≤ 1 / 10)
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA)
+    (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) :
+    ∃ (D : ConstructedConfiguredSequenceWeighted.Data)
+      (direction : ℕ → ℂ) (Cw Mend : ℝ),
+      0 ≤ Cw ∧ 0 < Mend ∧
+      (∀ n, ‖direction n‖ = 1) ∧
+      (∀ n, Width.width
+        (range (TwoCapPairsAssembly.front (D.kappas n)
+          D.model.thetaBase (D.Hs n))) (direction n) ≤ Cw) ∧
+      (∀ n, physicalDefect D n < Mend) ∧
+      Nonempty (ExponentialDiagonalLargeSeparation.Output
+        D (combinedConversion D MA NA kh Mend) (physicalDefect D) Cw) := by
+  obtain ⟨D, direction, Cw, hCw, hdir, hwidth, -⟩ :=
+    exists_widthData_and_stable_largeSeparationOutput_of_eps heps heps10
+  have hbeta : 0 < D.model.beta := (D.model.configs 0).hbeta0
+  let gamma : ℝ := D.model.beta / 16
+  let b : ℝ := D.model.beta / 8
+  have hgamma : 0 < gamma := div_pos hbeta (by norm_num)
+  have hb : 0 < b := div_pos hbeta (by norm_num)
+  have hgamma_b : gamma < b := by
+    dsimp [gamma, b]
+    nlinarith
+  obtain ⟨A, hA, hdexp⟩ := exists_physicalDefect_exp_bound D
+  let Mend : ℝ := A * Real.exp (-(b * D.Hs 0)) + 1
+  have hMend : 0 < Mend := by dsimp [Mend]; positivity
+  have hdM : ∀ n, physicalDefect D n < Mend := by
+    intro n
+    have harg : -(b * D.Hs n) ≤ -(b * D.Hs 0) := by
+      have hm := mul_le_mul_of_nonneg_left (D.separation_lower n) hb.le
+      linarith
+    have he := Real.exp_le_exp.mpr harg
+    calc
+      physicalDefect D n ≤ A * Real.exp (-(b * D.Hs n)) := by
+        simpa [b] using hdexp n
+      _ ≤ A * Real.exp (-(b * D.Hs 0)) :=
+        mul_le_mul_of_nonneg_left he hA
+      _ < Mend := by dsimp [Mend]; linarith
+  obtain ⟨C0, hC0, hCgrowth⟩ :=
+    exists_combinedConversion_growth_majorant D hMA hNA hkh0 hkh1
+      hMend.le hgamma
+  refine ⟨D, direction, Cw, Mend, hCw, hMend, hdir, hwidth, hdM, ?_⟩
+  exact ExponentialDiagonalLargeSeparation.exists_output D
+    (combinedConversion D MA NA kh Mend) (physicalDefect D)
+    (combinedConversion_nonneg D hkh0 hkh1)
+    hC0 hA hb hgamma_b hCgrowth (physicalDefect_nonneg D) (by
+      intro n
+      simpa [b] using hdexp n) hCw
+
+/-- Fully configured specialization of the combined scalar construction.  The
+selected-inverse cap is the model strip cap, so it is chosen only after the
+epsilon-dependent configured model has been constructed. -/
+theorem exists_widthData_and_combinedOutput_modelA_of_eps
+    {eps MA NA : ℝ} (heps : 0 < eps) (heps10 : eps ≤ 1 / 10)
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) :
+    ∃ (D : ConstructedConfiguredSequenceWeighted.Data)
+      (direction : ℕ → ℂ) (Cw Mend : ℝ),
+      0 ≤ Cw ∧ 0 < Mend ∧
+      (∀ n, ‖direction n‖ = 1) ∧
+      (∀ n, Width.width
+        (range (TwoCapPairsAssembly.front (D.kappas n)
+          D.model.thetaBase (D.Hs n))) (direction n) ≤ Cw) ∧
+      (∀ n, physicalDefect D n < Mend) ∧
+      Nonempty (ExponentialDiagonalLargeSeparation.Output
+        D (combinedConversion D MA NA D.model.a Mend)
+          (physicalDefect D) Cw) := by
+  obtain ⟨D, direction, Cw, hCw, hdir, hwidth, -⟩ :=
+    exists_widthData_and_stable_largeSeparationOutput_of_eps heps heps10
+  have hkh0 : 0 ≤ D.model.a := (D.model.configs 0).ha0
+  have hkh1 : D.model.a < 1 := (D.model.configs 0).ha1
+  have hbeta : 0 < D.model.beta := (D.model.configs 0).hbeta0
+  let gamma : ℝ := D.model.beta / 16
+  let b : ℝ := D.model.beta / 8
+  have hgamma : 0 < gamma := div_pos hbeta (by norm_num)
+  have hb : 0 < b := div_pos hbeta (by norm_num)
+  have hgamma_b : gamma < b := by
+    dsimp [gamma, b]
+    nlinarith
+  obtain ⟨A, hA, hdexp⟩ := exists_physicalDefect_exp_bound D
+  let Mend : ℝ := A * Real.exp (-(b * D.Hs 0)) + 1
+  have hMend : 0 < Mend := by dsimp [Mend]; positivity
+  have hdM : ∀ n, physicalDefect D n < Mend := by
+    intro n
+    have harg : -(b * D.Hs n) ≤ -(b * D.Hs 0) := by
+      have hm := mul_le_mul_of_nonneg_left (D.separation_lower n) hb.le
+      linarith
+    have he := Real.exp_le_exp.mpr harg
+    calc
+      physicalDefect D n ≤ A * Real.exp (-(b * D.Hs n)) := by
+        simpa [b] using hdexp n
+      _ ≤ A * Real.exp (-(b * D.Hs 0)) :=
+        mul_le_mul_of_nonneg_left he hA
+      _ < Mend := by dsimp [Mend]; linarith
+  obtain ⟨C0, hC0, hCgrowth⟩ :=
+    exists_combinedConversion_growth_majorant D hMA hNA hkh0 hkh1
+      hMend.le hgamma
+  refine ⟨D, direction, Cw, Mend, hCw, hMend, hdir, hwidth, hdM, ?_⟩
+  exact ExponentialDiagonalLargeSeparation.exists_output D
+    (combinedConversion D MA NA D.model.a Mend) (physicalDefect D)
+    (combinedConversion_nonneg D hkh0 hkh1)
+    hC0 hA hb hgamma_b hCgrowth (physicalDefect_nonneg D) (by
+      intro n
+      simpa [b] using hdexp n) hCw
+
+/-- The width and scalar large-separation output for the same configured
+sequence carrying the actual half-curvature certificate.  The coarse
+`E.data.kstar` is still used only in costs; selected-inverse geometry may use
+the retained actual ceiling `1 / 2`. -/
+theorem exists_actualHalf_widthData_and_combinedOutput_modelA_of_eps
+    {eps MA NA : ℝ} (heps : 0 < eps) (heps10 : eps ≤ 1 / 10)
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) :
+    ∃ (E : ConstructedConfiguredSequenceWeighted.DataWithActualHalf)
+      (direction : ℕ → ℂ) (Cw Mend : ℝ),
+      0 ≤ Cw ∧ 0 < Mend ∧
+      (∀ n, ‖direction n‖ = 1) ∧
+      (∀ n, Width.width
+        (range (TwoCapPairsAssembly.front (E.data.kappas n)
+          E.data.model.thetaBase (E.data.Hs n))) (direction n) ≤ Cw) ∧
+      (∀ n, physicalDefect E.data n < Mend) ∧
+      Nonempty (ExponentialDiagonalLargeSeparation.Output
+        E.data (combinedConversion E.data MA NA E.data.model.a Mend)
+          (physicalDefect E.data) Cw) := by
+  obtain ⟨E, direction, Cw, hCw, hdir, hwidth⟩ :=
+    ConstructedPulseWidth.exists_actualHalf_widthData_of_eps heps heps10
+  let D := E.data
+  have hkh0 : 0 ≤ D.model.a := (D.model.configs 0).ha0
+  have hkh1 : D.model.a < 1 := (D.model.configs 0).ha1
+  have hbeta : 0 < D.model.beta := (D.model.configs 0).hbeta0
+  let gamma : ℝ := D.model.beta / 16
+  let b : ℝ := D.model.beta / 8
+  have hgamma : 0 < gamma := div_pos hbeta (by norm_num)
+  have hb : 0 < b := div_pos hbeta (by norm_num)
+  have hgamma_b : gamma < b := by
+    dsimp [gamma, b]
+    nlinarith
+  obtain ⟨A, hA, hdexp⟩ := exists_physicalDefect_exp_bound D
+  let Mend : ℝ := A * Real.exp (-(b * D.Hs 0)) + 1
+  have hMend : 0 < Mend := by dsimp [Mend]; positivity
+  have hdM : ∀ n, physicalDefect D n < Mend := by
+    intro n
+    have harg : -(b * D.Hs n) ≤ -(b * D.Hs 0) := by
+      have hm := mul_le_mul_of_nonneg_left (D.separation_lower n) hb.le
+      linarith
+    have he := Real.exp_le_exp.mpr harg
+    calc
+      physicalDefect D n ≤ A * Real.exp (-(b * D.Hs n)) := by
+        simpa [b] using hdexp n
+      _ ≤ A * Real.exp (-(b * D.Hs 0)) :=
+        mul_le_mul_of_nonneg_left he hA
+      _ < Mend := by dsimp [Mend]; linarith
+  obtain ⟨C0, hC0, hCgrowth⟩ :=
+    exists_combinedConversion_growth_majorant D hMA hNA hkh0 hkh1
+      hMend.le hgamma
+  refine ⟨E, direction, Cw, Mend, hCw, hMend, hdir, hwidth, hdM, ?_⟩
+  exact ExponentialDiagonalLargeSeparation.exists_output D
+    (combinedConversion D MA NA D.model.a Mend) (physicalDefect D)
+    (combinedConversion_nonneg D hkh0 hkh1)
+    hC0 hA hb hgamma_b hCgrowth (physicalDefect_nonneg D) (by
+      intro n
+      simpa [b] using hdexp n) hCw
+
+/-- Final scalar specialization using the fixed actual selected-inverse cap
+`1 / 2` in the endpoint conversion. -/
+theorem exists_actualHalf_widthData_and_combinedOutput_half_of_eps
+    {eps MA NA : ℝ} (heps : 0 < eps) (heps10 : eps ≤ 1 / 10)
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) :
+    ∃ (E : ConstructedConfiguredSequenceWeighted.DataWithActualHalf)
+      (direction : ℕ → ℂ) (Cw Mend : ℝ),
+      0 ≤ Cw ∧ 0 < Mend ∧
+      (∀ n, ‖direction n‖ = 1) ∧
+      (∀ n, Width.width
+        (range (TwoCapPairsAssembly.front (E.data.kappas n)
+          E.data.model.thetaBase (E.data.Hs n))) (direction n) ≤ Cw) ∧
+      (∀ n, physicalDefect E.data n < Mend) ∧
+      Nonempty (ExponentialDiagonalLargeSeparation.Output
+        E.data (combinedConversion E.data MA NA (1 / 2) Mend)
+          (physicalDefect E.data) Cw) := by
+  obtain ⟨E, direction, Cw, hCw, hdir, hwidth⟩ :=
+    ConstructedPulseWidth.exists_actualHalf_widthData_of_eps heps heps10
+  let D := E.data
+  have hkh0 : (0 : ℝ) ≤ 1 / 2 := by norm_num
+  have hkh1 : (1 : ℝ) / 2 < 1 := by norm_num
+  have hbeta : 0 < D.model.beta := (D.model.configs 0).hbeta0
+  let gamma : ℝ := D.model.beta / 16
+  let b : ℝ := D.model.beta / 8
+  have hgamma : 0 < gamma := div_pos hbeta (by norm_num)
+  have hb : 0 < b := div_pos hbeta (by norm_num)
+  have hgamma_b : gamma < b := by
+    dsimp [gamma, b]
+    nlinarith
+  obtain ⟨A, hA, hdexp⟩ := exists_physicalDefect_exp_bound D
+  let Mend : ℝ := A * Real.exp (-(b * D.Hs 0)) + 1
+  have hMend : 0 < Mend := by dsimp [Mend]; positivity
+  have hdM : ∀ n, physicalDefect D n < Mend := by
+    intro n
+    have harg : -(b * D.Hs n) ≤ -(b * D.Hs 0) := by
+      have hm := mul_le_mul_of_nonneg_left (D.separation_lower n) hb.le
+      linarith
+    have he := Real.exp_le_exp.mpr harg
+    calc
+      physicalDefect D n ≤ A * Real.exp (-(b * D.Hs n)) := by
+        simpa [b] using hdexp n
+      _ ≤ A * Real.exp (-(b * D.Hs 0)) :=
+        mul_le_mul_of_nonneg_left he hA
+      _ < Mend := by dsimp [Mend]; linarith
+  obtain ⟨C0, hC0, hCgrowth⟩ :=
+    exists_combinedConversion_growth_majorant D hMA hNA hkh0 hkh1
+      hMend.le hgamma
+  refine ⟨E, direction, Cw, Mend, hCw, hMend, hdir, hwidth, hdM, ?_⟩
+  exact ExponentialDiagonalLargeSeparation.exists_output D
+    (combinedConversion D MA NA (1 / 2) Mend) (physicalDefect D)
+    (combinedConversion_nonneg D hkh0 hkh1)
+    hC0 hA hb hgamma_b hCgrowth (physicalDefect_nonneg D) (by
+      intro n
+      simpa [b] using hdexp n) hCw
+
+/-- TeX-faithful scalar specialization: recursive paths use `sourceKh = 5/6`
+and their variable-speed estimates use `analyticKhat`, while the configured
+model interpolation still retains its coarse `kstar`. -/
+theorem exists_actualHalf_widthData_and_combinedOutput_analytic_of_eps
+    {eps MA NA : ℝ} (heps : 0 < eps) (heps10 : eps ≤ 1 / 10)
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) :
+    ∃ (E : ConstructedConfiguredSequenceWeighted.DataWithActualHalf)
+      (direction : ℕ → ℂ) (Cw Mend : ℝ),
+      0 ≤ Cw ∧ 0 < Mend ∧
+      (∀ n, ‖direction n‖ = 1) ∧
+      (∀ n, Width.width
+        (range (TwoCapPairsAssembly.front (E.data.kappas n)
+          E.data.model.thetaBase (E.data.Hs n))) (direction n) ≤ Cw) ∧
+      (∀ n, physicalDefect E.data n < Mend) ∧
+      Nonempty (ExponentialDiagonalLargeSeparation.Output E.data
+        (combinedConversionWithKhat E.data MA NA
+          (analyticKhat E.data) sourceKh Mend)
+        (physicalDefect E.data) Cw) := by
+  obtain ⟨E, direction, Cw, hCw, hdir, hwidth⟩ :=
+    ConstructedPulseWidth.exists_actualHalf_widthData_of_eps heps heps10
+  let D := E.data
+  have hbeta : 0 < D.model.beta := (D.model.configs 0).hbeta0
+  let gamma : ℝ := D.model.beta / 16
+  let b : ℝ := D.model.beta / 8
+  have hgamma : 0 < gamma := div_pos hbeta (by norm_num)
+  have hb : 0 < b := div_pos hbeta (by norm_num)
+  have hgamma_b : gamma < b := by
+    dsimp [gamma, b]
+    nlinarith
+  obtain ⟨A, hA, hdexp⟩ := exists_physicalDefect_exp_bound D
+  let Mend : ℝ := A * Real.exp (-(b * D.Hs 0)) + 1
+  have hMend : 0 < Mend := by dsimp [Mend]; positivity
+  have hdM : ∀ n, physicalDefect D n < Mend := by
+    intro n
+    have harg : -(b * D.Hs n) ≤ -(b * D.Hs 0) := by
+      have hm := mul_le_mul_of_nonneg_left (D.separation_lower n) hb.le
+      linarith
+    have he := Real.exp_le_exp.mpr harg
+    calc
+      physicalDefect D n ≤ A * Real.exp (-(b * D.Hs n)) := by
+        simpa [b] using hdexp n
+      _ ≤ A * Real.exp (-(b * D.Hs 0)) :=
+        mul_le_mul_of_nonneg_left he hA
+      _ < Mend := by dsimp [Mend]; linarith
+  obtain ⟨C0, hC0, hCgrowth⟩ :=
+    exists_combinedConversionWithKhat_growth_majorant D hMA hNA
+      (analyticKhat_nonnegative D) sourceKh_nonnegative sourceKh_lt_one
+      hMend.le hgamma
+  refine ⟨E, direction, Cw, Mend, hCw, hMend, hdir, hwidth, hdM, ?_⟩
+  exact ExponentialDiagonalLargeSeparation.exists_output D
+    (combinedConversionWithKhat D MA NA (analyticKhat D) sourceKh Mend)
+    (physicalDefect D)
+    (combinedConversionWithKhat_nonneg D
+      (analyticKhat_nonnegative D) sourceKh_nonnegative sourceKh_lt_one)
+    hC0 hA hb hgamma_b hCgrowth (physicalDefect_nonneg D) (by
+      intro n
+      simpa [b] using hdexp n) hCw
+
+end ConfiguredCombinedPhysicalDiagonalLargeSeparation

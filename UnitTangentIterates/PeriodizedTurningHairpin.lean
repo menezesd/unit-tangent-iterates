@@ -85,7 +85,7 @@ theorem hairpin_pulse_mass_of_data (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 <
     (hthetac : Continuous theta)
     (hxinv : ∀ s, frontArclength f theta (x s) = s) :
     (∫ s : ℝ, pulseField f (theta (x s))) = π := by
-  obtain ⟨theta', x', hmem', hval', hxinv', hmass⟩ :=
+  obtain ⟨theta', x', hmem', hval', hxinv', _hint, hmass⟩ :=
     HairpinRelative.hairpin_pulse_mass hf hfpos
   have hthetaeq : theta = theta' := theta_eq_of_arclength hf hfpos hmem hval hmem' hval'
   subst hthetaeq

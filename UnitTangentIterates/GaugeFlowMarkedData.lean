@@ -42,7 +42,7 @@ space, together with its first two derivatives. -/
 theorem exists_data_of_flow_marking
     {xi xiX xiXX Phi : ℝ → ℝ → ℝ} {m : ℝ → ℝ} {ell kappa kappa2 T L t0 : ℝ} {b : Data}
     (hT : 0 < T) (hell : 0 < ell) (hL : 0 < L)
-    (hxiC1 : ContDiff ℝ 1 (uncurry xi))
+    (hxiC : Continuous (uncurry xi))
     (hxiXd : ∀ s x, HasDerivAt (xi s) (xiX s x) x)
     (hxiXc : Continuous (uncurry xiX))
     (hxiXXd : ∀ s x, HasDerivAt (xiX s) (xiXX s x) x)
@@ -77,7 +77,7 @@ theorem exists_data_of_flow_marking
   have hlip : ∀ t, LipschitzWith (Real.toNNReal (kappa * B)) ((fun a y => -xi a y) t) :=
     fun t => lipschitzWith_of_deriv_bound (mul_nonneg hkappa hBnn) hxdneg hbd1 t
   have hcont : Continuous (uncurry fun a y => -xi a y) := by
-    simpa [Function.uncurry] using hxiC1.continuous.neg
+    simpa [Function.uncurry] using hxiC.neg
   have hxcont : Continuous (uncurry fun a y => -xiX a y) := by
     simpa [Function.uncurry] using hxiXc.neg
   have hxxcont : Continuous (uncurry fun a y => -xiXX a y) := by

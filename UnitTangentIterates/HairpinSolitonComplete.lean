@@ -43,6 +43,9 @@ theorem hairpin_soliton_complete {ε : ℝ} (hε : 0 < ε) (hε' : ε ≤ 1 / 10
         (Hairpin.hairpinX f θ + Real.cos θ, Hairpin.hairpinZ f θ + Real.sin θ)
           = (Hairpin.hairpinX f (Translator.next f θ) + V,
              Hairpin.hairpinZ f (Translator.next f θ))) :=
-  exists_translating_hairpin_translation hε hε'
+  by
+    obtain ⟨f, V, hV, hfl, hfu, hc, hm, hU, hs, -, -, htrans⟩ :=
+      exists_translating_hairpin_translation hε hε'
+    exact ⟨f, V, hV, hfl, hfu, hc, hm, hU, hs, htrans⟩
 
 end HairpinSolitonComplete

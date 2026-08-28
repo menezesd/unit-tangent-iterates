@@ -54,6 +54,20 @@ second derivative of the gauge flow acting on the first derivative. -/
 def gaugeC2 (C1 C2 L R2 T Q : ℝ) : ℝ :=
   C2 * (Q * Real.exp (L * T)) ^ 2 + C1 * (R2 * Q ^ 2 * T * Real.exp (2 * L * T))
 
+/-- The four componentwise density estimates retained by the gauge
+construction before they are aggregated into `NormalPath.cost`. -/
+structure FlowedDensityBounds
+    (front rear : ℝ → ℝ → ℝ) (CW C0 C1 C2 : ℝ) : Prop where
+  w : ∀ t, (∫ u in (0 : ℝ)..1, |rear t u|) ≤
+    CW * ∫ u in (0 : ℝ)..1, |front t u|
+  s0 : ∀ t, supNorm (rear t) ≤
+    C0 * ∫ u in (0 : ℝ)..1, |front t u|
+  s1 : ∀ t, supNorm (iteratedDeriv 1 (rear t)) ≤
+    C1 * ((∫ u in (0 : ℝ)..1, |front t u|) + supNorm (front t))
+  s2 : ∀ t, supNorm (iteratedDeriv 2 (rear t)) ≤
+    C2 * ((∫ u in (0 : ℝ)..1, |front t u|) + supNorm (front t) +
+      supNorm (iteratedDeriv 1 (front t)))
+
 /-- **From arclength estimates to a normal path in the gauge parameter.**
 
 `Γ` is a normal path of fronts and `XR` a family of curves joining `p'` to `q'`
@@ -65,7 +79,7 @@ arclength densities of `η_t` obey the four estimates of the paper's lemma
 interval, and the family is at rest outside it, then `XR` is a normal path
 whose cost is the constant `jacobiConst` of the distorted constants times the
 cost of `Γ`. -/
-theorem exists_normalPath_of_gauge_jacobi {p q p' q' : Data} (Γ : NormalPath p q)
+theorem exists_normalPath_of_gauge_jacobi_data {p q p' q' : Data} (Γ : NormalPath p q)
     (D : GaugeFrameData) {Phi : ℝ → ℝ → ℝ} {Q : ℝ} (hQ : 0 < Q)
     (hxiper : ∀ a, Function.Periodic (D.xi a) Q) (hvper : ∀ a, Function.Periodic (D.v a) Q)
     (hPhid : ∀ u t, HasDerivAt (fun r => Phi r u)
@@ -92,7 +106,12 @@ theorem exists_normalPath_of_gauge_jacobi {p q p' q' : Data} (Γ : NormalPath p 
     ∃ Δ : NormalPath p' q', Δ.T = Γ.T ∧
       cost Δ = jacobiConst (gaugeCW CW D.rateLip Γ.T Q) (gaugeC0 C0)
         (gaugeC1 C1 D.rateLip Γ.T Q)
-        (gaugeC2 C1 C2 D.rateLip D.rateBound2 Γ.T Q) * cost Γ := by
+        (gaugeC2 C1 C2 D.rateLip D.rateBound2 Γ.T Q) * cost Γ ∧
+      Δ.eta = (fun t u => etaR t (Phi t u)) ∧
+      FlowedDensityBounds Γ.eta Δ.eta
+        (gaugeCW CW D.rateLip Γ.T Q) (gaugeC0 C0)
+        (gaugeC1 C1 D.rateLip Γ.T Q)
+        (gaugeC2 C1 C2 D.rateLip D.rateBound2 Γ.T Q) := by
   set L := D.rateLip with hL
   set R2 := D.rateBound2 with hR2
   set T := Γ.T with hT
@@ -164,128 +183,180 @@ theorem exists_normalPath_of_gauge_jacobi {p q p' q' : Data} (Γ : NormalPath p 
     exact ⟨M, by
       rintro y ⟨u', rfl⟩
       exact hM 0 (by simp) (Phi t u')⟩
-  refine exists_normalPath_of_jacobi (p' := p') (q' := q') Γ ?_ ?_ ?_ ?_
-    (XR := XR) (nuR := nuR) (etaR := etaF)
-    hstart hfinish hderiv hcont hnu hbdd ?_ ?_ ?_ ?_
-  · exact mul_nonneg hCW (by positivity)
-  · exact hC0
-  · exact mul_nonneg hC1 (by positivity)
-  · have h1 : (0:ℝ) ≤ C2 * (Q * Real.exp (L * T)) ^ 2 := by positivity
+  have hCWflow : 0 ≤ gaugeCW CW L T Q := mul_nonneg hCW (by positivity)
+  have hC0flow : 0 ≤ gaugeC0 C0 := hC0
+  have hC1flow : 0 ≤ gaugeC1 C1 L T Q := mul_nonneg hC1 (by positivity)
+  have hC2flow : 0 ≤ gaugeC2 C1 C2 L R2 T Q := by
+    have h1 : (0:ℝ) ≤ C2 * (Q * Real.exp (L * T)) ^ 2 := by positivity
     have h2 : (0:ℝ) ≤ C1 * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by positivity
     simpa [gaugeC2] using add_nonneg h1 h2
-  · -- the `L¹` density
-    intro t
-    by_cases ht : t ∈ Ioo (0:ℝ) T
-    · calc (∫ u in (0:ℝ)..1, |etaF t u|)
-          ≤ (Real.exp (L * |t|) / Q) * ∫ x in (0:ℝ)..Q, |etaR t x| := (hdens t).2.2.2
-        _ ≤ (Real.exp (L * T) / Q) * (CW * ∫ u in (0:ℝ)..1, |Γ.eta t u|) := by
-            have hnn : (0:ℝ) ≤ ∫ x in (0:ℝ)..Q, |etaR t x| :=
-              intervalIntegral.integral_nonneg hQ.le (fun u _ => abs_nonneg _)
-            have hle1 : Real.exp (L * |t|) / Q ≤ Real.exp (L * T) / Q := by
-              rw [div_eq_mul_inv, div_eq_mul_inv]
-              exact mul_le_mul_of_nonneg_right (hexp_le t ht) (inv_nonneg.mpr hQ.le)
-            have hle2 := hW t ht
-            have hpos : (0:ℝ) < Real.exp (L * T) / Q := by positivity
-            calc (Real.exp (L * |t|) / Q) * ∫ x in (0:ℝ)..Q, |etaR t x|
-                ≤ (Real.exp (L * T) / Q) * ∫ x in (0:ℝ)..Q, |etaR t x| := by
-                  exact mul_le_mul_of_nonneg_right hle1 hnn
-              _ ≤ (Real.exp (L * T) / Q) * (CW * ∫ u in (0:ℝ)..1, |Γ.eta t u|) :=
-                  mul_le_mul_of_nonneg_left hle2 hpos.le
-        _ = gaugeCW CW L T Q * ∫ u in (0:ℝ)..1, |Γ.eta t u| := by
-            rw [gaugeCW]; ring
-    · rw [hintzero t ht]
-      have : (0:ℝ) ≤ gaugeCW CW L T Q := mul_nonneg hCW (by positivity)
-      exact mul_nonneg this (hWFnn t)
-  · -- the sup norm
-    intro t
-    by_cases ht : t ∈ Ioo (0:ℝ) T
-    · calc supNorm (etaF t) ≤ supNorm (etaR t) := (hdens t).1
-        _ ≤ C0 * ∫ u in (0:ℝ)..1, |Γ.eta t u| := hS0 t ht
-        _ = gaugeC0 C0 * ∫ u in (0:ℝ)..1, |Γ.eta t u| := by rw [gaugeC0]
-    · rw [hsupzero t ht]
-      exact mul_nonneg hC0 (hWFnn t)
-  · -- the first derivative
-    intro t
-    by_cases ht : t ∈ Ioo (0:ℝ) T
-    · have hbr : (0:ℝ) ≤ (∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t) :=
-        add_nonneg (hWFnn t) (supNorm_nonneg _)
-      calc supNorm (iteratedDeriv 1 (etaF t))
-          ≤ supNorm (deriv (etaR t)) * (Q * Real.exp (L * |t|)) := (hdens t).2.1
-        _ ≤ (C1 * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)))
-              * (Q * Real.exp (L * T)) := by
-            have hfac : Q * Real.exp (L * |t|) ≤ Q * Real.exp (L * T) :=
-              mul_le_mul_of_nonneg_left (hexp_le t ht) hQ.le
-            have hnn : (0:ℝ) ≤ supNorm (deriv (etaR t)) := supNorm_nonneg _
-            have hrhs : (0:ℝ) ≤ C1 * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)) :=
-              mul_nonneg hC1 hbr
-            calc supNorm (deriv (etaR t)) * (Q * Real.exp (L * |t|))
-                ≤ supNorm (deriv (etaR t)) * (Q * Real.exp (L * T)) :=
-                  mul_le_mul_of_nonneg_left hfac hnn
-              _ ≤ (C1 * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)))
-                    * (Q * Real.exp (L * T)) := by
-                  refine mul_le_mul_of_nonneg_right (hS1 t ht) ?_
-                  positivity
-        _ = gaugeC1 C1 L T Q * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)) := by
-            rw [gaugeC1]; ring
-    · rw [hsupzero1 t ht]
-      have hbr : (0:ℝ) ≤ (∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t) :=
-        add_nonneg (hWFnn t) (supNorm_nonneg _)
-      exact mul_nonneg (mul_nonneg hC1 (by positivity)) hbr
-  · -- the second derivative
-    intro t
-    set BR : ℝ := (∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)
-      + supNorm (iteratedDeriv 1 (Γ.eta t)) with hBR
-    have hBRnn : 0 ≤ BR := by
-      have := hWFnn t
-      have h1 := supNorm_nonneg (Γ.eta t)
-      have h2 := supNorm_nonneg (iteratedDeriv 1 (Γ.eta t))
-      simp only [hBR]
-      linarith
-    by_cases ht : t ∈ Ioo (0:ℝ) T
-    · have hS1' : supNorm (deriv (etaR t)) ≤ C1 * BR := by
-        refine le_trans (hS1 t ht) ?_
-        have h2 := supNorm_nonneg (iteratedDeriv 1 (Γ.eta t))
-        have : (∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t) ≤ BR := by
-          simp only [hBR]; linarith
-        exact mul_le_mul_of_nonneg_left this hC1
-      have hS2' : supNorm (deriv (deriv (etaR t))) ≤ C2 * BR := hS2 t ht
-      calc supNorm (iteratedDeriv 2 (etaF t))
-          ≤ supNorm (deriv (deriv (etaR t))) * (Q * Real.exp (L * |t|)) ^ 2
-              + supNorm (deriv (etaR t)) * (R2 * Q ^ 2 * |t| * Real.exp (2 * L * |t|)) :=
-            (hdens t).2.2.1
-        _ ≤ (C2 * BR) * (Q * Real.exp (L * T)) ^ 2
-              + (C1 * BR) * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by
-            have hfac : (Q * Real.exp (L * |t|)) ^ 2 ≤ (Q * Real.exp (L * T)) ^ 2 := by
-              have h1 : Q * Real.exp (L * |t|) ≤ Q * Real.exp (L * T) :=
+  have hflow : FlowedDensityBounds Γ.eta etaF
+      (gaugeCW CW L T Q) (gaugeC0 C0) (gaugeC1 C1 L T Q)
+      (gaugeC2 C1 C2 L R2 T Q) := by
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · -- the `L¹` density
+      intro t
+      by_cases ht : t ∈ Ioo (0:ℝ) T
+      · calc (∫ u in (0:ℝ)..1, |etaF t u|)
+            ≤ (Real.exp (L * |t|) / Q) * ∫ x in (0:ℝ)..Q, |etaR t x| := (hdens t).2.2.2
+          _ ≤ (Real.exp (L * T) / Q) * (CW * ∫ u in (0:ℝ)..1, |Γ.eta t u|) := by
+              have hnn : (0:ℝ) ≤ ∫ x in (0:ℝ)..Q, |etaR t x| :=
+                intervalIntegral.integral_nonneg hQ.le (fun u _ => abs_nonneg _)
+              have hle1 : Real.exp (L * |t|) / Q ≤ Real.exp (L * T) / Q := by
+                rw [div_eq_mul_inv, div_eq_mul_inv]
+                exact mul_le_mul_of_nonneg_right (hexp_le t ht) (inv_nonneg.mpr hQ.le)
+              have hle2 := hW t ht
+              have hpos : (0:ℝ) < Real.exp (L * T) / Q := by positivity
+              calc (Real.exp (L * |t|) / Q) * ∫ x in (0:ℝ)..Q, |etaR t x|
+                  ≤ (Real.exp (L * T) / Q) * ∫ x in (0:ℝ)..Q, |etaR t x| := by
+                    exact mul_le_mul_of_nonneg_right hle1 hnn
+                _ ≤ (Real.exp (L * T) / Q) * (CW * ∫ u in (0:ℝ)..1, |Γ.eta t u|) :=
+                    mul_le_mul_of_nonneg_left hle2 hpos.le
+          _ = gaugeCW CW L T Q * ∫ u in (0:ℝ)..1, |Γ.eta t u| := by
+              rw [gaugeCW]; ring
+      · rw [hintzero t ht]
+        have : (0:ℝ) ≤ gaugeCW CW L T Q := mul_nonneg hCW (by positivity)
+        exact mul_nonneg this (hWFnn t)
+    · -- the sup norm
+      intro t
+      by_cases ht : t ∈ Ioo (0:ℝ) T
+      · calc supNorm (etaF t) ≤ supNorm (etaR t) := (hdens t).1
+          _ ≤ C0 * ∫ u in (0:ℝ)..1, |Γ.eta t u| := hS0 t ht
+          _ = gaugeC0 C0 * ∫ u in (0:ℝ)..1, |Γ.eta t u| := by rw [gaugeC0]
+      · rw [hsupzero t ht]
+        exact mul_nonneg hC0 (hWFnn t)
+    · -- the first derivative
+      intro t
+      by_cases ht : t ∈ Ioo (0:ℝ) T
+      · have hbr : (0:ℝ) ≤ (∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t) :=
+          add_nonneg (hWFnn t) (supNorm_nonneg _)
+        calc supNorm (iteratedDeriv 1 (etaF t))
+            ≤ supNorm (deriv (etaR t)) * (Q * Real.exp (L * |t|)) := (hdens t).2.1
+          _ ≤ (C1 * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)))
+                * (Q * Real.exp (L * T)) := by
+              have hfac : Q * Real.exp (L * |t|) ≤ Q * Real.exp (L * T) :=
                 mul_le_mul_of_nonneg_left (hexp_le t ht) hQ.le
-              have h0 : (0:ℝ) ≤ Q * Real.exp (L * |t|) := by positivity
-              nlinarith
-            have hnn2 : (0:ℝ) ≤ supNorm (deriv (deriv (etaR t))) := supNorm_nonneg _
-            have hnn1 : (0:ℝ) ≤ supNorm (deriv (etaR t)) := supNorm_nonneg _
-            have hA : supNorm (deriv (deriv (etaR t))) * (Q * Real.exp (L * |t|)) ^ 2
-                ≤ (C2 * BR) * (Q * Real.exp (L * T)) ^ 2 := by
-              calc supNorm (deriv (deriv (etaR t))) * (Q * Real.exp (L * |t|)) ^ 2
-                  ≤ supNorm (deriv (deriv (etaR t))) * (Q * Real.exp (L * T)) ^ 2 :=
-                    mul_le_mul_of_nonneg_left hfac hnn2
-                _ ≤ (C2 * BR) * (Q * Real.exp (L * T)) ^ 2 := by
-                    refine mul_le_mul_of_nonneg_right hS2' ?_
+              have hnn : (0:ℝ) ≤ supNorm (deriv (etaR t)) := supNorm_nonneg _
+              have hrhs : (0:ℝ) ≤ C1 * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)) :=
+                mul_nonneg hC1 hbr
+              calc supNorm (deriv (etaR t)) * (Q * Real.exp (L * |t|))
+                  ≤ supNorm (deriv (etaR t)) * (Q * Real.exp (L * T)) :=
+                    mul_le_mul_of_nonneg_left hfac hnn
+                _ ≤ (C1 * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)))
+                      * (Q * Real.exp (L * T)) := by
+                    refine mul_le_mul_of_nonneg_right (hS1 t ht) ?_
                     positivity
-            have hB : supNorm (deriv (etaR t)) * (R2 * Q ^ 2 * |t| * Real.exp (2 * L * |t|))
-                ≤ (C1 * BR) * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by
-              calc supNorm (deriv (etaR t)) * (R2 * Q ^ 2 * |t| * Real.exp (2 * L * |t|))
-                  ≤ supNorm (deriv (etaR t)) * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) :=
-                    mul_le_mul_of_nonneg_left (hexp2_le t ht) hnn1
-                _ ≤ (C1 * BR) * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by
-                    refine mul_le_mul_of_nonneg_right hS1' ?_
-                    positivity
-            linarith
-        _ = gaugeC2 C1 C2 L R2 T Q * BR := by rw [gaugeC2]; ring
-    · rw [hsupzero2 t ht]
-      have h1 : (0:ℝ) ≤ C2 * (Q * Real.exp (L * T)) ^ 2 := by positivity
-      have h2 : (0:ℝ) ≤ C1 * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by positivity
-      have : (0:ℝ) ≤ gaugeC2 C1 C2 L R2 T Q := by
-        simpa [gaugeC2] using add_nonneg h1 h2
-      exact mul_nonneg this hBRnn
+          _ = gaugeC1 C1 L T Q * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)) := by
+              rw [gaugeC1]; ring
+      · rw [hsupzero1 t ht]
+        have hbr : (0:ℝ) ≤ (∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t) :=
+          add_nonneg (hWFnn t) (supNorm_nonneg _)
+        exact mul_nonneg (mul_nonneg hC1 (by positivity)) hbr
+    · -- the second derivative
+      intro t
+      set BR : ℝ := (∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)
+        + supNorm (iteratedDeriv 1 (Γ.eta t)) with hBR
+      have hBRnn : 0 ≤ BR := by
+        have := hWFnn t
+        have h1 := supNorm_nonneg (Γ.eta t)
+        have h2 := supNorm_nonneg (iteratedDeriv 1 (Γ.eta t))
+        simp only [hBR]
+        linarith
+      by_cases ht : t ∈ Ioo (0:ℝ) T
+      · have hS1' : supNorm (deriv (etaR t)) ≤ C1 * BR := by
+          refine le_trans (hS1 t ht) ?_
+          have h2 := supNorm_nonneg (iteratedDeriv 1 (Γ.eta t))
+          have : (∫ u in (0:ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t) ≤ BR := by
+            simp only [hBR]; linarith
+          exact mul_le_mul_of_nonneg_left this hC1
+        have hS2' : supNorm (deriv (deriv (etaR t))) ≤ C2 * BR := hS2 t ht
+        calc supNorm (iteratedDeriv 2 (etaF t))
+            ≤ supNorm (deriv (deriv (etaR t))) * (Q * Real.exp (L * |t|)) ^ 2
+                + supNorm (deriv (etaR t)) * (R2 * Q ^ 2 * |t| * Real.exp (2 * L * |t|)) :=
+              (hdens t).2.2.1
+          _ ≤ (C2 * BR) * (Q * Real.exp (L * T)) ^ 2
+                + (C1 * BR) * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by
+              have hfac : (Q * Real.exp (L * |t|)) ^ 2 ≤ (Q * Real.exp (L * T)) ^ 2 := by
+                have h1 : Q * Real.exp (L * |t|) ≤ Q * Real.exp (L * T) :=
+                  mul_le_mul_of_nonneg_left (hexp_le t ht) hQ.le
+                have h0 : (0:ℝ) ≤ Q * Real.exp (L * |t|) := by positivity
+                nlinarith
+              have hnn2 : (0:ℝ) ≤ supNorm (deriv (deriv (etaR t))) := supNorm_nonneg _
+              have hnn1 : (0:ℝ) ≤ supNorm (deriv (etaR t)) := supNorm_nonneg _
+              have hA : supNorm (deriv (deriv (etaR t))) * (Q * Real.exp (L * |t|)) ^ 2
+                  ≤ (C2 * BR) * (Q * Real.exp (L * T)) ^ 2 := by
+                calc supNorm (deriv (deriv (etaR t))) * (Q * Real.exp (L * |t|)) ^ 2
+                    ≤ supNorm (deriv (deriv (etaR t))) * (Q * Real.exp (L * T)) ^ 2 :=
+                      mul_le_mul_of_nonneg_left hfac hnn2
+                  _ ≤ (C2 * BR) * (Q * Real.exp (L * T)) ^ 2 := by
+                      refine mul_le_mul_of_nonneg_right hS2' ?_
+                      positivity
+              have hB : supNorm (deriv (etaR t)) * (R2 * Q ^ 2 * |t| * Real.exp (2 * L * |t|))
+                  ≤ (C1 * BR) * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by
+                calc supNorm (deriv (etaR t)) * (R2 * Q ^ 2 * |t| * Real.exp (2 * L * |t|))
+                    ≤ supNorm (deriv (etaR t)) * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) :=
+                      mul_le_mul_of_nonneg_left (hexp2_le t ht) hnn1
+                  _ ≤ (C1 * BR) * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by
+                      refine mul_le_mul_of_nonneg_right hS1' ?_
+                      positivity
+              linarith
+          _ = gaugeC2 C1 C2 L R2 T Q * BR := by rw [gaugeC2]; ring
+      · rw [hsupzero2 t ht]
+        have h1 : (0:ℝ) ≤ C2 * (Q * Real.exp (L * T)) ^ 2 := by positivity
+        have h2 : (0:ℝ) ≤ C1 * (R2 * Q ^ 2 * T * Real.exp (2 * L * T)) := by positivity
+        have : (0:ℝ) ≤ gaugeC2 C1 C2 L R2 T Q := by
+          simpa [gaugeC2] using add_nonneg h1 h2
+        exact mul_nonneg this hBRnn
+  obtain ⟨Δ, hDeltaT, -, -, hDeltaCost, hDeltaEta⟩ :=
+    exists_normalPath_of_jacobi_data (p' := p') (q' := q') Γ
+      hCWflow hC0flow hC1flow hC2flow
+      (XR := XR) (nuR := nuR) (etaR := etaF)
+      hstart hfinish hderiv hcont hnu hbdd hflow.w hflow.s0 hflow.s1 hflow.s2
+  have hDeltaEta' : Δ.eta = fun t u => etaR t (Phi t u) := by
+    simpa only [hetaF] using hDeltaEta
+  refine ⟨Δ, hDeltaT, ?_, hDeltaEta', ?_⟩
+  · simpa only [hL, hR2, hT] using hDeltaCost
+  · rw [hDeltaEta]
+    simpa only [hL, hR2, hT] using hflow
+
+/-- Compatibility projection of `exists_normalPath_of_gauge_jacobi_data`.
+The historical API intentionally erases the normal-rate identity. -/
+theorem exists_normalPath_of_gauge_jacobi {p q p' q' : Data} (Γ : NormalPath p q)
+    (D : GaugeFrameData) {Phi : ℝ → ℝ → ℝ} {Q : ℝ} (hQ : 0 < Q)
+    (hxiper : ∀ a, Function.Periodic (D.xi a) Q)
+    (hvper : ∀ a, Function.Periodic (D.v a) Q)
+    (hPhid : ∀ u t, HasDerivAt (fun r => Phi r u)
+      (GaugeRate.gaugeRate D.xi D.v t (Phi t u)) t)
+    (hPhi0 : ∀ u, Phi 0 u = Q * u)
+    {XR nuR : ℝ → ℝ → ℂ} {etaR : ℝ → ℝ → ℝ}
+    (hetaC2 : ∀ t, ContDiff ℝ (2 : ℕ) (etaR t))
+    (hetaper : ∀ t, Function.Periodic (etaR t) Q)
+    (hstart : ∀ u, XR 0 u = p'.1 u) (hfinish : ∀ u, XR Γ.T u = q'.1 u)
+    (hderiv : ∀ t u, HasDerivAt (fun r => XR r u)
+      ((etaR t (Phi t u) : ℂ) * nuR t u) t)
+    (hcont : ∀ u, Continuous fun t => (etaR t (Phi t u) : ℂ) * nuR t u)
+    (hnu : ∀ t u, ‖nuR t u‖ = 1)
+    (hrest : ∀ t ∉ Ioo (0 : ℝ) Γ.T, etaR t = fun _ => 0)
+    {CW C0 C1 C2 : ℝ} (hCW : 0 ≤ CW) (hC0 : 0 ≤ C0)
+    (hC1 : 0 ≤ C1) (hC2 : 0 ≤ C2)
+    (hW : ∀ t ∈ Ioo (0 : ℝ) Γ.T,
+      (∫ x in (0 : ℝ)..Q, |etaR t x|) ≤
+        CW * ∫ u in (0 : ℝ)..1, |Γ.eta t u|)
+    (hS0 : ∀ t ∈ Ioo (0 : ℝ) Γ.T,
+      supNorm (etaR t) ≤ C0 * ∫ u in (0 : ℝ)..1, |Γ.eta t u|)
+    (hS1 : ∀ t ∈ Ioo (0 : ℝ) Γ.T, supNorm (deriv (etaR t)) ≤
+      C1 * ((∫ u in (0 : ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t)))
+    (hS2 : ∀ t ∈ Ioo (0 : ℝ) Γ.T, supNorm (deriv (deriv (etaR t))) ≤
+      C2 * ((∫ u in (0 : ℝ)..1, |Γ.eta t u|) + supNorm (Γ.eta t) +
+        supNorm (iteratedDeriv 1 (Γ.eta t)))) :
+    ∃ Δ : NormalPath p' q', Δ.T = Γ.T ∧
+      cost Δ = jacobiConst (gaugeCW CW D.rateLip Γ.T Q) (gaugeC0 C0)
+        (gaugeC1 C1 D.rateLip Γ.T Q)
+        (gaugeC2 C1 C2 D.rateLip D.rateBound2 Γ.T Q) * cost Γ := by
+  obtain ⟨Δ, hT, hcost, -, -⟩ := exists_normalPath_of_gauge_jacobi_data
+    Γ D hQ hxiper hvper hPhid hPhi0 hetaC2 hetaper hstart hfinish
+      hderiv hcont hnu hrest hCW hC0 hC1 hC2 hW hS0 hS1 hS2
+  exact ⟨Δ, hT, hcost⟩
 
 /-- A bundle of frame data with vanishing tangential component and unit speed:
 the family already moves normally, and its gauge flow is the identity. -/

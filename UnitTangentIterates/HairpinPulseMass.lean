@@ -24,7 +24,8 @@ Main results:
 
 * `HairpinRelative.integrable_of_exp_bound` : a continuous nonnegative function
   dominated by `A e^{-|s|/M}` is integrable;
-* `HairpinRelative.hairpin_pulse_mass` : `∫_ℝ y = π`.
+* `HairpinRelative.hairpin_pulse_mass` : the same canonical pulse is
+  integrable and satisfies `∫_ℝ y = π`.
 -/
 
 noncomputable section
@@ -53,6 +54,7 @@ theorem hairpin_pulse_mass (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < f t) :
     ∃ theta x : ℝ → ℝ, (∀ u, theta u ∈ Ioo 0 π) ∧
       (∀ u, Hairpin.hairpinArclength f (π/2) (theta u) = u) ∧
       (∀ s, frontArclength f theta (x s) = s) ∧
+      Integrable (fun s => pulseField f (theta (x s))) ∧
       ∫ s, pulseField f (theta (x s)) = π := by
   have hcontf : Continuous f := hf.continuous
   have hne : (Icc (0:ℝ) π).Nonempty := ⟨0, ⟨le_rfl, Real.pi_pos.le⟩⟩
@@ -138,7 +140,8 @@ theorem hairpin_pulse_mass (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < f t) :
   have hpi : (∫ u, K u) = π :=
     integral_curv_eq_pi hf hfpos hmem hsm hsurj hderiv' hdecay hMpos
   have hyk : (∫ s, y s) = ∫ u, K u := tendsto_nhds_unique h1 h2
-  refine ⟨theta, x, hmem, hval, hxinv, ?_⟩
+  refine ⟨theta, x, hmem, hval, hxinv, ?_, ?_⟩
+  · simpa [hy] using hyint
   have hfin : (∫ s, y s) = π := by rw [hyk, hpi]
   simpa [hy] using hfin
 
@@ -148,7 +151,7 @@ The hypotheses are consistent: the constant profile `f ≡ 2` is smooth and
 positive on the line. -/
 
 example : ∃ theta x : ℝ → ℝ, ∫ s, pulseField (fun _ => (2:ℝ)) (theta (x s)) = π := by
-  obtain ⟨theta, x, -, -, -, h⟩ :=
+  obtain ⟨theta, x, -, -, -, -, h⟩ :=
     hairpin_pulse_mass (f := fun _ => 2) contDiff_const (fun _ => two_pos)
   exact ⟨theta, x, h⟩
 

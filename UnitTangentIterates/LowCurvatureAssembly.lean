@@ -52,6 +52,63 @@ theorem steering_pos_of_curvature_pos {delta K : ℝ → ℝ}
     simp at hzero
     linarith [hK s]
 
+/-- **Strong positivity of a nontrivial periodic selected steering.**  A
+nonnegative periodic solution of `δ' = K - sin δ` with nonnegative, nonzero
+forcing cannot touch zero.  This is the form needed when the front curvature
+has flat pieces but positive total turning. -/
+theorem steering_pos_of_nonnegative_nonzero {delta K : ℝ → ℝ} {P : ℝ}
+    (hP : 0 < P) (hper : Function.Periodic delta P)
+    (hode : ∀ s, HasDerivAt delta (K s - Real.sin (delta s)) s)
+    (hnonneg : ∀ s, 0 ≤ delta s) (hKnonneg : ∀ s, 0 ≤ K s)
+    (hKnonzero : ∃ s, K s ≠ 0) (s : ℝ) : 0 < delta s := by
+  rcases lt_or_eq_of_le (hnonneg s) with hs | hs
+  · exact hs
+  exfalso
+  let f : ℝ → ℝ := fun x => Real.exp x * delta x
+  have hfd : ∀ x, HasDerivAt f
+      (Real.exp x * (delta x + (K x - Real.sin (delta x)))) x := by
+    intro x
+    simpa [f, add_mul, mul_add, mul_comm, mul_left_comm, mul_assoc] using
+      (Real.hasDerivAt_exp x).mul (hode x)
+  have hfmono : Monotone f := by
+    apply monotone_of_deriv_nonneg
+    · exact fun x => (hfd x).differentiableAt
+    · intro x
+      rw [(hfd x).deriv]
+      have hsin : Real.sin (delta x) ≤ delta x := Real.sin_le (hnonneg x)
+      exact mul_nonneg (Real.exp_pos x).le (by linarith [hKnonneg x])
+  obtain ⟨r, hr⟩ := hKnonzero
+  obtain ⟨n : ℕ, hn⟩ := exists_nat_gt ((r - s) / P)
+  have hrpast : r - n * P < s := by
+    rw [div_lt_iff₀ hP] at hn
+    push_cast
+    linarith
+  have hfzero : f (r - n * P) = 0 := by
+    have hle := hfmono hrpast.le
+    have hfnonneg : 0 ≤ f (r - n * P) := mul_nonneg (Real.exp_pos _).le (hnonneg _)
+    have hfs : f s = 0 := by
+      change Real.exp s * delta s = 0
+      rw [← hs, mul_zero]
+    rw [hfs] at hle
+    linarith
+  have hdeltaPast : delta (r - n * P) = 0 := by
+    change Real.exp (r - n * P) * delta (r - n * P) = 0 at hfzero
+    rw [mul_eq_zero] at hfzero
+    exact hfzero.resolve_left (Real.exp_ne_zero _)
+  have hdeltar : delta r = 0 := by
+    have hp := (hper.nat_mul n) (r - n * P)
+    have harg : r - n * P + ↑n * P = r := by ring
+    rw [harg] at hp
+    exact hp.trans hdeltaPast
+  have hmin : IsLocalMin delta r := by
+    refine Filter.Eventually.of_forall fun t => ?_
+    rw [hdeltar]
+    exact hnonneg t
+  have hzero := hmin.hasDerivAt_eq_zero (hode r)
+  rw [hdeltar] at hzero
+  simp only [Real.sin_zero, sub_zero] at hzero
+  exact hr hzero
+
 /-- **Low-curvature inverse.**  A unit-speed closed front with continuous
 periodic curvature `0 < K ≤ κ < 1` has a unique closed rear track on the branch
 `0 < δ < π/2`; it is regular, strictly convex, and its curvature is at most

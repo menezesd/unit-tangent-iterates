@@ -189,6 +189,47 @@ def costP1 (ell kappa M : ℝ) : ℝ := ell * Real.exp (kappa * M)
 /-- The bound for the second flow derivative, as a function of the total cost. -/
 def costG1 (ell kappa kappa2 M : ℝ) : ℝ := costP1 ell kappa M ^ 2 * (kappa2 * M)
 
+/-- Uniform first-flow ceiling from a common period and total-cost bound. -/
+theorem costP1_le {ell Q kappa M Mtot : ℝ}
+    (hell : 0 ≤ ell) (hellQ : ell ≤ Q) (hk : 0 ≤ kappa)
+    (hM : 0 ≤ M) (hMM : M ≤ Mtot) :
+    costP1 ell kappa M ≤ costP1 Q kappa Mtot := by
+  unfold costP1
+  have he : Real.exp (kappa * M) ≤ Real.exp (kappa * Mtot) :=
+    Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hMM hk)
+  have hQ : 0 ≤ Q := hell.trans hellQ
+  exact mul_le_mul hellQ he (Real.exp_pos _).le hQ
+
+/-- Uniform second-flow ceiling from common period and total-cost bounds. -/
+theorem costG1_le {ell Q kappa kappa2 M Mtot : ℝ}
+    (hell : 0 ≤ ell) (hellQ : ell ≤ Q) (hk : 0 ≤ kappa)
+    (hk2 : 0 ≤ kappa2) (hM : 0 ≤ M) (hMM : M ≤ Mtot) :
+    costG1 ell kappa kappa2 M ≤ costG1 Q kappa kappa2 Mtot := by
+  unfold costG1
+  have hp := costP1_le hell hellQ hk hM hMM
+  have hp0 : 0 ≤ costP1 ell kappa M := by unfold costP1; positivity
+  have hpQ0 : 0 ≤ costP1 Q kappa Mtot := le_trans hp0 hp
+  have hsquare : costP1 ell kappa M ^ 2 ≤ costP1 Q kappa Mtot ^ 2 :=
+    (sq_le_sq₀ hp0 hpQ0).2 hp
+  have hlast : kappa2 * M ≤ kappa2 * Mtot := mul_le_mul_of_nonneg_left hMM hk2
+  exact mul_le_mul hsquare hlast (mul_nonneg hk2 hM) (sq_nonneg _)
+
+/-- The mixed variable-speed constant is uniformly bounded by replacing the
+rear period and accumulated path cost with their common ceilings. -/
+theorem mixedCost_le {ell Q kappa kappa2 M Mtot : ℝ}
+    (hell : 0 ≤ ell) (hellQ : ell ≤ Q) (hk : 0 ≤ kappa)
+    (hk2 : 0 ≤ kappa2) (hM : 0 ≤ M) (hMM : M ≤ Mtot) :
+    kappa * costG1 ell kappa kappa2 M +
+        kappa2 * costP1 ell kappa M ^ 2
+      ≤ kappa * costG1 Q kappa kappa2 Mtot +
+        kappa2 * costP1 Q kappa Mtot ^ 2 := by
+  have hg := costG1_le hell hellQ hk hk2 hM hMM
+  have hp := costP1_le hell hellQ hk hM hMM
+  have hp0 : 0 ≤ costP1 ell kappa M := by unfold costP1; positivity
+  have hpQ0 : 0 ≤ costP1 Q kappa Mtot := le_trans hp0 hp
+  exact add_le_add (mul_le_mul_of_nonneg_left hg hk)
+    (mul_le_mul_of_nonneg_left ((sq_le_sq₀ hp0 hpQ0).2 hp) hk2)
+
 theorem costP1_pos {ell kappa M : ℝ} (hell : 0 < ell) : 0 < costP1 ell kappa M :=
   mul_pos hell (Real.exp_pos _)
 

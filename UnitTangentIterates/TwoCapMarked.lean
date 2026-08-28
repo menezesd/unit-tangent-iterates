@@ -1,6 +1,7 @@
 import Mathlib
 import UnitTangentIterates.TwoCapPairsExistence
 import UnitTangentIterates.SelectedInverseTube
+import UnitTangentIterates.ConvexEmbedded
 
 /-!
 # The exact two-cap pair as a pair of marked curves
@@ -110,6 +111,59 @@ theorem exists_marked_two_cap_pair {kappa : ℝ → ℝ} {H kmin kap theta0 : �
   · rw [← hperimF, ← hperimR]; exact hle
   · rw [hrange, hevF]
 
+/-! ### The front is embedded, unconditionally -/
+
+/-- **The two-cap front tangent angle turns by `2π` over its full period.**  The
+prescribed curvature has total turning `π` over a half period, so two
+applications of `TwoCapPairsAssembly.frontAngle_add_halfPeriod` give the full
+turning identity.  This is the turning number of the front, and for the paper's
+model curves it is exact by construction rather than a topological input. -/
+theorem frontAngle_add_period {kappa : ℝ → ℝ} {theta0 H : ℝ}
+    (hk : Continuous kappa) (hper : Periodic kappa H)
+    (htotal : (∫ r in (0:ℝ)..H, kappa r) = Real.pi) (s : ℝ) :
+    frontAngle kappa theta0 (s + 2 * H) = frontAngle kappa theta0 s + 2 * Real.pi := by
+  have h1 := frontAngle_add_halfPeriod (theta0 := theta0) hk hper htotal s
+  have h2 := frontAngle_add_halfPeriod (theta0 := theta0) hk hper htotal (s + H)
+  have hs : s + 2 * H = s + H + H := by ring
+  rw [hs, h2, h1]
+  ring
+
+/-- The front tangent angle is strictly increasing when the prescribed curvature
+is strictly positive. -/
+theorem strictMono_frontAngle {kappa : ℝ → ℝ} {theta0 kmin : ℝ}
+    (hk : Continuous kappa) (hkminpos : 0 < kmin) (hkmin : ∀ s, kmin ≤ kappa s) :
+    StrictMono (frontAngle kappa theta0) := by
+  have hd : ∀ s, HasDerivAt (frontAngle kappa theta0) (kappa s) s :=
+    fun s => hasDerivAt_tangentAngle (θ₀ := theta0) hk s
+  refine strictMono_of_deriv_pos fun s => ?_
+  rw [(hd s).deriv]
+  exact lt_of_lt_of_le hkminpos (hkmin s)
+
+/-- **The two-cap front is embedded.**  Strict positivity of the prescribed
+curvature makes the tangent angle strictly increasing, and the total turning is
+exactly `2π` by construction, so `ConvexEmbedded.injOn_Ico_of_turning_one`
+applies.  Front embeddedness is therefore *not* an extra topological hypothesis
+for the curves of the paper's model orbit. -/
+theorem injOn_front {kappa : ℝ → ℝ} {theta0 H kmin : ℝ}
+    (hk : Continuous kappa) (hper : Periodic kappa H)
+    (hkminpos : 0 < kmin) (hkmin : ∀ s, kmin ≤ kappa s)
+    (htotal : (∫ r in (0:ℝ)..H, kappa r) = Real.pi) :
+    InjOn (front kappa theta0 H) (Ico 0 (2 * H)) := by
+  have hd : ∀ s, HasDerivAt (frontAngle kappa theta0) (kappa s) s :=
+    fun s => hasDerivAt_tangentAngle (θ₀ := theta0) hk s
+  have hcont : Continuous (frontAngle kappa theta0) :=
+    continuous_iff_continuousAt.2 fun s => (hd s).differentiableAt.continuousAt
+  have hX : ∀ s, HasDerivAt (front kappa theta0 H)
+      ((((1 : ℝ)) : ℂ) *
+        Complex.exp (Complex.I * (frontAngle kappa theta0 s : ℂ))) s := by
+    intro s
+    simpa using front_hasDerivAt (theta0 := theta0) (H := H) hk s
+  have hres := ConvexEmbedded.injOn_Ico_of_turning_one (v := fun _ => (1 : ℝ)) hX
+    (fun _ => one_pos) hcont (strictMono_frontAngle hk hkminpos hkmin)
+    (frontAngle_add_period (theta0 := theta0) hk hper htotal)
+    (front_periodic hk hper htotal) 0
+  simpa using hres
+
 /-! ### The hypotheses are not vacuous -/
 
 /-- The constant curvature `1/2`. -/
@@ -167,43 +221,12 @@ theorem front_kcirc_sub (s t : ℝ) :
     linear_combination h
   rw [this]; ring
 
-/-- **The constant-curvature front is embedded.** -/
+/-- **The constant-curvature front is embedded.**  A special case of the
+general `injOn_front`; no separate argument for the circle is needed. -/
 theorem injOn_front_kcirc :
-    InjOn (front kcirc 0 (2 * Real.pi)) (Ico 0 (2 * (2 * Real.pi))) := by
-  intro s hs t ht hst
-  have h : (0 : ℂ) = -(2 * Complex.I) * (tau (s / 2) - tau (t / 2)) := by
-    rw [← front_kcirc_sub s t, hst, sub_self]
-  have h0 : tau (s / 2) = tau (t / 2) := by
-    have hne : (-(2 * Complex.I)) ≠ 0 := by simp [Complex.I_ne_zero]
-    rcases mul_eq_zero.1 h.symm with h3 | h3
-    · exact absurd h3 hne
-    · linear_combination h3
-  -- `e^{i s/2} = e^{i t/2}` forces `s − t ∈ 4πℤ`
-  rw [tau, tau, Complex.exp_eq_exp_iff_exists_int] at h0
-  obtain ⟨n, hn⟩ := h0
-  have hmul : ((s / 2 : ℝ) : ℂ) * Complex.I
-      = (((t / 2 : ℝ) : ℂ) + (n : ℂ) * (2 * (Real.pi : ℂ))) * Complex.I := by
-    linear_combination hn
-  have h2 : ((s / 2 : ℝ) : ℂ) = ((t / 2 : ℝ) : ℂ) + (n : ℂ) * (2 * (Real.pi : ℂ)) :=
-    mul_right_cancel₀ Complex.I_ne_zero hmul
-  have hreal : s / 2 = t / 2 + (n : ℝ) * (2 * Real.pi) := by exact_mod_cast h2
-  have hpi : 0 < Real.pi := Real.pi_pos
-  have hs0 : 0 ≤ s := hs.1
-  have hs1 : s < 4 * Real.pi := by have := hs.2; linarith
-  have ht0 : 0 ≤ t := ht.1
-  have ht1 : t < 4 * Real.pi := by have := ht.2; linarith
-  have hsub : s - t = (n : ℝ) * (4 * Real.pi) := by linear_combination 2 * hreal
-  have hn0 : (n : ℝ) = 0 := by
-    by_contra hne
-    rcases lt_or_gt_of_ne hne with hneg | hpos
-    · have hnint : n < 0 := by exact_mod_cast hneg
-      have h1 : (n : ℝ) ≤ -1 := by exact_mod_cast (by omega : n ≤ -1)
-      nlinarith
-    · have hnint : 0 < n := by exact_mod_cast hpos
-      have h1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast (by omega : 1 ≤ n)
-      nlinarith
-  rw [hn0] at hsub
-  linarith
+    InjOn (front kcirc 0 (2 * Real.pi)) (Ico 0 (2 * (2 * Real.pi))) :=
+  injOn_front (kmin := 1 / 2) continuous_kcirc kcirc_periodic (by norm_num)
+    (fun _ => le_rfl) kcirc_total
 
 /-- **The hypotheses of `exists_marked_front` are not vacuous.**  The constant
 curvature `1/2` with half-period `2π` — whose front is the circle of radius `2`

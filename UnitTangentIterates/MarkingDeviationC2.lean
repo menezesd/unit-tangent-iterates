@@ -146,6 +146,50 @@ def markingC2Bound (e0 e1 e2 L kb kL : ℝ) : ℝ :=
 theorem markingC2Bound_nonneg {e0 e1 e2 L kb kL : ℝ} (he0 : 0 ≤ e0) :
     0 ≤ markingC2Bound e0 e1 e2 L kb kL := le_trans he0 (le_max_left _ _)
 
+/-- Uniform linearization of the marking bound on a bounded cost interval.
+The only nonlinear term is quadratic in the first-derivative defect; it is
+absorbed by `x² ≤ Mx`. -/
+theorem markingC2Bound_le_mul_of_component_linear
+    {e0 e1 e2 x M A B D L kb kL : ℝ}
+    (hx0 : 0 ≤ x) (hxM : x ≤ M)
+    (hA : 0 ≤ A) (hB : 0 ≤ B) (hD : 0 ≤ D)
+    (hL : 0 ≤ L) (hkb : 0 ≤ kb) (hkL : 0 ≤ kL)
+    (he0 : 0 ≤ e0) (he1 : 0 ≤ e1)
+    (he0bd : e0 ≤ A * x) (he1bd : e1 ≤ B * x) (he2bd : e2 ≤ D * x) :
+    markingC2Bound e0 e1 e2 L kb kL ≤
+      max A (max (B + L * kb * A)
+        (D + kb * B * (2 * L + B * M) + L ^ 2 * (kL + kb ^ 2) * A)) * x := by
+  have hM0 : 0 ≤ M := hx0.trans hxM
+  have he1Bx : 0 ≤ B * x := mul_nonneg hB hx0
+  have hquad : e1 * e1 ≤ B ^ 2 * M * x := by
+    have he1sq : e1 ^ 2 ≤ (B * x) ^ 2 :=
+      (sq_le_sq₀ he1 he1Bx).2 he1bd
+    have hxx : x ^ 2 ≤ M * x := by nlinarith
+    nlinarith [mul_le_mul_of_nonneg_left hxx (sq_nonneg B)]
+  unfold markingC2Bound
+  apply max_le
+  · exact he0bd.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hx0)
+  apply max_le
+  · have : e1 + L * kb * e0 ≤ (B + L * kb * A) * x := by
+      nlinarith [mul_le_mul_of_nonneg_left he0bd (mul_nonneg hL hkb)]
+    exact this.trans (mul_le_mul_of_nonneg_right
+      (le_trans (le_max_left _ _) (le_max_right _ _)) hx0)
+  · have hcross : kb * e1 * (2 * L + e1) ≤
+        (kb * B * (2 * L + B * M)) * x := by
+      have hlin := mul_le_mul_of_nonneg_left he1bd
+        (mul_nonneg hkb (mul_nonneg (by norm_num : (0 : ℝ) ≤ 2) hL))
+      have hquad' := mul_le_mul_of_nonneg_left hquad hkb
+      nlinarith
+    have hpos : L ^ 2 * (kL + kb ^ 2) * e0 ≤
+        (L ^ 2 * (kL + kb ^ 2) * A) * x := by
+      nlinarith [mul_le_mul_of_nonneg_left he0bd (by positivity :
+        0 ≤ L ^ 2 * (kL + kb ^ 2))]
+    have : e2 + kb * e1 * (2 * L + e1) + L ^ 2 * (kL + kb ^ 2) * e0 ≤
+        (D + kb * B * (2 * L + B * M) + L ^ 2 * (kL + kb ^ 2) * A) * x := by
+      nlinarith
+    exact this.trans (mul_le_mul_of_nonneg_right
+      (le_trans (le_max_right _ _) (le_max_right _ _)) hx0)
+
 /-- The bound is monotone in the three defects. -/
 theorem markingC2Bound_mono {e0 e1 e2 e0' e1' e2' L kb kL : ℝ} (hL : 0 ≤ L) (hkb : 0 ≤ kb)
     (hkL : 0 ≤ kL) (he1 : 0 ≤ e1) (h0 : e0 ≤ e0') (h1 : e1 ≤ e1') (h2 : e2 ≤ e2') :

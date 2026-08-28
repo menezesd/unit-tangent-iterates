@@ -1,5 +1,6 @@
 import Mathlib
 import UnitTangentIterates.NormalPathC2Increment
+import UnitTangentIterates.NormalPathC2IncrementVariableSpeed
 
 /-!
 # Completeness of summable normal paths, in the space of marked curves
@@ -50,6 +51,34 @@ theorem exists_limit_of_summable_dist {c kmin dlt : ℝ} {p : ℕ → Data} {d :
   exact (isClosed_tube c kmin dlt).mem_of_tendsto hlim
     (Eventually.of_forall fun n => hmem n)
 
+/-- A gauge-marked intermediate endpoint and its canonical marking correction
+may be estimated separately.  No path realizing the correction distance is
+needed: the triangle inequality produces direct canonical increments. -/
+theorem canonical_increment_le_of_gauge_endpoint
+    {p g : ℕ → Data} {a b : ℕ → ℝ}
+    (hgauge : ∀ n, dist (p n) (g n) ≤ a n)
+    (hcanonical : ∀ n, dist (g n) (p (n + 1)) ≤ b n) :
+    ∀ n, dist (p n) (p (n + 1)) ≤ a n + b n := by
+  intro n
+  exact (dist_triangle (p n) (g n) (p (n + 1))).trans
+    (add_le_add (hgauge n) (hcanonical n))
+
+/-- **Hybrid gauge/canonical completeness.**  Variable-speed transport may
+remain entirely on the gauge-marked intermediate endpoints, while canonical
+marking defects enter only through metric estimates.  Separate summability of
+the transport and correction bounds gives convergence of the canonical
+sequence in the same closed tube. -/
+theorem exists_limit_of_summable_gauge_canonical_increments
+    {c kmin dlt : ℝ} {p g : ℕ → Data} {a b : ℕ → ℝ}
+    (hmem : ∀ n, IsTubeMember c kmin dlt (p n))
+    (hsumA : Summable a) (hsumB : Summable b)
+    (hgauge : ∀ n, dist (p n) (g n) ≤ a n)
+    (hcanonical : ∀ n, dist (g n) (p (n + 1)) ≤ b n) :
+    ∃ plim : Data, IsTubeMember c kmin dlt plim ∧
+      Tendsto p atTop (𝓝 plim) := by
+  apply exists_limit_of_summable_dist hmem (hsumA.add hsumB)
+  exact canonical_increment_le_of_gauge_endpoint hgauge hcanonical
+
 /-- **Completeness of summable normal paths.**  Let `pₙ` be marked curves of one
 tube, joined by normal paths `Γₙ` whose slices are constant-speed closed curves
 of curvature at most `κ̂` and arclength period at most `P₁`, in the normal gauge
@@ -67,6 +96,26 @@ theorem exists_limit_of_summable_costs {c kmin dlt P0 P1 khat : ℝ} {p : ℕ �
   refine exists_limit_of_summable_dist hmem
     (hsum.mul_left (c2Const P0 P1 khat)) (fun n => ?_)
   exact dist_le_cost (Γ n) (hmem n) (hmem (n + 1)) (hgeom n)
+
+/-- **Completeness of summable variable-speed normal paths.**  This is the
+version consumed by the gauge-selected-rear construction, whose slices need
+not have constant normalized speed. -/
+theorem exists_limit_of_summable_variableSpeed_costs
+    {c kmin dlt P0 P1 khat G1 Cg : ℝ} {p : ℕ → Data}
+    (Γ : ∀ n, NormalPath (p n) (p (n + 1)))
+    (hmem : ∀ n, IsTubeMember c kmin dlt (p n))
+    (hgeom : ∀ n,
+      NormalPathC2IncrementVariableSpeed.IsVariableSpeedNormalPath
+        P0 P1 khat G1 Cg (Γ n))
+    (hsum : Summable fun n => cost (Γ n)) :
+    ∃ plim : Data, IsTubeMember c kmin dlt plim ∧ Tendsto p atTop (𝓝 plim) := by
+  refine exists_limit_of_summable_dist hmem
+    (hsum.mul_left
+      (NormalPathC2IncrementVariableSpeed.c2ConstVar P0 P1 khat G1 Cg)) ?_
+  intro n
+  exact NormalPathC2IncrementVariableSpeed.dist_le_cost_variableSpeed (Γ n)
+    (hmem n).hasDerivAt_curve (hmem (n + 1)).hasDerivAt_curve
+    (hmem n).hasDerivAt_vel (hmem (n + 1)).hasDerivAt_vel (hgeom n)
 
 /-- **The limit in the marked geometric `C²` topology.**  The convergence of
 `exists_limit_of_summable_costs`, written out: the curves, their velocities and

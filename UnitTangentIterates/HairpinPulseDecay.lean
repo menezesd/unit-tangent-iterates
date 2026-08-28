@@ -102,12 +102,12 @@ theorem frontArclength_zero (f : ℝ → ℝ) (theta : ℝ → ℝ) : frontArcle
   simp [frontArclength]
 
 /-- The pointwise bound on the integrand of the front arclength. -/
-theorem sqrt_integrand_le (hfpos : ∀ t, 0 < f t)
-    {theta : ℝ → ℝ} (hmem : ∀ u, theta u ∈ Icc 0 π)
+theorem sqrt_integrand_le {theta : ℝ → ℝ}
+    (hnn : ∀ u, 0 ≤ curvField f (theta u))
     (hdecay : ∀ u, curvField f (theta u) ≤ A * Real.exp (-|u| / M)) (hM : 0 < M)
     {t : ℝ} (ht : 0 ≤ t) :
     Real.sqrt (1 + curvField f (theta t) ^ 2) - 1 ≤ A ^ 2 / 2 * Real.exp (-t / M) := by
-  have h0 : 0 ≤ curvField f (theta t) := curvField_nonneg hfpos (hmem t)
+  have h0 : 0 ≤ curvField f (theta t) := hnn t
   have h1 : curvField f (theta t) ≤ A * Real.exp (-t / M) := by
     have := hdecay t
     rwa [abs_of_nonneg ht] at this
@@ -129,12 +129,12 @@ theorem sqrt_integrand_le (hfpos : ∀ t, 0 < f t)
   linarith
 
 /-- The symmetric pointwise bound for `t ≤ 0`. -/
-theorem sqrt_integrand_le' (hfpos : ∀ t, 0 < f t)
-    {theta : ℝ → ℝ} (hmem : ∀ u, theta u ∈ Icc 0 π)
+theorem sqrt_integrand_le' {theta : ℝ → ℝ}
+    (hnn : ∀ u, 0 ≤ curvField f (theta u))
     (hdecay : ∀ u, curvField f (theta u) ≤ A * Real.exp (-|u| / M)) (hM : 0 < M)
     {t : ℝ} (ht : t ≤ 0) :
     Real.sqrt (1 + curvField f (theta t) ^ 2) - 1 ≤ A ^ 2 / 2 * Real.exp (t / M) := by
-  have h0 : 0 ≤ curvField f (theta t) := curvField_nonneg hfpos (hmem t)
+  have h0 : 0 ≤ curvField f (theta t) := hnn t
   have h1 : curvField f (theta t) ≤ A * Real.exp (t / M) := by
     have := hdecay t
     rwa [abs_of_nonpos ht, neg_neg] at this
@@ -190,7 +190,7 @@ theorem frontArclength_le (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < f t)
     refine intervalIntegral.integral_mono_on hu
       ((hg.sub continuous_const).intervalIntegrable _ _) (hbnd.intervalIntegrable _ _) ?_
     intro t ht
-    exact sqrt_integrand_le hfpos hmem hdecay hM ht.1
+    exact sqrt_integrand_le (fun u => curvField_nonneg hfpos (hmem u)) hdecay hM ht.1
   have hlast : (∫ t in (0:ℝ)..u, A ^ 2 / 2 * Real.exp (-t / M)) ≤ A ^ 2 / 2 * M := by
     rw [intervalIntegral.integral_const_mul]
     exact mul_le_mul_of_nonneg_left (integral_exp_neg_le hM u) (by positivity)
@@ -220,7 +220,7 @@ theorem le_frontArclength (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < f t)
     refine intervalIntegral.integral_mono_on hu
       ((hg.sub continuous_const).intervalIntegrable _ _) (hbnd.intervalIntegrable _ _) ?_
     intro t ht
-    exact sqrt_integrand_le' hfpos hmem hdecay hM ht.2
+    exact sqrt_integrand_le' (fun u => curvField_nonneg hfpos (hmem u)) hdecay hM ht.2
   have hlast : (∫ t in u..(0:ℝ), A ^ 2 / 2 * Real.exp (t / M)) ≤ A ^ 2 / 2 * M := by
     rw [intervalIntegral.integral_const_mul]
     exact mul_le_mul_of_nonneg_left (integral_exp_le hM u) (by positivity)

@@ -84,7 +84,7 @@ theorem exists_normalPath_of_jacobi_data {p q p' q' : Data} (Γ : NormalPath p q
         + MarkedTopology.supNorm (iteratedDeriv 1 (Γ.eta t)))) :
     ∃ Δ : NormalPath p' q', Δ.T = Γ.T ∧ Δ.X = XR ∧
       (∀ t, Δ.m t = jacobiConst CW C0 C1 C2 * Γ.m t) ∧
-      cost Δ = jacobiConst CW C0 C1 C2 * cost Γ := by
+      cost Δ = jacobiConst CW C0 C1 C2 * cost Γ ∧ Δ.eta = etaR := by
   set C := jacobiConst CW C0 C1 C2 with hCdef
   have hCval : C = CW + C0 + 2 * C1 + 3 * C2 := hCdef
   have hCnn : 0 ≤ C := jacobiConst_nonneg hCW hC0 hC1 hC2
@@ -153,7 +153,7 @@ theorem exists_normalPath_of_jacobi_data {p q p' q' : Data} (Γ : NormalPath p q
             m_stop := fun t ht => by rw [Γ.m_stop t ht, mul_zero]
             abs_eta_le := fun t u => le_trans (hbdd t u) (hS0R t)
             le_m_L1 := hWR
-            le_m_sup := ?_ }, rfl, rfl, fun _ => rfl, ?_⟩
+            le_m_sup := ?_ }, rfl, rfl, fun _ => rfl, ?_, rfl⟩
   · intro t j hj
     match j, hj with
     | 0, _ => simpa [iteratedDeriv_zero] using hS0R t
@@ -181,7 +181,7 @@ theorem exists_normalPath_of_jacobi {p q p' q' : Data} (Γ : NormalPath p q)
       ≤ C2 * ((∫ u in (0:ℝ)..1, |Γ.eta t u|) + MarkedTopology.supNorm (Γ.eta t)
         + MarkedTopology.supNorm (iteratedDeriv 1 (Γ.eta t)))) :
     ∃ Δ : NormalPath p' q', Δ.T = Γ.T ∧ cost Δ = jacobiConst CW C0 C1 C2 * cost Γ := by
-  obtain ⟨Δ, hT, -, -, hcost⟩ := exists_normalPath_of_jacobi_data Γ hCW hC0 hC1 hC2
+  obtain ⟨Δ, hT, -, -, hcost, -⟩ := exists_normalPath_of_jacobi_data Γ hCW hC0 hC1 hC2
     hstart hfinish hderiv hcont hnu hbdd hW hS0 hS1 hS2
   exact ⟨Δ, hT, hcost⟩
 

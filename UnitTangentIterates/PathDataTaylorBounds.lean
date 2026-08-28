@@ -100,6 +100,44 @@ theorem abs_taylor_le_of_deriv2_bound {g g' g'' : ℝ → ℝ} {B : ℝ}
     (by simpa [Real.norm_eq_abs, abs_mul] using hres :
       |g a - g b - (a - b) * g' b| ≤ B * |a - b| * |a - b|)
 
+/-- A Lipschitz first derivative gives the same quadratic Taylor remainder
+without requiring a pointwise second derivative. -/
+theorem abs_taylor_le_of_lipschitz_deriv {g g' : ℝ → ℝ} {K : NNReal}
+    (hg : ∀ t, HasDerivAt g (g' t) t) (hg' : LipschitzWith K g') (a b : ℝ) :
+    |g a - g b - (a - b) * g' b| ≤ (K : ℝ) * (a - b) ^ 2 := by
+  set h : ℝ → ℝ := fun t => g t - g b - (t - b) * g' b with hh
+  have hderiv : ∀ t, HasDerivAt h (g' t - g' b) t := by
+    intro t
+    simpa [hh] using (hg t).sub_const (g b) |>.sub
+      (((hasDerivAt_id t).sub_const b).mul_const (g' b))
+  have hlip : ∀ t, |g' t - g' b| ≤ (K : ℝ) * |t - b| := by
+    intro t
+    simpa [Real.dist_eq] using hg'.dist_le_mul t b
+  have hseg : ∀ t ∈ uIcc b a, ‖deriv h t‖ ≤ (K : ℝ) * |a - b| := by
+    intro t ht
+    have htb : |t - b| ≤ |a - b| := by
+      rcases mem_uIcc.mp ht with ⟨h1, h2⟩ | ⟨h1, h2⟩
+      · rw [abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - b)]
+        exact le_trans (by linarith) (le_abs_self _)
+      · rw [abs_of_nonpos (by linarith : t - b ≤ 0),
+          abs_of_nonpos (by linarith : a - b ≤ 0)]
+        linarith
+    calc
+      ‖deriv h t‖ = |g' t - g' b| := by rw [(hderiv t).deriv, Real.norm_eq_abs]
+      _ ≤ (K : ℝ) * |t - b| := hlip t
+      _ ≤ (K : ℝ) * |a - b| :=
+        mul_le_mul_of_nonneg_left htb K.coe_nonneg
+  have hdiff : ∀ t ∈ uIcc b a, DifferentiableAt ℝ h t :=
+    fun t _ => (hderiv t).differentiableAt
+  have hres := Convex.norm_image_sub_le_of_norm_deriv_le hdiff hseg
+    (convex_uIcc b a) left_mem_uIcc right_mem_uIcc
+  have hb : h b = 0 := by simp [hh]
+  have ha : h a = g a - g b - (a - b) * g' b := rfl
+  rw [ha, hb] at hres
+  simpa [Real.norm_eq_abs, sq_abs, pow_two, mul_assoc, abs_mul] using
+    (by simpa [Real.norm_eq_abs, abs_mul] using hres :
+      |g a - g b - (a - b) * g' b| ≤ (K : ℝ) * |a - b| * |a - b|)
+
 /-! ### Boundedness from rest outside the time window -/
 
 /-- **A continuous function that is constant in the time outside a compact

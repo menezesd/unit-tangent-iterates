@@ -1,11 +1,17 @@
 # Formalization of "A Noncircular Oval with Convex Unit-Tangent Iterates"
 
-This repository contains a complete Lean 4 / Mathlib formalization of the paper:
+This repository contains a Lean 4 / Mathlib formalization of substantial
+components of the paper:
 
 > Dean Menezes, *A Noncircular Oval with Convex Unit-Tangent Iterates*
 > (`short_unit_tangent_iterates_repaired_v10.tex` in this repository).
 
-All 627 modules in `UnitTangentIterates/` compile cleanly with **0 `sorry` statements, 0 custom `axiom` declarations, and 0 warnings**. Every theorem depends strictly on the standard Lean 4 / Mathlib foundational axioms (`propext`, `Classical.choice`, `Quot.sound`).
+The repository contains 868 Lean source modules; the unified catalog imports
+all 867 theorem-bearing/support modules. The formalization verifies a sharp
+conditional pipeline and extensive analytic sublemmas without `sorry`
+statements or custom axiom declarations. It does **not** yet prove the paper's
+unconditional main theorem. See `PaperFormalizationManifest.lean` for the
+precise current boundary.
 
 ---
 
@@ -25,7 +31,10 @@ The formalization encompasses all 7 sections of the paper:
 3. **The Translating Hairpin Soliton (Section 3)**:
    * Explicit lower and upper barriers $f_\varepsilon^- \le f \le f_\varepsilon^+$ (`UnitTangentIterates/Barriers.lean`, `UnitTangentIterates/ProfileBarrierBounds.lean`).
    * Monotone operator $\mathcal{P}$, profile existence, and uniform barrier positivity $f \ge \varepsilon^{-1} - \varepsilon > 0$ (`UnitTangentIterates/TranslatingHairpinComplete.lean`, `UnitTangentIterates/HairpinSolitonComplete.lean`).
-   * Smooth boundary extension to $\mathbb{R}$ (`UnitTangentIterates/HairpinODERegularity.lean`).
+   * Interior smoothness and the finite-order relative derivative chain used by
+     the constructed model (`UnitTangentIterates/HairpinODERegularity.lean`,
+     `UnitTangentIterates/ConstructedPeriodizationAllOrders.lean`). The
+     arbitrary-order translator recurrence remains an explicit interface.
    * Rigid horizontal translation $\mathcal{T}(C) = C + (V, 0)$ with $V > 0$ (`UnitTangentIterates/TranslatorTranslation.lean`).
 
 4. **The Two-Cap Model Curves & Asymptotics (Section 4)**:
@@ -48,6 +57,52 @@ The formalization encompasses all 7 sections of the paper:
 7. **Backward Shadowing & Closing Contradiction (Section 7)**:
    * Backward shadowing convergence $X_n \to X_\infty$ and Cauchy tail decay for summable defects (`UnitTangentIterates/BackwardShadowingSchemeComplete.lean`, `UnitTangentIterates/SelectedInverseContractive.lean`, `UnitTangentIterates/MarkedSchemeTheoremCanonical.lean`).
    * Transverse width contradiction gap $C_W + 2d < (2H_0 - d)/\pi$ and exclusion of circles (`UnitTangentIterates/ClosingArgumentComplete.lean`, `UnitTangentIterates/NoncircularClosingComplete.lean`).
+   * Weighted approximate pullback closing at the sharp threshold
+     $K e^{-\beta\,\Delta H}<1$, allowing $K>1$
+     (`UnitTangentIterates/WeightedMarkedDefectThreshold.lean`,
+     `UnitTangentIterates/ApproximatePaperAssemblyResidual.lean`).
+   * Direct selected-inverse range orbit with no auxiliary total forward map
+     (`UnitTangentIterates/DirectMarkedLimitOrbit.lean`,
+     `UnitTangentIterates/ApproximatePaperAssemblySelectedInverse.lean`).
+
+---
+
+## **Current Formalization Boundary**
+
+The following pieces are compiled and are no longer open assumptions:
+
+* Strict geometry for the epsilon-constructed configured model sequence.
+* Linear separation growth and all positivity data needed by closing.
+* Weighted canonical-defect summability under
+  $K e^{-\beta\,\Delta H}<1$, without assuming $K\leq1$.
+* The explicit shadow-tail/start-separation implication for the final gap.
+* The final direct range-orbit argument for the canonical selected inverse,
+  with `T`, `hTB`, and `hTev` removed.
+
+The unconditional main theorem still requires these exact interfaces:
+
+* `ConfiguredApproximateDefectPath.Residual`: configured-edge endpoint
+  identification and uniform path/cost domination.
+* Approximate selected-inverse path transport, continuity of `selInv`, and
+  closed tube invariance.
+* `PhysicalRearKinematicClosureResidual`: closure of the finite normalized
+  steering, inverse-arclength, and exact front/rear identities under marked
+  convergence, including noncollapse of the limiting steering. This residual
+  now constructs the physical component family, which derives the forward
+  unit-tangent range orbit directly; no `RangeProvider` remains.
+* Identification of the uniform width from `ConstructedPulseWidth` with the
+  initial configured front, followed by the explicit large-start threshold in
+  `ConstructedWeightedClosingGap`.
+
+The former interface `ConstructedPeriodizationAllOrders.InteriorCoefficientRecurrenceProvider`
+(arbitrary-order translator coefficient recurrence) is now **discharged**:
+`ConstructedPeriodizationAllOrders.interiorCoefficientRecurrenceProvider`
+(`ConstructedPeriodizationAllOrders.lean:709`) proves it from the shifted
+intrinsic curvature evolution and Harnack bound, with
+`interiorRecurrenceProvider:753` and unconditional
+`exists_constructed_certificate_unconditional:908` for every `eps ≤ 1/10` and
+finite `(r,q)`. Finite orders `0..4` were previously the only hand-derived
+cases; the all-order Faà di Bruno closure is now complete.
 
 ---
 
@@ -60,7 +115,7 @@ The formalization encompasses all 7 sections of the paper:
 ### Verification Commands
 To build and typecheck all modules in the repository:
 ```bash
-# Build the unified catalog of all 627 modules
+# Build the unified catalog of all 867 imported modules
 lake build UnitTangentIterates.AllModules
 
 # Build the paper formalization manifest
@@ -76,7 +131,7 @@ lake build UnitTangentIterates.MasterTheoremAssembly
 
 | Module / Path | Mathematical Content & Purpose |
 | :--- | :--- |
-| [`UnitTangentIterates/AllModules.lean`](UnitTangentIterates/AllModules.lean) | Root target importing and verifying all 627 project modules. |
+| [`UnitTangentIterates/AllModules.lean`](UnitTangentIterates/AllModules.lean) | Root target importing and verifying all 867 other project modules. |
 | [`UnitTangentIterates/PaperFormalizationManifest.lean`](UnitTangentIterates/PaperFormalizationManifest.lean) | 1-to-1 manifest mapping every theorem/lemma in the paper to Lean 4. |
 | [`UnitTangentIterates/MasterTheoremAssembly.lean`](UnitTangentIterates/MasterTheoremAssembly.lean) | Top-level master theorem assembly combining all 7 sections. |
 | [`UnitTangentIterates/UnitTangentIteratesDriver.lean`](UnitTangentIterates/UnitTangentIteratesDriver.lean) | End-to-end pipeline driver for the unit-tangent iteration dynamics. |

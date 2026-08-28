@@ -180,6 +180,10 @@ theorem exists_translating_hairpin_translation {ε : ℝ} (hε : 0 < ε) (hε' :
       (∀ θ ∈ Ioo (0:ℝ) π, (∫ t in θ..(Translator.next f θ), f t) = Real.sin θ) ∧
       (∀ n : ℕ, ContDiffOn ℝ n f (Ioo 0 π)) ∧
       (∀ θ ∈ Ioo (0:ℝ) π,
+        Translator.next f θ - θ = Real.arctan (Real.sin θ / f θ)) ∧
+      (∀ θ ∈ Ioo (0:ℝ) π, HasDerivAt (Translator.next f)
+        ((f θ + Real.cos θ) / f (Translator.next f θ)) θ) ∧
+      (∀ θ ∈ Ioo (0:ℝ) π,
         (Hairpin.hairpinX f θ + Real.cos θ, Hairpin.hairpinZ f θ + Real.sin θ)
           = (Hairpin.hairpinX f (Translator.next f θ) + V,
              Hairpin.hairpinZ f (Translator.next f θ))) := by
@@ -248,7 +252,10 @@ theorem exists_translating_hairpin_translation {ε : ℝ} (hε : 0 < ε) (hε' :
   have hsmooth : ∀ n : ℕ, ContDiffOn ℝ n f (Ioo 0 π) := fun n =>
     (TranslatorSmooth.contDiffOn_of_fixedPoint hcont hg
       (fun θ hθ => hmaps θ hθ) (fun t _ => ne_of_gt (hfpos t)) hsinD hfix n).1
-  refine ⟨f, V, hVpos, hfl, hfu, hcont, hmaps', hU, hsmooth, ?_⟩
+  refine ⟨f, V, hVpos, hfl, hfu, hcont, hmaps', hU, hsmooth, ?_, hg, ?_⟩
+  · intro θ hθ
+    rw [hnext θ hθ]
+    simpa using harctan θ hθ
   intro θ hθ
   have hconst := translator_horizontal_const_on hA hfpos hg heq hmaps hX hθ
   have hZ := heq θ hθ

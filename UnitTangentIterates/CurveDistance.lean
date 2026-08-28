@@ -60,6 +60,25 @@ theorem isBounded_range_of_periodic {E : Type*} [PseudoMetricSpace E] {γ : ℝ 
     Bornology.IsBounded (range γ) :=
   (isCompact_range_of_periodic hγ hper hL).isBounded
 
+/-- **The closing argument, for curves, in the paper's Hausdorff form.**  This
+is the shape in which Theorem `thm:shadow` delivers its conclusion:
+`d_H(X, Q) ≤ d` together with the perimeter estimate.  No pointwise comparison
+of the two parametrizations is required. -/
+theorem not_isCircleOfPerimeter_of_hausdorffDist_range_le {E : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] {X Q : ℝ → E} {LX LQ : ℝ}
+    (hX : Continuous X) (hXper : Periodic X LX) (hLX : 0 < LX)
+    (hQ : Continuous Q) (hQper : Periodic Q LQ) (hLQ : 0 < LQ)
+    {e : E} (he : ‖e‖ = 1) {d Cw H L : ℝ}
+    (hdist : hausdorffDist (range X) (range Q) ≤ d)
+    (hQw : Width.width (range Q) e ≤ Cw)
+    (hL : 2 * H - d ≤ L)
+    (hgap : Cw + 2 * d < (2 * H - d) / Real.pi) :
+    ¬ ClosingArgument.IsCircleOfPerimeter (range X) L :=
+  ClosingArgument.not_isCircleOfPerimeter_of_hausdorffDist_le
+    (range_nonempty X) (range_nonempty Q)
+    (isBounded_range_of_periodic hX hXper hLX)
+    (isBounded_range_of_periodic hQ hQper hLQ) he hdist hQw hL hgap
+
 /-- **The closing argument, for curves.**  If the closed curve `X` stays within
 distance `d` of the closed model curve `Q`, the width of the model in a unit
 direction is at most `C_W`, the perimeter `L` of `X` is at least `2H − d`, and

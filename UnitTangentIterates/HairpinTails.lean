@@ -2,6 +2,7 @@ import Mathlib
 import UnitTangentIterates.Hairpin
 import UnitTangentIterates.HairpinPulse
 import UnitTangentIterates.BarrierEstimates
+import UnitTangentIterates.SecondOrderBounds
 
 /-!
 # Exponential decay of the hairpin curvature in arclength
@@ -48,6 +49,11 @@ variable {f : ℝ → ℝ} {m M : ℝ}
 /-- The half-angle variable `log tan(θ/2)`: the arclength of the model in which
 the tangent angle turns at rate `sin θ`. -/
 def logHalf (θ : ℝ) : ℝ := Real.log (Real.tan (θ / 2))
+
+/-- The isolated hairpin curvature field `sin θ / f θ`.  This is definitionally
+`curvField`, which is declared in a module that already depends
+on this one, so it is restated here rather than imported. -/
+def curvField (f : ℝ → ℝ) (t : ℝ) : ℝ := Real.sin t / f t
 
 theorem hasDerivAt_logHalf {θ : ℝ} (hθ : θ ∈ Ioo (0:ℝ) π) :
     HasDerivAt logHalf (1 / Real.sin θ) θ := by
@@ -120,6 +126,225 @@ theorem sin_le_two_exp {θ : ℝ} (hθ : θ ∈ Ioo (0:ℝ) π) :
   · rw [abs_of_nonpos (Real.log_nonpos hr0.le h), neg_neg, Real.exp_log hr0]
     rw [div_le_iff₀ (by positivity)]
     nlinarith [sq_nonneg r]
+
+/-- A two-sided multiplicative comparison of half-angle coordinates gives the
+same comparison of their sines.  This is the elementary core of the direct
+bounded-shift Harnack estimate. -/
+theorem sin_le_of_tanHalf_comparison {θ ψ E : ℝ}
+    (hθ : θ ∈ Ioo (0 : ℝ) π) (hψ : ψ ∈ Ioo (0 : ℝ) π)
+    (hE : 1 ≤ E)
+    (hforward : Real.tan (θ / 2) ≤ E * Real.tan (ψ / 2))
+    (hbackward : Real.tan (ψ / 2) ≤ E * Real.tan (θ / 2)) :
+    Real.sin θ ≤ E * Real.sin ψ := by
+  have hr : 0 < Real.tan (θ / 2) := tan_half_pos hθ
+  have hq : 0 < Real.tan (ψ / 2) := tan_half_pos hψ
+  have hdenr : 0 < 1 + Real.tan (θ / 2) ^ 2 := by positivity
+  have hdenq : 0 < 1 + Real.tan (ψ / 2) ^ 2 := by positivity
+  rw [sin_eq_tan_half hθ, sin_eq_tan_half hψ, div_le_iff₀ hdenr,
+    show E * (2 * Real.tan (ψ / 2) / (1 + Real.tan (ψ / 2) ^ 2)) *
+        (1 + Real.tan (θ / 2) ^ 2)
+      = E * (2 * Real.tan (ψ / 2)) * (1 + Real.tan (θ / 2) ^ 2) /
+        (1 + Real.tan (ψ / 2) ^ 2) from by ring,
+    le_div_iff₀ hdenq]
+  have h1 : 2 * Real.tan (θ / 2) ≤ E * (2 * Real.tan (ψ / 2)) := by nlinarith
+  have h2 : 2 * Real.tan (θ / 2) * Real.tan (ψ / 2) ^ 2
+      ≤ E * (2 * Real.tan (ψ / 2)) * Real.tan (θ / 2) ^ 2 := by
+    nlinarith [mul_le_mul_of_nonneg_left hbackward
+      (show (0:ℝ) ≤ 2 * Real.tan (θ / 2) * Real.tan (ψ / 2) by positivity)]
+  nlinarith [h1, h2]
+
+/-- Additive control of the logarithmic half-angle variable gives an
+exponential comparison of the sines. -/
+theorem sin_le_exp_of_logHalf_sub_le {θ ψ q : ℝ}
+    (hθ : θ ∈ Ioo (0 : ℝ) π) (hψ : ψ ∈ Ioo (0 : ℝ) π)
+    (hq : 0 ≤ q) (hlog : |logHalf θ - logHalf ψ| ≤ q) :
+    Real.sin θ ≤ Real.exp q * Real.sin ψ := by
+  have hr := tan_half_pos hθ
+  have hs := tan_half_pos hψ
+  have hle := abs_le.mp hlog
+  have hforward : Real.tan (θ / 2) ≤ Real.exp q * Real.tan (ψ / 2) := by
+    have he := Real.exp_le_exp.mpr hle.2
+    rw [Real.exp_sub] at he
+    simp only [logHalf] at he
+    rw [Real.exp_log hr, Real.exp_log hs] at he
+    have hs0 : 0 < Real.tan (ψ / 2) := hs
+    field_simp at he
+    nlinarith
+  have hbackward : Real.tan (ψ / 2) ≤ Real.exp q * Real.tan (θ / 2) := by
+    have he := Real.exp_le_exp.mpr (by linarith [hle.1] :
+      logHalf ψ - logHalf θ ≤ q)
+    rw [Real.exp_sub] at he
+    simp only [logHalf] at he
+    rw [Real.exp_log hs, Real.exp_log hr] at he
+    field_simp at he
+    nlinarith
+  exact sin_le_of_tanHalf_comparison hθ hψ (Real.one_le_exp hq)
+    hforward hbackward
+
+/-- **Direct bounded-shift Harnack comparison for a hairpin curvature.**
+Only the half-angle equation and the two profile barriers are used.  In
+particular this proof does not bound derivatives of the profile at the angle
+endpoints. -/
+theorem curvField_shift_harnack {f theta : ℝ → ℝ} {m M D u v : ℝ}
+    (hm : 0 < m) (hmM : m ≤ M)
+    (hmem : ∀ t, theta t ∈ Ioo (0 : ℝ) π)
+    (htheta : ∀ t, HasDerivAt theta (curvField f (theta t)) t)
+    (hlower : ∀ t, m ≤ f t) (hupper : ∀ t, f t ≤ M)
+    (hD : 0 ≤ D) (huv : |v - u| ≤ D) :
+    curvField f (theta v) ≤
+      (M / m) * Real.exp (D / m) * curvField f (theta u) := by
+  let L : ℝ → ℝ := fun t => logHalf (theta t)
+  have hL : ∀ t, HasDerivAt L (1 / f (theta t)) t := by
+    intro t
+    have h := HairpinPulse.hasDerivAt_log_tan_half (htheta t)
+      (hmem t).1 (hmem t).2
+    have hs : Real.sin (theta t) ≠ 0 :=
+      (Real.sin_pos_of_pos_of_lt_pi (hmem t).1 (hmem t).2).ne'
+    have heq : Real.sin (theta t) / f (theta t) / Real.sin (theta t)
+        = 1 / f (theta t) := by
+      rw [div_div, mul_comm, ← div_div, div_self hs]
+    have h2 : HasDerivAt (fun t => Real.log (Real.tan (theta t / 2)))
+        (1 / f (theta t)) t := by
+      rw [← heq]
+      simpa [curvField] using h
+    simpa [L, logHalf] using h2
+  have hDb : ∀ t, |1 / f (theta t)| ≤ 1 / m := by
+    intro t
+    have hft : 0 < f (theta t) := lt_of_lt_of_le hm (hlower _)
+    rw [abs_of_pos (one_div_pos.mpr hft)]
+    exact one_div_le_one_div_of_le hm (hlower _)
+  have hlog0 := SecondOrderBounds.abs_sub_le_of_deriv_bound hL hDb v u
+  have hlog : |logHalf (theta v) - logHalf (theta u)| ≤ D / m := by
+    dsimp [L] at hlog0
+    calc
+      |logHalf (theta v) - logHalf (theta u)| ≤ (1 / m) * |v - u| := hlog0
+      _ ≤ (1 / m) * D := mul_le_mul_of_nonneg_left huv (by positivity)
+      _ = D / m := by ring
+  have hsin := sin_le_exp_of_logHalf_sub_le (hmem v) (hmem u)
+    (by positivity : 0 ≤ D / m) hlog
+  have hfu0 : 0 < f (theta u) := lt_of_lt_of_le hm (hlower _)
+  have hfv0 : 0 < f (theta v) := lt_of_lt_of_le hm (hlower _)
+  rw [curvField, curvField]
+  rw [div_le_iff₀ hfv0]
+  have hM0 : 0 < M := lt_of_lt_of_le hm hmM
+  have hsin0 : 0 ≤ Real.sin (theta u) :=
+    (Real.sin_pos_of_pos_of_lt_pi (hmem u).1 (hmem u).2).le
+  have hfactor : f (theta u) ≤ (M / m) * f (theta v) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hm]
+    exact mul_le_mul (hupper _) (hlower _) hm.le hM0.le
+  calc
+    Real.sin (theta v) ≤ Real.exp (D / m) * Real.sin (theta u) := hsin
+    _ ≤ ((M / m) * Real.exp (D / m) * Real.sin (theta u) * f (theta v)) /
+        f (theta u) := by
+      rw [le_div_iff₀ hfu0]
+      have hmul := mul_le_mul_of_nonneg_left hfactor
+        (mul_nonneg (Real.exp_nonneg (D / m)) hsin0)
+      nlinarith
+    _ = (M / m) * Real.exp (D / m) *
+        (Real.sin (theta u) / f (theta u)) * f (theta v) := by ring
+
+/-- Localized form of `curvField_shift_harnack`: only the values of the
+profile on the actual angle image are bounded. -/
+theorem curvField_shift_harnack_along_theta
+    {f theta : ℝ → ℝ} {m M D u v : ℝ}
+    (hm : 0 < m) (hmM : m ≤ M)
+    (hmem : ∀ t, theta t ∈ Ioo (0 : ℝ) π)
+    (htheta : ∀ t, HasDerivAt theta (curvField f (theta t)) t)
+    (hlower : ∀ t, m ≤ f (theta t)) (hupper : ∀ t, f (theta t) ≤ M)
+    (hD : 0 ≤ D) (huv : |v - u| ≤ D) :
+    curvField f (theta v) ≤
+      (M / m) * Real.exp (D / m) * curvField f (theta u) := by
+  let L : ℝ → ℝ := fun t => logHalf (theta t)
+  have hL : ∀ t, HasDerivAt L (1 / f (theta t)) t := by
+    intro t
+    have h := HairpinPulse.hasDerivAt_log_tan_half (htheta t)
+      (hmem t).1 (hmem t).2
+    have hs : Real.sin (theta t) ≠ 0 :=
+      (Real.sin_pos_of_pos_of_lt_pi (hmem t).1 (hmem t).2).ne'
+    have heq : Real.sin (theta t) / f (theta t) / Real.sin (theta t)
+        = 1 / f (theta t) := by
+      rw [div_div, mul_comm, ← div_div, div_self hs]
+    have h2 : HasDerivAt (fun t => Real.log (Real.tan (theta t / 2)))
+        (1 / f (theta t)) t := by
+      rw [← heq]
+      simpa [curvField] using h
+    simpa [L, logHalf] using h2
+  have hDb : ∀ t, |1 / f (theta t)| ≤ 1 / m := by
+    intro t
+    have hft : 0 < f (theta t) := lt_of_lt_of_le hm (hlower t)
+    rw [abs_of_pos (one_div_pos.mpr hft)]
+    exact one_div_le_one_div_of_le hm (hlower t)
+  have hlog0 := SecondOrderBounds.abs_sub_le_of_deriv_bound hL hDb v u
+  have hlog : |logHalf (theta v) - logHalf (theta u)| ≤ D / m := by
+    dsimp [L] at hlog0
+    calc
+      |logHalf (theta v) - logHalf (theta u)| ≤ (1 / m) * |v - u| := hlog0
+      _ ≤ (1 / m) * D := mul_le_mul_of_nonneg_left huv (by positivity)
+      _ = D / m := by ring
+  have hsin := sin_le_exp_of_logHalf_sub_le (hmem v) (hmem u)
+    (by positivity : 0 ≤ D / m) hlog
+  have hfu0 : 0 < f (theta u) := lt_of_lt_of_le hm (hlower u)
+  have hfv0 : 0 < f (theta v) := lt_of_lt_of_le hm (hlower v)
+  rw [curvField, curvField]
+  rw [div_le_iff₀ hfv0]
+  have hM0 : 0 < M := lt_of_lt_of_le hm hmM
+  have hsin0 : 0 ≤ Real.sin (theta u) :=
+    (Real.sin_pos_of_pos_of_lt_pi (hmem u).1 (hmem u).2).le
+  have hfactor : f (theta u) ≤ (M / m) * f (theta v) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hm]
+    exact mul_le_mul (hupper u) (hlower v) hm.le hM0.le
+  calc
+    Real.sin (theta v) ≤ Real.exp (D / m) * Real.sin (theta u) := hsin
+    _ ≤ ((M / m) * Real.exp (D / m) * Real.sin (theta u) * f (theta v)) /
+        f (theta u) := by
+      rw [le_div_iff₀ hfu0]
+      have hmul := mul_le_mul_of_nonneg_left hfactor
+        (mul_nonneg (Real.exp_nonneg (D / m)) hsin0)
+      nlinarith
+    _ = (M / m) * Real.exp (D / m) *
+        (Real.sin (theta u) / f (theta u)) * f (theta v) := by ring
+
+/-- The direct half-angle Harnack estimate and the exact translated Frenet
+identity together produce the first relative derivative constant for the
+intrinsic hairpin curvature. -/
+theorem abs_curvFieldDeriv_le_of_translator
+    {f theta Kp sigma : ℝ → ℝ} {m M D A : ℝ}
+    (hm : 0 < m) (hmM : m ≤ M) (hD : 0 ≤ D) (hA0 : 0 ≤ A)
+    (hmem : ∀ t, theta t ∈ Ioo (0 : ℝ) π)
+    (htheta : ∀ t, HasDerivAt theta (curvField f (theta t)) t)
+    (hlower : ∀ t, m ≤ f t) (hupper : ∀ t, f t ≤ M)
+    (hKderiv : ∀ u, HasDerivAt
+      (fun t => curvField f (theta t)) (Kp u) u)
+    (hsigma : ∀ u, HasDerivAt sigma
+      (Real.sqrt (1 + curvField f (theta u) ^ 2)) u)
+    (hsigmaShift : ∀ u, |sigma u - u| ≤ D)
+    (hKA : ∀ u, curvField f (theta u) ≤ A)
+    (htranslated : ∀ u,
+      deriv (fun t => Real.arctan (curvField f (theta t))) u /
+          deriv sigma u
+          + Real.sin (Real.arctan (curvField f (theta u))) =
+        curvField f (theta (sigma u))) :
+    ∀ u, |Kp u| ≤
+      ((1 + A ^ 2) * Real.sqrt (1 + A ^ 2) *
+          ((M / m) * Real.exp (D / m)) + 1 + A ^ 2) *
+        curvField f (theta u) := by
+  let K : ℝ → ℝ := fun u => curvField f (theta u)
+  have hKpos : ∀ u, 0 < K u := fun u => by
+    dsimp [K, curvField]
+    exact div_pos (Real.sin_pos_of_pos_of_lt_pi (hmem u).1 (hmem u).2)
+      (lt_of_lt_of_le hm (hlower _))
+  have hCh0 : 0 ≤ (M / m) * Real.exp (D / m) :=
+    mul_nonneg (div_nonneg (lt_of_lt_of_le hm hmM).le hm.le) (Real.exp_nonneg _)
+  have hshift : ∀ u, K (sigma u) ≤ (M / m) * Real.exp (D / m) * K u := by
+    intro u
+    exact curvField_shift_harnack hm hmM hmem htheta hlower hupper hD
+      (hsigmaShift u)
+  have hevol : ∀ u, Kp u =
+      (1 + K u ^ 2) * Real.sqrt (1 + K u ^ 2) * K (sigma u)
+        - K u - K u ^ 3 := fun u =>
+    HairpinPulse.curvature_deriv_eq_of_translator hKderiv hsigma htranslated u
+  exact HairpinPulse.abs_curvatureDeriv_le_of_shift_harnack hKpos hA0 hCh0
+    hKA hshift hevol
 
 /-! ### Comparison of the two arclengths -/
 

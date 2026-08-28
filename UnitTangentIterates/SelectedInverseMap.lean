@@ -66,6 +66,32 @@ curve to be an admissible member of the tube). -/
 def selInv (kap : ℝ) (p : Data) : Data :=
   if h : ∃ q, IsMarkedSelectedInverse kap p q then h.choose else p
 
+/-- **Weak closed-strip identification of the canonical selected inverse.**
+No positive curvature lower bound is needed here.  Once a marked rear has been
+constructed from the closed-strip steering data, uniqueness identifies it
+with `selInv`; in particular the fallback branch of `selInv` is impossible. -/
+theorem eq_selInv_of_isMarkedSelectedInverse {c kmin dlt kap : ℝ}
+    (hc : 0 < c) (hkap0 : 0 ≤ kap) (hkap1 : kap < 1)
+    {p q : Data} (hp : IsTubeMember c kmin dlt p)
+    (hq : IsMarkedSelectedInverse kap p q) :
+    q = selInv kap p := by
+  have hex : ∃ r, IsMarkedSelectedInverse kap p r := ⟨q, hq⟩
+  rw [selInv, dif_pos hex]
+  exact hq.unique hc hkap0 hkap1 hp hex.choose_spec
+
+/-- Transfer any weak-convex tube certificate for a constructed marked rear
+to the canonical selected inverse.  This is the zero-pinching replacement for
+the final identification step of `selInv_spec`; it deliberately assumes
+neither strict curvature nor injectivity of every steering solution. -/
+theorem selInv_spec_of_markedRear {c kmin dlt kap cR kR dR : ℝ}
+    (hc : 0 < c) (hkap0 : 0 ≤ kap) (hkap1 : kap < 1)
+    {p q : Data} (hp : IsTubeMember c kmin dlt p)
+    (hq : IsMarkedSelectedInverse kap p q)
+    (hqmem : IsTubeMember cR kR dR q) :
+    IsTubeMember cR kR dR (selInv kap p) := by
+  rw [← eq_selInv_of_isMarkedSelectedInverse hc hkap0 hkap1 hp hq]
+  exact hqmem
+
 /-- **The selected inverse of an admissible marked curve is its marked selected
 inverse.** -/
 theorem isMarkedSelectedInverse_selInv {c kmin dlt kap : ℝ} (hc : 0 < c) (hkmin : 0 < kmin)

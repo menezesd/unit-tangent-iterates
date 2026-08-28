@@ -155,6 +155,43 @@ def flowDefectC1Int (ell c0 : ℝ) : ℝ := ell * (Real.exp c0 - Real.exp (-c0))
 first two space derivatives of the field. -/
 def flowDefectC2Int (ell c0 c2 : ℝ) : ℝ := ell ^ 2 * Real.exp (2 * c0) * c2
 
+/-- On a bounded nonnegative cost interval the two exponential flow defects
+are linear in the cost, with explicit uniform coefficients. -/
+theorem flowDefectInt_linear_bounds
+    {ell kappa kappa2 x M : ℝ}
+    (hell : 0 ≤ ell) (hk : 0 ≤ kappa) (hk2 : 0 ≤ kappa2)
+    (hx0 : 0 ≤ x) (hxM : x ≤ M) :
+    flowDefectC1Int ell (kappa * x) ≤
+        (ell * kappa * (Real.exp (kappa * M) + 1)) * x ∧
+      flowDefectC2Int ell (kappa * x) (kappa2 * x) ≤
+        (ell ^ 2 * Real.exp (2 * kappa * M) * kappa2) * x := by
+  have hy0 : 0 ≤ kappa * x := mul_nonneg hk hx0
+  have hyM : kappa * x ≤ kappa * M := mul_le_mul_of_nonneg_left hxM hk
+  have hexp : Real.exp (kappa * x) ≤ Real.exp (kappa * M) :=
+    Real.exp_le_exp.2 hyM
+  have hplus : Real.exp (kappa * x) - 1 ≤
+      (kappa * x) * Real.exp (kappa * M) := by
+    have h1 : (-(kappa * x)) + 1 ≤ Real.exp (-(kappa * x)) := Real.add_one_le_exp _
+    have hpos : (0:ℝ) < Real.exp (kappa * x) := Real.exp_pos _
+    have h2 : Real.exp (-(kappa * x)) * Real.exp (kappa * x) = 1 := by
+      rw [← Real.exp_add]; simp
+    have h3 : Real.exp (kappa * x) - 1 ≤ (kappa * x) * Real.exp (kappa * x) := by
+      nlinarith [mul_le_mul_of_nonneg_right h1 hpos.le, h2]
+    exact h3.trans (mul_le_mul_of_nonneg_left hexp hy0)
+  have hminus : 1 - Real.exp (-(kappa * x)) ≤ kappa * x := by
+    nlinarith [Real.add_one_le_exp (-(kappa * x))]
+  constructor
+  · unfold flowDefectC1Int
+    have hsplit : Real.exp (kappa * x) - Real.exp (-(kappa * x)) =
+        (Real.exp (kappa * x) - 1) + (1 - Real.exp (-(kappa * x))) := by ring
+    rw [hsplit]
+    nlinarith [mul_le_mul_of_nonneg_left (add_le_add hplus hminus) hell]
+  · unfold flowDefectC2Int
+    have he2 : Real.exp (2 * (kappa * x)) ≤ Real.exp (2 * kappa * M) :=
+      Real.exp_le_exp.2 (by nlinarith)
+    simpa only [mul_assoc] using mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_left he2 (sq_nonneg ell)) (mul_nonneg hk2 hx0)
+
 theorem flowDefectC1Int_nonneg {c0 : ℝ} (hell : 0 ≤ ell) (hc0 : 0 ≤ c0) :
     0 ≤ flowDefectC1Int ell c0 := by
   have h : Real.exp (-c0) ≤ Real.exp c0 := Real.exp_le_exp.2 (by linarith)

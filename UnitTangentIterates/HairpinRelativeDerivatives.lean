@@ -90,6 +90,28 @@ theorem contDiff_pulseField (hf : ContDiff ℝ ∞ f) (hfpos : ∀ t, 0 < f t) :
     hsq.sqrt fun t => by positivity
   exact hG.div hs fun t => (sqrt_one_add_sq_pos _).ne'
 
+/-- Finite interior regularity of the curvature field; this is the form used
+by the canonical translator profile, which is smooth on `(0,pi)` but is not
+extended across its endpoint angles. -/
+theorem contDiffOn_curvField_nat {U : Set ℝ}
+    (hf : ∀ n : ℕ, ContDiffOn ℝ (n : ℕ) f U)
+    (hfpos : ∀ t ∈ U, 0 < f t) (n : ℕ) :
+    ContDiffOn ℝ (n : ℕ) (curvField f) U := by
+  exact Real.contDiff_sin.contDiffOn.div (hf n) fun t ht => (hfpos t ht).ne'
+
+/-- Finite interior regularity of the pulse field. -/
+theorem contDiffOn_pulseField_nat {U : Set ℝ}
+    (hf : ∀ n : ℕ, ContDiffOn ℝ (n : ℕ) f U)
+    (hfpos : ∀ t ∈ U, 0 < f t) (n : ℕ) :
+    ContDiffOn ℝ (n : ℕ) (pulseField f) U := by
+  have hG := contDiffOn_curvField_nat hf hfpos n
+  have hsq : ContDiffOn ℝ (n : ℕ) (fun t => 1 + curvField f t ^ 2) U :=
+    contDiffOn_const.add (hG.pow 2)
+  have hs : ContDiffOn ℝ (n : ℕ)
+      (fun t => Real.sqrt (1 + curvField f t ^ 2)) U :=
+    hsq.sqrt fun t _ => by positivity
+  exact hG.div hs fun t _ => (sqrt_one_add_sq_pos _).ne'
+
 /-- The pulse field is `sin δ` for the steering angle `δ = arctan K_*`. -/
 theorem pulseField_eq_sin_arctan (t : ℝ) :
     pulseField f t = Real.sin (Real.arctan (curvField f t)) :=

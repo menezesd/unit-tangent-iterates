@@ -43,6 +43,99 @@ namespace RearOwnFrameDrift
 
 open UniformFrameBounds RearFamilyFrame
 
+/-- Jointly continuous spatial `C²` data for a time-dependent scalar field.
+No time derivative is required. -/
+structure SpatialC2 (xi : ℝ → ℝ → ℝ) where
+  xi1 : ℝ → ℝ → ℝ
+  xi2 : ℝ → ℝ → ℝ
+  deriv1 : ∀ t x, HasDerivAt (xi t) (xi1 t x) x
+  deriv2 : ∀ t x, HasDerivAt (xi1 t) (xi2 t x) x
+  continuous0 : Continuous (uncurry xi)
+  continuous1 : Continuous (uncurry xi1)
+  continuous2 : Continuous (uncurry xi2)
+
+/-- Build the unit-speed gauge frame directly from spatial `C²` data. -/
+theorem exists_gaugeFrameData_unitSpeed_of_spatialC2_bounds
+    {xi : ℝ → ℝ → ℝ} {rL rB : ℝ} (S : SpatialC2 xi)
+    (h1 : ∀ t x, |S.xi1 t x| ≤ rL)
+    (h2 : ∀ t x, |S.xi2 t x| ≤ rB) :
+    ∃ D : GaugeFrameData,
+      (∀ t x, D.v t x = 1) ∧
+      (∀ t x, D.xi t x = xi t x) ∧
+      (∀ t x, D.xi1 t x = S.xi1 t x) ∧
+      (∀ t x, D.xi2 t x = S.xi2 t x) ∧
+      (∀ t x, D.v1 t x = 0) ∧
+      (∀ t x, D.v2 t x = 0) ∧
+      D.rateLip = rL ∧ D.rateBound2 = rB := by
+  refine ⟨{
+      xi := xi
+      xi1 := S.xi1
+      xi2 := S.xi2
+      v := fun _ _ => 1
+      v1 := fun _ _ => 0
+      v2 := fun _ _ => 0
+      rateLip := rL
+      rateBound2 := rB
+      hxi := S.deriv1
+      hxi1 := S.deriv2
+      hv := fun _ x => hasDerivAt_const x (1 : ℝ)
+      hv1 := fun _ x => hasDerivAt_const x (0 : ℝ)
+      hvne := fun _ _ => one_ne_zero
+      hxic := S.continuous0
+      hxi1c := S.continuous1
+      hxi2c := S.continuous2
+      hvc := continuous_const
+      hv1c := continuous_const
+      hv2c := continuous_const
+      hrate1 := fun t x => by simpa [GaugeRate.gaugeRate1] using h1 t x
+      hrate2 := fun t x => by simpa [GaugeRate.gaugeRate2] using h2 t x },
+    fun _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl, fun _ _ => rfl,
+    fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩
+
+/-- Joint `C²` regularity supplies the weaker spatial certificate. -/
+def SpatialC2.ofContDiff {xi : ℝ → ℝ → ℝ}
+    (hxi : ContDiff ℝ (2 : ℕ) (uncurry xi)) : SpatialC2 xi where
+  xi1 := partialX xi
+  xi2 := partialX (partialX xi)
+  deriv1 := hasDerivAt_partialX (hxi.of_le (by norm_num))
+  deriv2 := by
+    apply hasDerivAt_partialX
+    exact contDiff_partialX (n := 1) (by exact_mod_cast hxi)
+  continuous0 := hxi.continuous
+  continuous1 := (contDiff_partialX (n := 1) (by exact_mod_cast hxi)).continuous
+  continuous2 := by
+    have h1 : ContDiff ℝ (1 : ℕ) (uncurry (partialX xi)) :=
+      contDiff_partialX (n := 1) (by exact_mod_cast hxi)
+    exact (contDiff_partialX (n := 0) (by exact_mod_cast h1)).continuous
+
+/-- A continuous stopped clock preserves two spatial derivatives.  No
+regularity of the clock beyond continuity is used. -/
+def SpatialC2.profile {xi : ℝ → ℝ → ℝ} {B w : ℝ → ℝ}
+    (hxi : ContDiff ℝ (2 : ℕ) (uncurry xi))
+    (hB : Continuous B) (hw : Continuous w) :
+    SpatialC2 (fun t x => w t * xi (B t) x) := by
+  let S := SpatialC2.ofContDiff hxi
+  let pair : ℝ × ℝ → ℝ × ℝ := fun p => (B p.1, p.2)
+  have hpair : Continuous pair :=
+    (hB.comp continuous_fst).prodMk continuous_snd
+  refine
+    { xi1 := fun t x => w t * S.xi1 (B t) x
+      xi2 := fun t x => w t * S.xi2 (B t) x
+      deriv1 := ?_
+      deriv2 := ?_
+      continuous0 := ?_
+      continuous1 := ?_
+      continuous2 := ?_ }
+  · intro t x
+    exact (S.deriv1 (B t) x).const_mul (w t)
+  · intro t x
+    exact (S.deriv2 (B t) x).const_mul (w t)
+  · exact (hw.comp continuous_fst).mul (hxi.continuous.comp hpair)
+  · exact (hw.comp continuous_fst).mul (S.continuous1.comp hpair)
+  · exact (hw.comp continuous_fst).mul (S.continuous2.comp hpair)
+
+open UniformFrameBounds RearFamilyFrame
+
 /-! ### Boundedness with a variable period -/
 
 /-- **A jointly continuous function which is periodic in the arclength with a
@@ -207,24 +300,22 @@ tangential component is the given one at every time.  This is what a bound with
 constants *uniform over a family of paths* requires, the constants produced by
 `exists_gaugeFrameData_unitSpeed_drift` depending on the path through the
 compact window of times. -/
-theorem exists_gaugeFrameData_unitSpeed_of_bounds {xi : ℝ → ℝ → ℝ} {rL rB : ℝ}
-    (hxi : ContDiff ℝ (3 : ℕ) (uncurry xi))
+theorem exists_gaugeFrameData_unitSpeed_of_bounds_c2 {xi : ℝ → ℝ → ℝ} {rL rB : ℝ}
+    (hxi : ContDiff ℝ (2 : ℕ) (uncurry xi))
     (h1 : ∀ a x, |partialX xi a x| ≤ rL)
     (h2 : ∀ a x, |partialX (partialX xi) a x| ≤ rB) :
     ∃ D : GaugeFrameData, (∀ a x, D.v a x = 1) ∧ (∀ a x, D.xi a x = xi a x) ∧
       D.rateLip = rL ∧ D.rateBound2 = rB := by
-  have h3le1 : ((1 : ℕ) : WithTop ℕ∞) ≤ ((3 : ℕ) : WithTop ℕ∞) := by
-    exact_mod_cast (by norm_num : (1 : ℕ) ≤ 3)
-  have hxi1 : ContDiff ℝ (1 : ℕ) (uncurry xi) := hxi.of_le h3le1
+  have h2le1 : ((1 : ℕ) : WithTop ℕ∞) ≤ ((2 : ℕ) : WithTop ℕ∞) := by
+    exact_mod_cast (by norm_num : (1 : ℕ) ≤ 2)
+  have hxi1 : ContDiff ℝ (1 : ℕ) (uncurry xi) := hxi.of_le h2le1
   set xiD := partialX xi with hxiDdef
-  have hxiD2 : ContDiff ℝ (2 : ℕ) (uncurry xiD) := by
-    have : ContDiff ℝ ((2 : ℕ) + 1) (uncurry xi) := by exact_mod_cast hxi
+  have hxiD1 : ContDiff ℝ (1 : ℕ) (uncurry xiD) := by
+    have : ContDiff ℝ ((1 : ℕ) + 1) (uncurry xi) := by exact_mod_cast hxi
     exact contDiff_partialX this
-  have hxiD1 : ContDiff ℝ (1 : ℕ) (uncurry xiD) :=
-    hxiD2.of_le (by exact_mod_cast (by norm_num : (1 : ℕ) ≤ 2))
   set xiDD := partialX xiD with hxiDDdef
-  have hxiDD0 : ContDiff ℝ (1 : ℕ) (uncurry xiDD) := by
-    have : ContDiff ℝ ((1 : ℕ) + 1) (uncurry xiD) := by exact_mod_cast hxiD2
+  have hxiDD0 : ContDiff ℝ (0 : ℕ) (uncurry xiDD) := by
+    have : ContDiff ℝ ((0 : ℕ) + 1) (uncurry xiD) := by exact_mod_cast hxiD1
     exact contDiff_partialX this
   exact ⟨{
       xi := xi
@@ -250,12 +341,35 @@ theorem exists_gaugeFrameData_unitSpeed_of_bounds {xi : ℝ → ℝ → ℝ} {rL
       hrate2 := fun a x => by simpa [GaugeRate.gaugeRate2] using h2 a x },
     fun _ _ => rfl, fun _ _ => rfl, rfl, rfl⟩
 
+/-- Backward-compatible `C³` form of `exists_gaugeFrameData_unitSpeed_of_bounds_c2`. -/
+theorem exists_gaugeFrameData_unitSpeed_of_bounds {xi : ℝ → ℝ → ℝ} {rL rB : ℝ}
+    (hxi : ContDiff ℝ (3 : ℕ) (uncurry xi))
+    (h1 : ∀ a x, |partialX xi a x| ≤ rL)
+    (h2 : ∀ a x, |partialX (partialX xi) a x| ≤ rB) :
+    ∃ D : GaugeFrameData, (∀ a x, D.v a x = 1) ∧ (∀ a x, D.xi a x = xi a x) ∧
+      D.rateLip = rL ∧ D.rateBound2 = rB :=
+  exists_gaugeFrameData_unitSpeed_of_bounds_c2
+    (hxi.of_le (by exact_mod_cast (by norm_num : (2 : ℕ) ≤ 3))) h1 h2
+
 /-- **The gauge frame bundle of the family of rear tracks written in its own
 arclength, with the two constants prescribed.**  The variant of
 `exists_gaugeFrameData_frameTangential_drift` whose constants are given in
 advance: the family is not asked to be at rest outside any window, nor its
 tangential component to drift in any particular way, only its two arclength
 derivatives to be bounded. -/
+theorem exists_gaugeFrameData_frameTangential_of_bounds_c2 {Ydot : ℝ → ℝ → ℂ}
+    {psi : ℝ → ℝ → ℝ} {rL rB : ℝ}
+    (hY : ContDiff ℝ (2 : ℕ) (uncurry Ydot)) (hpsi : ContDiff ℝ (2 : ℕ) (uncurry psi))
+    (h1 : ∀ a x, |partialX (frameTangential Ydot psi) a x| ≤ rL)
+    (h2 : ∀ a x, |partialX (partialX (frameTangential Ydot psi)) a x| ≤ rB) :
+    ∃ D : GaugeFrameData, (∀ a x, D.v a x = 1) ∧
+      (∀ a x, D.xi a x = frameTangential Ydot psi a x) ∧
+      D.rateLip = rL ∧ D.rateBound2 = rB :=
+  exists_gaugeFrameData_unitSpeed_of_bounds_c2
+    (RearOwnFrameData.contDiff_frameTangential hY hpsi) h1 h2
+
+/-- Backward-compatible `C³` form of
+`exists_gaugeFrameData_frameTangential_of_bounds_c2`. -/
 theorem exists_gaugeFrameData_frameTangential_of_bounds {Ydot : ℝ → ℝ → ℂ}
     {psi : ℝ → ℝ → ℝ} {rL rB : ℝ}
     (hY : ContDiff ℝ (3 : ℕ) (uncurry Ydot)) (hpsi : ContDiff ℝ (3 : ℕ) (uncurry psi))
@@ -264,7 +378,8 @@ theorem exists_gaugeFrameData_frameTangential_of_bounds {Ydot : ℝ → ℝ → 
     ∃ D : GaugeFrameData, (∀ a x, D.v a x = 1) ∧
       (∀ a x, D.xi a x = frameTangential Ydot psi a x) ∧
       D.rateLip = rL ∧ D.rateBound2 = rB :=
-  exists_gaugeFrameData_unitSpeed_of_bounds
-    (RearOwnFrameData.contDiff_frameTangential hY hpsi) h1 h2
+  exists_gaugeFrameData_frameTangential_of_bounds_c2
+    (hY.of_le (by exact_mod_cast (by norm_num : (2 : ℕ) ≤ 3)))
+    (hpsi.of_le (by exact_mod_cast (by norm_num : (2 : ℕ) ≤ 3))) h1 h2
 
 end RearOwnFrameDrift

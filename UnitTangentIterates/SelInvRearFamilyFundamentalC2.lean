@@ -323,7 +323,8 @@ theorem dist_selInv_le_of_rear_family_fundamental_C2 {p q : Data} (Γ : NormalPa
       (Kx := Kx) (kx := kx) (Rb := Rb) (r := rr) (gS := gS) (Dd := Dd) (d := dd)
       (m := m) (P0 := Pv0)
       Γ hkh0 hkh1 hstrip0 hstrip1 hK hF hΘ hsteer hsfspace hcos hYt hFC hΘC
-      hδC hsfC hYdotC hangC hkC1 hQpos hQd hclose hangper hxi0 hjac hPpos hlink hkappa1
+      hδC hsfC (hYdotC.of_le (by norm_num)) (hangC.of_le (by norm_num))
+      hkC1 hQpos hQd hclose hangper hxi0 hjac hPpos hlink hkappa1
       halphaT hkT halphaTc hkTc halphaTS hmixed hKxbd hKxnn hKxm hkXc hRbd hRbm hr
       hgSd hgSbd hDm hmc hm0 hmstop hmge hnumA hnumK
   ------------------------------------------------------------------

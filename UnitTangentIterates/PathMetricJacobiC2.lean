@@ -61,7 +61,7 @@ theorem exists_variableSpeed_normalPath_of_jacobi {p q p' q' : Data} (Γ : Norma
     ∃ Δ : NormalPath p' q', Δ.T = Γ.T ∧
       IsVariableSpeedNormalPath P0 P1 khat G1 Cg Δ ∧
       cost Δ = jacobiConst CW C0 C1 C2 * cost Γ := by
-  obtain ⟨Δ, hT, hX, hm, hcost⟩ := exists_normalPath_of_jacobi_data Γ hCW hC0 hC1 hC2
+  obtain ⟨Δ, hT, hX, hm, hcost, -⟩ := exists_normalPath_of_jacobi_data Γ hCW hC0 hC1 hC2
     hstart hfinish hderiv hcont hnu hbdd hW hS0 hS1 hS2
   refine ⟨Δ, hT, ?_, hcost⟩
   have hmeq : Δ.m = fun t => jacobiConst CW C0 C1 C2 * Γ.m t := funext hm

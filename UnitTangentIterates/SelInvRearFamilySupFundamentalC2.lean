@@ -353,7 +353,8 @@ theorem dist_selInv_le_of_rear_family_sup_fundamental_C2 {p q : Data} (Γ : Norm
       (kappa2 := rearKappa2 kh) (T := Γ.T)
       (L := perim (SelectedInverseMap.selInv kh q)) (t0 := Γ.T)
       (b := SelectedInverseMap.selInv kh q)
-      Γ.T_pos hellpos hLpos hxiC1 (fun s x => hasDerivAt_partialX hxiC1 s x)
+      Γ.T_pos hellpos hLpos hxiC1.continuous
+      (fun s x => hasDerivAt_partialX hxiC1 s x)
       hpxC1.continuous (fun s x => hasDerivAt_partialX hpxC1 s x) hpxxC1.continuous
       hCbd hC2bd hkhat (rearKappa2_nonneg hkh0 hkh1) hmc hm0 hmstop hPhi0' hPhiflow
       hbmem.hasDerivAt_curve hbmem.hasDerivAt_vel
@@ -370,7 +371,8 @@ theorem dist_selInv_le_of_rear_family_sup_fundamental_C2 {p q : Data} (Γ : Norm
     (g := fun t x => etaF t (sf t x) / Real.cos (δ t (sf t x))) (gS := gS) (Phi := Phi)
     (m := m) (S0 := fun t => Γ.m t / Real.sqrt (1 - kh ^ 2)) (Dd := Dd)
     (ell := rearArclength (δ 0) (P 0)) (kappa := khat) (kappa2 := rearKappa2 kh)
-    Γ.T_pos hellpos hxiC1 (fun s x => hasDerivAt_partialX hxiC1 s x) hpxC1.continuous
+    Γ.T_pos hellpos hxiC1.continuous
+    (fun s x => hasDerivAt_partialX hxiC1 s x) hpxC1.continuous
     (fun s x => hasDerivAt_partialX hpxC1 s x) hpxxC1.continuous hCbd hC2bd hkhat
     (rearKappa2_nonneg hkh0 hkh1) hmc hm0 hmstop hPhi0' hPhiflow hjac hgSd hetabd hgbd
     hgSbd hmge hsupA hsupB

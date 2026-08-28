@@ -1,17 +1,20 @@
 import Mathlib
-import UnitTangentIterates.MarkedSchemeTheorem
+import UnitTangentIterates.MarkedSpace
+import UnitTangentIterates.ShadowingScheme
+import UnitTangentIterates.CurveDistance
 import UnitTangentIterates.UnitTangentSpeed
 
 /-!
 # The closing argument on the marked space, with the orbit taken up to
 reparametrization
 
-`MarkedSchemeTheorem.main_theorem_on_marked_space` states the closing step with
-the orbit condition `𝒯(Xₙ) = X_{n+1}` **as an identity of parametrized curves**.
+An earlier formulation of the closing step stated the orbit condition
+`𝒯(Xₙ) = X_{n+1}` **as an identity of parametrized curves**.
 By `UnitTangentSpeed.not_isOval_unitTangentMap`, that identity is incompatible
 with `Xₙ` and `X_{n+1}` both being parametrized by arclength: the transform of a
 unit-speed curve of curvature `k` has speed `√(1 + k²) > 1`.  Statements
-combining the two are therefore vacuous.
+combining the two are therefore vacuous, and the vacuous versions have been
+removed from this project.
 
 The geometrically correct condition, which is the one the paper uses, is that
 the two curves have the same **image**:
@@ -20,7 +23,7 @@ the two curves have the same **image**:
 
 i.e. `X (n+1)` is the arclength reparametrization of `𝒯 (X n)`.  That condition
 is satisfiable — see `UnitTangentSpeed.exists_range_orbit_of_ovals` — and this
-file re-runs the closing argument of `MarkedSchemeTheorem.lean` with it.
+file runs the closing argument with it.
 -/
 
 noncomputable section
@@ -38,9 +41,9 @@ defects, perimeter `2H` and width at most `C_W`, produce a sequence of ovals
 `Xₙ` with `range (X (n+1)) = range (𝒯 (X n))` whose initial member is not a
 circle.
 
-Unlike `main_theorem_on_marked_space`, whose hypotheses are contradictory (see
-`UnitTangentSpeed.not_isOval_unitTangentMap`), the hypotheses here are
-consistent. -/
+Unlike the removed vacuous formulations, whose orbit hypotheses were
+contradictory (see `UnitTangentSpeed.not_isOval_unitTangentMap`), the
+hypotheses here are consistent. -/
 theorem main_theorem_on_marked_space_range {c kmin delta : ℝ} (hc : 0 < c) (hkmin : 0 < kmin)
     (hdelta : 0 < delta)
     {B T : tube c kmin delta → tube c kmin delta} {Q : ℕ → tube c kmin delta} {e : ℕ → ℝ}

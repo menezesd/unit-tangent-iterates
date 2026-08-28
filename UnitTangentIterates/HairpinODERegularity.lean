@@ -4,10 +4,10 @@ import UnitTangentIterates.ProfileExtension
 import UnitTangentIterates.Barriers
 
 /-!
-# Smooth boundary extension of the translating hairpin profile
+# A staged smooth boundary extension interface
 
-This file formalizes the smooth boundary regularity and extension of the
-hairpin profile `f` across the endpoints `θ = 0` and `θ = π`.
+This file records the analytic interfaces needed to extend a hairpin profile
+across the endpoints `θ = 0` and `θ = π`.
 
 The profile satisfies the second-order ODE:
 ```
@@ -17,11 +17,13 @@ Because the profile is uniformly bounded below away from zero
 (`ProfileBarrierBounds.profile_pos_of_lower_barrier`: `f(θ) ≥ ε⁻¹ - ε > 0`),
 the nonlinearity `y ↦ y⁻³ - y` is smooth on the domain `y > 0`.
 
-Consequently, the local solution extends to a smooth positive solution on an
-open neighbourhood `(-r, π + r)` for some `r > 0`, and
+`ProfileODE.abs_second_le` proves the first quantitative implication of this
+ODE: positive lower and upper barriers bound `f''`.  Once a smooth positive
+continuation to an open neighbourhood `(-r, π + r)` has been established,
 `ProfileExtension.exists_contDiff_pos_extension_pi` provides a smooth positive
 extension `F : ℝ → ℝ` with `ContDiff ℝ ∞ F`, `F > 0` on `ℝ`, and `F = f` on
-`[0, π]`.
+`[0, π]`.  The construction of that neighbourhood continuation from the
+translator fixed-point equation is not asserted here.
 
 Main theorems:
 * `exists_smooth_positive_hairpin_extension` — the full smooth positive extension
@@ -35,6 +37,45 @@ open Set Metric
 open scoped ContDiff
 
 namespace HairpinODERegularity
+
+/-- The interior autonomous ODE satisfied by the translator profile, with
+explicit first- and second-derivative witnesses.  This declaration was
+previously referenced by the formalization manifest but had not actually been
+defined. -/
+structure ProfileODE (f fp fpp : ℝ → ℝ) (U : Set ℝ) : Prop where
+  first_deriv : ∀ x ∈ U, HasDerivAt f (fp x) x
+  second_deriv : ∀ x ∈ U, HasDerivAt fp (fpp x) x
+  equation : ∀ x ∈ U, fpp x + f x = (f x)⁻¹ ^ 3
+
+namespace ProfileODE
+
+/-- Positive lower and upper barriers make the right side of
+`f'' = f⁻³ - f` uniformly bounded.  This is the quantitative input for proving
+that `f'` is uniformly Lipschitz up to the two endpoints. -/
+theorem abs_second_le {f fp fpp : ℝ → ℝ} {U : Set ℝ} {m M : ℝ}
+    (d : ProfileODE f fp fpp U) (hm : 0 < m)
+    (hlower : ∀ x ∈ U, m ≤ f x) (hupper : ∀ x ∈ U, f x ≤ M) :
+    ∀ x ∈ U, |fpp x| ≤ M + m⁻¹ ^ 3 := by
+  intro x hx
+  have hfxm := hlower x hx
+  have hfxM := hupper x hx
+  have hfx0 : 0 < f x := lt_of_lt_of_le hm hfxm
+  have hM0 : 0 < M := lt_of_lt_of_le hfx0 hfxM
+  have hinv : (f x)⁻¹ ≤ m⁻¹ := by
+    exact (inv_le_inv₀ hfx0 hm).2 hfxm
+  have hinv0 : 0 ≤ (f x)⁻¹ := inv_nonneg.mpr hfx0.le
+  have him0 : 0 ≤ m⁻¹ := inv_nonneg.mpr hm.le
+  have hcub : (f x)⁻¹ ^ 3 ≤ m⁻¹ ^ 3 := by
+    exact pow_le_pow_left₀ hinv0 hinv 3
+  have heq : fpp x = (f x)⁻¹ ^ 3 - f x := by
+    linarith [d.equation x hx]
+  rw [heq, abs_le]
+  constructor
+  · have : 0 ≤ (f x)⁻¹ ^ 3 := pow_nonneg hinv0 3
+    nlinarith
+  · nlinarith [pow_nonneg him0 3]
+
+end ProfileODE
 
 /-- **Full smooth positive extension of the hairpin profile to the line.**
 Given a profile `f` bounded below by the barrier `f_ε⁻` for `0 < ε ≤ 1/10` and

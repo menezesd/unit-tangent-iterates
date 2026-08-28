@@ -1,12 +1,12 @@
 import Mathlib
 import UnitTangentIterates.GeometricLimit
-import UnitTangentIterates.MainTheoremConditional
+import UnitTangentIterates.Oval
 
 /-!
 # The space of marked curves: a concrete complete tube of ovals
 
 The shadowing scheme of *A Noncircular Oval with Convex Unit-Tangent Iterates*
-(`ShadowingScheme.lean`, `MainTheoremScheme.lean`) is run in a **complete
+(`ShadowingScheme.lean`) is run in a **complete
 metric space of marked curves**: a tube of closed convex curves, compared in
 one common periodic parameter with the `C²` distance of the marked geometric
 topology.  `MarkedTopology.lean` formalizes the functionals of that topology
@@ -41,8 +41,8 @@ Main results:
 * `isOval_ev` : **every member of the tube is an oval**, once reparametrized by
   arclength — the tube really is a space of ovals.
 
-Together these provide, for the abstract hypotheses of
-`MainTheoremScheme.main_theorem_of_scheme`, the complete space of marked ovals
+Together these provide, for the abstract hypotheses of the shadowing scheme,
+the complete space of marked ovals
 with its Lipschitz evaluation and perimeter.  What is still not constructed
 here is the selected inverse `B` on this space.
 -/
@@ -304,10 +304,10 @@ theorem periodic_ev {c kmin delta : ℝ} (hc : 0 < c) {p : Data}
   simp only [ev, h]
   exact hp.periodic (s / perim p)
 
-/-- Reparametrizing by arclength does not change the image of the curve. -/
-theorem range_ev {c kmin delta : ℝ} (hc : 0 < c) {p : Data}
-    (hp : IsTubeMember c kmin delta p) : range (ev p) = range (⇑p.1) := by
-  have hLpos : 0 < perim p := perim_pos hc hp
+/-- Reparametrizing by arclength does not change the image of the curve.  Only
+nondegeneracy of the perimeter is used. -/
+theorem range_ev_of_perim_ne_zero {p : Data} (hp : perim p ≠ 0) :
+    range (ev p) = range (⇑p.1) := by
   ext z
   constructor
   · rintro ⟨s, rfl⟩
@@ -315,7 +315,12 @@ theorem range_ev {c kmin delta : ℝ} (hc : 0 < c) {p : Data}
   · rintro ⟨u, rfl⟩
     refine ⟨u * perim p, ?_⟩
     simp only [ev]
-    rw [mul_div_assoc, div_self (ne_of_gt hLpos), mul_one]
+    rw [mul_div_assoc, div_self hp, mul_one]
+
+/-- Reparametrizing by arclength does not change the image of the curve. -/
+theorem range_ev {c kmin delta : ℝ} (hc : 0 < c) {p : Data}
+    (hp : IsTubeMember c kmin delta p) : range (ev p) = range (⇑p.1) :=
+  range_ev_of_perim_ne_zero (ne_of_gt (perim_pos hc hp))
 
 /-- **Every member of the tube is an oval.**  Reparametrized by arclength, a
 marked curve of the tube is a closed embedded curve of unit speed and positive

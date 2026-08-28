@@ -134,6 +134,105 @@ theorem norm_sub_ge_of_close {g V : ℝ → ℂ} {c d0 : ℝ}
       _ = ‖(∫ w in y..x, (V w - V y)) + (x - y) • V y‖ := by rw [add_comm]
   linarith
 
+/-- **Quantitative stability of a prescribed chord constant.**  The near
+diagonal is controlled by the speed and a velocity modulus, while away from
+the diagonal the old chord estimate absorbs the uniform positional error. -/
+theorem chord_arc_stable {g₀ g V : ℝ → ℂ} {c d₀ dlt rho eps : ℝ}
+    (hg : ∀ u, HasDerivAt g (V u) u) (hVc : Continuous V)
+    (hVper : Periodic V 1) (hgper : Periodic g 1)
+    (hspeed : ∀ u, c ≤ ‖V u‖)
+    (hunif : ∀ x y, |x - y| ≤ rho → ‖V x - V y‖ ≤ c / 2)
+    (hbase : ∀ u ∈ Icc (0 : ℝ) 1, ∀ v ∈ Icc (0 : ℝ) 1,
+      d₀ * MarkedSpace.cyc u v ≤ ‖g₀ u - g₀ v‖)
+    (hclose : ∀ u, ‖g u - g₀ u‖ ≤ eps)
+    (hrho : 0 < rho) (hrhohalf : rho ≤ 1 / 2)
+    (hdlt0 : 0 ≤ dlt) (hdltc : dlt ≤ c / 2)
+    (hmargin : 2 * eps ≤ (d₀ - dlt) * rho) :
+    ∀ u ∈ Icc (0 : ℝ) 1, ∀ v ∈ Icc (0 : ℝ) 1,
+      dlt * MarkedSpace.cyc u v ≤ ‖g u - g v‖ := by
+  intro u hu v hv
+  by_cases hfar : rho ≤ MarkedSpace.cyc u v
+  · have hb := hbase u hu v hv
+    have herr : ‖g₀ u - g₀ v‖ ≤ ‖g u - g v‖ + 2 * eps := by
+      calc
+        ‖g₀ u - g₀ v‖ = ‖(g₀ u - g u) + (g u - g v) + (g v - g₀ v)‖ := by congr 1 <;> ring
+        _ ≤ ‖g₀ u - g u‖ + ‖g u - g v‖ + ‖g v - g₀ v‖ := by
+          exact (norm_add_le (g₀ u - g u + (g u - g v)) (g v - g₀ v)).trans
+            (add_le_add_left (norm_add_le (g₀ u - g u) (g u - g v)) ‖g v - g₀ v‖)
+        _ ≤ eps + ‖g u - g v‖ + eps := by
+          gcongr
+          · simpa [norm_sub_rev] using hclose u
+          · exact hclose v
+        _ = ‖g u - g v‖ + 2 * eps := by ring
+    have hcyc0 := cyc_nonneg hu hv
+    have heps0 : 0 ≤ eps := (norm_nonneg (g u - g₀ u)).trans (hclose u)
+    have hcoef0 : 0 ≤ d₀ - dlt := by
+      by_contra hcoef
+      have hmneg : (d₀ - dlt) * rho < 0 :=
+        mul_neg_of_neg_of_pos (lt_of_not_ge hcoef) hrho
+      linarith
+    have hgap : 2 * eps ≤ (d₀ - dlt) * MarkedSpace.cyc u v := by
+      exact hmargin.trans (mul_le_mul_of_nonneg_left hfar hcoef0)
+    linarith
+  · have hnear : MarkedSpace.cyc u v < rho := lt_of_not_ge hfar
+    rw [MarkedSpace.cyc] at hnear ⊢
+    have habsle : |u - v| ≤ 1 := by
+      rw [abs_le]
+      constructor <;> linarith [hu.1, hu.2, hv.1, hv.2]
+    have hwrapnonneg : 0 ≤ 1 - |u - v| := by linarith
+    rcases le_or_gt |u - v| (1 - |u - v|) with hdir | hwrap
+    · rw [min_eq_left hdir] at hnear ⊢
+      exact (mul_le_mul_of_nonneg_right hdltc (abs_nonneg _)).trans
+        (norm_sub_ge_of_close hg hVc hspeed hunif u v hnear.le)
+    · rw [min_eq_right hwrap.le] at hnear ⊢
+      rcases le_total u v with huv | huv
+      · have habs : |u - v| = v - u := by rw [abs_sub_comm]; exact abs_of_nonneg (by linarith)
+        have hshift : |u + 1 - v| = 1 - |u - v| := by
+          rw [habs, abs_of_nonneg (by linarith [hu.1, hv.2] : 0 ≤ u + 1 - v)]
+          ring
+        have hn := norm_sub_ge_of_close hg hVc hspeed hunif (u + 1) v (by
+          rw [hshift]; exact hnear.le)
+        rw [hshift, hgper u] at hn
+        exact (mul_le_mul_of_nonneg_right hdltc hwrapnonneg).trans hn
+      · have habs : |u - v| = u - v := abs_of_nonneg (by linarith)
+        have hshift : |u - (v + 1)| = 1 - |u - v| := by
+          rw [abs_of_nonpos (by linarith [hv.1, hu.2] : u - (v + 1) ≤ 0), habs]
+          ring
+        have hn := norm_sub_ge_of_close hg hVc hspeed hunif u (v + 1) (by
+          rw [hshift]; exact hnear.le)
+        rw [hshift, hgper v] at hn
+        exact (mul_le_mul_of_nonneg_right hdltc hwrapnonneg).trans hn
+
+/-- Acceleration-bounded form of `chord_arc_stable`. -/
+theorem chord_arc_stable_of_acc_bound
+    {g₀ g V Afield : ℝ → ℂ} {c A d₀ dlt rho eps : ℝ}
+    (hg : ∀ u, HasDerivAt g (V u) u)
+    (hVd : ∀ u, HasDerivAt V (Afield u) u)
+    (hVper : Periodic V 1) (hgper : Periodic g 1)
+    (hspeed : ∀ u, c ≤ ‖V u‖) (hAbd : ∀ u, ‖Afield u‖ ≤ A)
+    (hbase : ∀ u ∈ Icc (0 : ℝ) 1, ∀ v ∈ Icc (0 : ℝ) 1,
+      d₀ * MarkedSpace.cyc u v ≤ ‖g₀ u - g₀ v‖)
+    (hclose : ∀ u, ‖g u - g₀ u‖ ≤ eps)
+    (hA0 : 0 ≤ A) (hrho : 0 < rho) (hrhohalf : rho ≤ 1 / 2)
+    (hArho : A * rho ≤ c / 2) (hdlt0 : 0 ≤ dlt)
+    (hdltc : dlt ≤ c / 2) (hmargin : 2 * eps ≤ (d₀ - dlt) * rho) :
+    ∀ u ∈ Icc (0 : ℝ) 1, ∀ v ∈ Icc (0 : ℝ) 1,
+      dlt * MarkedSpace.cyc u v ≤ ‖g u - g v‖ := by
+  have hVc : Continuous V :=
+    continuous_iff_continuousAt.mpr fun u => (hVd u).continuousAt
+  have hunif : ∀ x y, |x - y| ≤ rho → ‖V x - V y‖ ≤ c / 2 := by
+    intro x y hxy
+    have hLip := Convex.norm_image_sub_le_of_norm_deriv_le
+      (fun z _ => (hVd z).differentiableAt)
+      (fun z _ => by rw [(hVd z).deriv]; exact hAbd z) convex_univ
+      (Set.mem_univ x) (Set.mem_univ y)
+    have hnorm : ‖y - x‖ ≤ rho := by
+      simpa [Real.norm_eq_abs, abs_sub_comm] using hxy
+    simpa [norm_sub_rev] using
+      hLip.trans ((mul_le_mul_of_nonneg_left hnorm hA0).trans hArho)
+  exact chord_arc_stable hg hVc hVper hgper hspeed hunif hbase hclose
+    hrho hrhohalf hdlt0 hdltc hmargin
+
 /-- Away from the diagonal the chord is bounded below: on the compact set of
 pairs of parameters in `[0,1]` at cyclic distance at least `eps`, the
 continuous function `‖g u − g v‖` is positive, hence has a positive minimum. -/
