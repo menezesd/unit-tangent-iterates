@@ -7,7 +7,7 @@ import UnitTangentIterates.FiniteSmoothRearFamilyMarkingAwareCompositionInitialN
 
 noncomputable section
 
-set_option maxHeartbeats 0
+set_option maxHeartbeats 2000000
 
 open Function Set MarkedSpace PathMetric
 
@@ -286,18 +286,60 @@ theorem exists_phaseNormalizedSuccessor
       H n).frontData_eq, H.terminalFront_eq_phase n]
     exact (SelectedInverseShiftEquivariance.perim_shiftData hinitial
       (H.terminalFront_phase n)).symm
-  have hN :=
-    FiniteSmoothRearFamilyMarkingAwareCompositionInitialNormalization.ChosenPath.exists_phaseNormalizedCompositionSuccessor W
+  have hP0one : edgeSourceP0 (D J.scalar) q ≤ 1 := by
+    have hkh := analyticKhat_nonnegative (D J.scalar)
+    have hR : 0 ≤ GaugeRearFamilyFromFront.rearDriftConst
+        (edgeSpeedCap (D J.scalar) q) sourceKh :=
+      GaugeRearFamilyFromFront.rearDriftConst_nonneg
+        (edgeSpeedCap_nonnegative (D J.scalar) q)
+        sourceKh_nonnegative sourceKh_lt_one
+    have hInv : 1 ≤ 1 / edgeSourceP0 (D J.scalar) q := by
+      have h := ConfiguredRecursiveEdgeSourceP0.numerical_A (D J.scalar) q
+      nlinarith [mul_nonneg hkh hR]
+    have hp := edgeSourceP0_pos (D J.scalar) q
+    have h := (le_div_iff₀ hp).mp hInv
+    simpa using h
+  have hPl : ∀ t, edgeSourceP0 (D J.scalar) q ≤
+      FiniteSmoothRearFamilyMarkingAwareSuccessorFront.period A t := by
+    intro t
+    have hdelta : Continuous (A.delta t) :=
+      Differentiable.continuous fun s ↦ (A.steering t s).differentiableAt
+    have hcos : ∀ s, Real.sqrt (1 - sourceKh ^ 2) ≤
+        Real.cos (A.delta t s) := fun s ↦
+      Shadowing.cos_ge_of_mem_strip
+        (A.strip_nonnegative t s) (A.strip_le t s)
+    have hrear : Real.sqrt (1 - sourceKh ^ 2) * A.P t ≤
+        FiniteSmoothRearFamilyMarkingAwareSuccessorFront.period A t :=
+      ArclengthInverse.rearArclength_ge hdelta hcos (A.period_pos t).le
+    have hscale : 1 ≤ Real.sqrt (1 - sourceKh ^ 2) * A.P t := by
+      simpa [A, khRow] using H.frontPeriodScaleOne (n + 1) t
+    exact hP0one.trans (hscale.trans hrear)
+  have hPu : ∀ t, FiniteSmoothRearFamilyMarkingAwareSuccessorFront.period A t ≤
+      (H.slice (n + 1)).periodUpper := by
+    intro t
+    have hdelta : Continuous (A.delta t) :=
+      Differentiable.continuous fun s ↦ (A.steering t s).differentiableAt
+    exact (ArclengthInverse.rearArclength_le_of_period hdelta
+      (A.period_pos t).le).trans (by
+        simpa [A] using (H.slice (n + 1)).period_upper t)
+  exact
+    FiniteSmoothRearFamilyMarkingAwareCompositionInitialNormalization.ChosenPath.exists_phaseNormalizedCompositionSuccessor
+    (A := A) (periodLower := edgeSourceP0 (D J.scalar) q)
+    (periodUpper := (H.slice (n + 1)).periodUpper)
+    (kap := sourceKh) (khatNext := pathKhat J.scalar)
+    (QmaxNext := edgeSpeedCap (D J.scalar) q)
+    (Md := (H.sidecars (n + 1)).selection.Md)
+    (MP := (H.sidecars (n + 1)).selection.MP)
+    (rear := R.presented) (frontData := R.terminalInput.frontData) W
     (edgeSourceP0_pos (D J.scalar) q)
     sourceKh_nonnegative sourceKh_lt_one
-    (H.slice (n + 1)).period_lower (H.slice (n + 1)).period_upper
+    hPl hPu
     (H.sidecars (n + 1)).selection.normalizedCurvatureTime_le
     (H.sidecars (n + 1)).selection.periodTime_le
     (compositionScalar J H n)
     R.output.frontKinematics hcF hfront
     R.terminalInput.physical.cq_pos R.terminalInput.zero_floor_tube
     (-(H.terminalFront_phase n)) hF hP
-  simpa [q, W, A, R] using hN
 
 /-- The canonical choice of the exact phase-normalized successor. -/
 noncomputable def phaseNormalizedSuccessor

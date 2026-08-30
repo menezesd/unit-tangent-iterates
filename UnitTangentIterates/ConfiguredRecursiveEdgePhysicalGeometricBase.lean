@@ -121,6 +121,13 @@ noncomputable def base
   pathEndRange n := (initial_range_baseCurrent J
     (K0 := K0) (K1 := K1) (K2 := K2) (n + 1)).symm
 
+/-- The geometric base retains the complete shifted physical initial datum. -/
+@[simp] theorem base_initial
+    (J : ConfiguredRecursiveEdgeSourceP0RowJetTail.RowJetScalarOutput MA NA)
+    {K0 K1 K2 : ℝ} (n : ℕ) :
+    (base J (K0 := K0) (K1 := K1) (K2 := K2)).initial n =
+      ConfiguredRecursiveEdgePhysicalInitialData.initial J.scalar n := rfl
+
 /-- All analytic, terminal-range, cost, and composition budgets on the
 transition-free physical base. -/
 noncomputable def invariant

@@ -68,14 +68,10 @@ structure PresentedInput (S : Stage P0 kh khat Qmax j) where
   bound : ℝ
   terminal : PresentedTerminalInputCore
     (p := S.displayed) (base := base) (bound := bound) S.applied
+  output : PresentedOutputCore S.applied terminal
   path_time_one : S.Gamma.T = 1
 
 namespace PresentedInput
-
-/-- Choose the theorem-produced presented output on the native stage. -/
-noncomputable def output (B : PresentedInput S) :
-    PresentedOutputCore S.applied B.terminal :=
-  Classical.choice (exists_presentedOutputCore S.applied B.terminal)
 
 /-- Native geometric input assembled without a dependent stage cast. -/
 noncomputable def geometricInput (B : PresentedInput S) : GeometricInput S where

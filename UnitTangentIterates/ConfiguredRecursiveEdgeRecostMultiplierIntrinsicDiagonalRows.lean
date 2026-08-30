@@ -23,15 +23,20 @@ open ConfiguredRecursiveEdgeRecostMultiplierDiagonalRows
   FiniteSmoothRearFamilyMarkingAwareActualPullbackStages
   FiniteSmoothRearFamilyMarkingAwareAppliedSource
 
-/-- A stage together with the exact scalar parameters occurring in its source
- type. -/
+/-- A stage together with its intrinsic profile/index type and the three
+scalar values used by the configured recursive contracts.  Keeping those
+contracts separate lets the physical base retain its canonical stage type. -/
 structure Node where
   P0 : ℝ
   khat : ℝ
   Qmax : ℝ
-  stage : Stage (fun _ => P0)
-    (fun _ => ConfiguredCombinedPhysicalDiagonalLargeSeparation.sourceKh)
-    (fun _ => khat) (fun _ => Qmax) 0
+  stageP0 : ℕ → ℝ
+  stageKhat : ℕ → ℝ
+  stageQmax : ℕ → ℝ
+  stageIndex : ℕ
+  stage : Stage stageP0
+    (fun _ ↦ ConfiguredCombinedPhysicalDiagonalLargeSeparation.sourceKh)
+    stageKhat stageQmax stageIndex
 
 /-- One diagonal step.  The displayed metric row is `n`; the recursive source
 comes from predecessor row `n+1`. -/
@@ -68,6 +73,10 @@ noncomputable def next
   P0 := I.targetP0 n
   khat := I.targetKhat n
   Qmax := I.targetQmax n
+  stageP0 := fun _ ↦ I.targetP0 n
+  stageKhat := fun _ ↦ I.targetKhat n
+  stageQmax := fun _ ↦ I.targetQmax n
+  stageIndex := 0
   stage :=
     { start := (S (n + 1)).stage.displayed
       rear := (I.pre (n + 1)).geometric.output.jets.rear

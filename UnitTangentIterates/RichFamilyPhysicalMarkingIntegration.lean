@@ -1,5 +1,6 @@
 import UnitTangentIterates.RowwiseNormalizedMarkingGeometryBounds
 import UnitTangentIterates.ConfiguredFinitePullbackPhysicalRearKinematics
+import UnitTangentIterates.CurvatureFromMarkedDistance
 import UnitTangentIterates.VariableMarkedTubeLocalStability
 
 /-!
@@ -14,7 +15,7 @@ rowwise marked-distance radius.
 
 noncomputable section
 
-open Filter Topology MarkedSpace
+open Filter Topology MarkedSpace CurvatureFromMarkedDistance
 
 namespace RichFamilyPhysicalMarkingIntegration
 
@@ -58,6 +59,27 @@ theorem endpoint_acc
       norm_add_le _ _
     _ ≤ R.r n + R.Ab n := add_le_add hdiff (R.physical_acc n k u)
     _ = R.Ab n + R.r n := add_comm _ _
+
+/-- A common positive speed floor converts the row acceleration ceiling into
+an absolute curvature ceiling. -/
+theorem abs_dataCurv_le
+    {B P : ℕ → ℕ → Data} {cb db : ℝ}
+    (R : PhysicalRowBounds B P cb db) (hcb : 0 < cb)
+    (n k : ℕ) (u : ℝ) :
+    |dataCurv (B n k) u| ≤ R.Ab n / cb ^ 2 := by
+  have hp := R.physical_tube n k
+  have hspeed : cb ≤ ‖(B n k).2.1 u‖ := hp.speed_lb u
+  have hspeed_pos : 0 < ‖(B n k).2.1 u‖ := lt_of_lt_of_le hcb hspeed
+  have hsq : cb ^ 2 ≤ ‖(B n k).2.1 u‖ ^ 2 := by
+    nlinarith [mul_nonneg (sub_nonneg.mpr hspeed)
+      (add_nonneg (norm_nonneg ((B n k).2.1 u)) hcb.le)]
+  apply (le_div_iff₀ (pow_pos hcb 2)).2
+  calc
+    |dataCurv (B n k) u| * cb ^ 2 ≤
+        |dataCurv (B n k) u| * ‖(B n k).2.1 u‖ ^ 2 :=
+      mul_le_mul_of_nonneg_left hsq (abs_nonneg _)
+    _ = ‖(B n k).2.2 u‖ := (norm_acc_eq hp hspeed_pos).symm
+    _ ≤ R.Ab n := R.physical_acc n k u
 
 end PhysicalRowBounds
 

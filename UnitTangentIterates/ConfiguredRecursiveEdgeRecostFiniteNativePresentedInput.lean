@@ -56,7 +56,7 @@ variable {I : ConfiguredRecursiveEdgeRecostFiniteIntrinsicStepAssembly.InputData
 def recursive (B : BoundaryFacts I n bound) :=
   Input.recursive (I.analytic n) B.recursiveFacts
 
-noncomputable def geometry (B : BoundaryFacts I n bound) :
+private noncomputable def rawGeometry (B : BoundaryFacts I n bound) :
     PresentedTerminalGeometry (I.analytic n).source (I.step.nextApplied n) :=
   Classical.choice
     (RecursiveAnalyticSuccessor.exists_presentedTerminalGeometry_of_spatial
@@ -66,6 +66,15 @@ noncomputable def geometry (B : BoundaryFacts I n bound) :
       ((I.analytic n).composition_d2
         ((I.analytic n).source.rear_period_le 0))
       (I.step.targetQmax n) (I.analytic n).source.rear_period_le)
+
+noncomputable def geometry (B : BoundaryFacts I n bound) :
+    PresentedTerminalGeometry (I.analytic n).source (I.step.nextApplied n) :=
+  { B.rawGeometry with
+    Lmax := I.step.targetQmax n
+    period_le := (I.analytic n).source.rear_period_le }
+
+@[simp] theorem geometry_Lmax (B : BoundaryFacts I n bound) :
+    B.geometry.Lmax = I.step.targetQmax n := rfl
 
 private theorem frame_speed_one_zero
     {p q : Data} {Gamma : NormalPath p q}
@@ -137,15 +146,32 @@ def inputs (B : BoundaryFacts I n bound) :
 def terminal (B : BoundaryFacts I n bound) :=
   B.inputs.toPresentedTerminalInputCore
 
-def presentedInput (B : BoundaryFacts I n bound) :
+noncomputable def presentedInput (B : BoundaryFacts I n bound) :
     PresentedInput (I.step.next n).stage where
   base := B.geometry.presented
   bound := bound
   terminal := B.terminal
+  output := Classical.choice
+    (FiniteSmoothRearFamilyMarkingAwareChosenTerminal.exists_presentedOutputCore
+      (I.step.next n).stage.applied B.terminal)
   path_time_one := (I.pre (n + 1)).time_one
 
 noncomputable def core (B : BoundaryFacts I n bound) :
     Core (I.step.next n).stage := B.presentedInput.core
+
+/-- Terminal source curvature remains nonnegative at the reconstructed
+presented core's normalized terminal time. -/
+theorem presentedCore_terminalCurvature_nonnegative
+    (B : BoundaryFacts I n bound) :
+    ∀ s, 0 ≤ (I.analytic n).source.K B.core.path.T s := by
+  have hcore : B.core.path.T = 1 := by
+    simpa [Core.path, CanonicalNormalPathRecost.recost] using B.core.time_one
+  have hpre : (I.pre (n + 1)).path.T = 1 := by
+    simpa [Core.path, CanonicalNormalPathRecost.recost] using
+      (I.pre (n + 1)).time_one
+  intro s
+  rw [hcore.trans hpre.symm]
+  exact B.recursiveFacts.terminalCurvature_nonnegative s
 
 end BoundaryFacts
 

@@ -47,6 +47,9 @@ structure ConfiguredNode (q : ℕ) (N : Node) : Prop where
   Qmax_eq : N.Qmax = ConfiguredRecursiveEdgeSourceP0.edgeSpeedCap
     (ConfiguredRecursiveEdgeSourceP0CappedRowProduction.D J.scalar)
       (R.totalShift + q)
+  stageP0_at_index_eq : N.stageP0 N.stageIndex = N.P0
+  stageKhat_at_index_eq : N.stageKhat N.stageIndex = N.khat
+  stageQmax_at_index_eq : N.stageQmax N.stageIndex = N.Qmax
 
 noncomputable def nextState
     {k n : ℕ} {S : ℕ → Node}

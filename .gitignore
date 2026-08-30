@@ -1,1 +1,7 @@
 /.lake
+/scratch/
+/.omo/
+*.aux
+*.log
+*.out
+*.synctex.gz

@@ -41,6 +41,11 @@ noncomputable def budget (q : ℕ) : MajorBudget
 fresh source-tied selection bounds needed at the next step. -/
 structure PreparedReachable (k : ℕ) where
   nodes : ℕ → Node
+  coherentPhase : ℕ → ℝ
+  coherentDistance : ∀ n,
+    dist (ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n)
+        (MarkedShift.shiftData (coherentPhase n) (nodes n).stage.displayed) ≤
+      ∑ j ∈ Finset.range k, H.error n j
   layer : Layer (budget H) (stateP1 H) (defect H) k nodes
   presented : ∀ n, PresentedInput (nodes n).stage
   selection : ∀ n, SelectionBounds (nodes n).stage.source
@@ -49,6 +54,38 @@ namespace PreparedReachable
 
 noncomputable def pre {k : ℕ} (Z : PreparedReachable H k) (n : ℕ) :
     Core (Z.nodes n).stage := (Z.presented n).core
+
+/-- A depth-zero family whose displayed rows are the configured base rows is
+coherent with phase zero.  Keeping this generic prevents concrete base-layer
+definitions from generating a very large reduction proof. -/
+theorem coherentDistance_zero_of_displayed_eq
+    (nodes : ℕ → Node)
+    (hdisplayed : ∀ n, (nodes n).stage.displayed =
+      ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n)
+    (n : ℕ) :
+    dist (ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n)
+        (MarkedShift.shiftData 0 (nodes n).stage.displayed) ≤
+      ∑ j ∈ Finset.range 0, H.error n j := by
+  rw [hdisplayed n]
+  simp only [MarkedShift.shiftData_zero, dist_self, Finset.range_zero,
+    Finset.sum_empty, le_refl]
+
+/-- Package a depth-zero prepared system without exposing its concrete
+dependent records to the kernel while it checks the constructor literal. -/
+noncomputable def zero
+    (nodes : ℕ → Node)
+    (hdisplayed : ∀ n, (nodes n).stage.displayed =
+      ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n)
+    (layer : Layer (budget H) (stateP1 H) (defect H) 0 nodes)
+    (presented : ∀ n, PresentedInput (nodes n).stage)
+    (selection : ∀ n, SelectionBounds (nodes n).stage.source) :
+    PreparedReachable H 0 where
+  nodes := nodes
+  coherentPhase := fun _ ↦ 0
+  coherentDistance := coherentDistance_zero_of_displayed_eq H nodes hdisplayed
+  layer := layer
+  presented := presented
+  selection := selection
 
 end PreparedReachable
 
@@ -65,6 +102,10 @@ structure PreparedStepData {k : ℕ} (Z : PreparedReachable H k) where
   mappedCost_le : ∀ n,
     (∫ t in (0 : ℝ)..(input.pre (n + 1)).path.T,
       (input.analytic n).source.m t) ≤ H.error n (k + 1)
+  mappedRearCurvature_le : ∀ n t s,
+    |FiniteSmoothRearFamilyMarkingAwareSuccessorFront.curvature
+      (input.analytic n).source t s| ≤
+        ConfiguredCombinedPhysicalDiagonalLargeSeparation.sourceKh
   initialPhase : ℕ → ℝ
   nextDisplayed_eq_phase : ∀ n,
     input.nextDisplayed n = MarkedShift.shiftData (initialPhase n)
@@ -85,72 +126,55 @@ def boundaryFacts (I : PreparedStepData H Z) (n : ℕ) :
   displayed_eq := I.nextDisplayed_eq_selected n
   cost_le := I.mappedCost_le n
 
+theorem coherentDistance_step
+    (I : ConfiguredRecursiveEdgeRecostFiniteIntrinsicStepAssembly.InputData
+      J H (budget H) Z.layer)
+    (phase : ℕ → ℝ)
+    (hphase : ∀ n, I.nextDisplayed n =
+      MarkedShift.shiftData (phase n) (I.pre n).geometric.base)
+    (n : ℕ) :
+    dist (ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n)
+        (MarkedShift.shiftData (Z.coherentPhase n - phase n)
+          (I.nextDisplayed n)) ≤
+      ∑ j ∈ Finset.range (k + 1), H.error n j := by
+  have hshift :
+      MarkedShift.shiftData (Z.coherentPhase n - phase n)
+          (I.nextDisplayed n) =
+        MarkedShift.shiftData (Z.coherentPhase n)
+          (I.pre n).geometric.base := by
+    rw [hphase n, MarkedShift.shiftData_add]
+    congr 1
+    ring
+  rw [hshift, Finset.sum_range_succ]
+  refine (dist_triangle _
+    (MarkedShift.shiftData (Z.coherentPhase n) (Z.nodes n).stage.displayed) _).trans ?_
+  refine add_le_add (Z.coherentDistance n) ?_
+  rw [FiniteSmoothRearFamilyMarkingAwareCorrelatedPresentedInfiniteArray.dist_shiftData]
+  exact (I.rawMetric n).dist_displayed_base_le.trans
+    (I.edgeBudget_le_error n)
+
+theorem coherentDistance_next (I : PreparedStepData H Z) (n : ℕ) :
+    dist (ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n)
+        (MarkedShift.shiftData (Z.coherentPhase n - I.initialPhase n)
+          (I.input.nextDisplayed n)) ≤
+      ∑ j ∈ Finset.range (k + 1), H.error n j :=
+  coherentDistance_step H I.input I.initialPhase
+    I.nextDisplayed_eq_phase n
+
 noncomputable def next (I : PreparedStepData H Z) :
     PreparedReachable H (k + 1) where
   nodes := I.input.step.next
+  coherentPhase := fun n ↦ Z.coherentPhase n - I.initialPhase n
+  coherentDistance := by
+    intro n
+    change dist (ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n)
+        (MarkedShift.shiftData (Z.coherentPhase n - I.initialPhase n)
+          (I.input.nextDisplayed n)) ≤ _
+    exact I.coherentDistance_next H n
   layer := I.input.nextLayer
   presented := fun n ↦ (I.boundaryFacts H n).presentedInput
   selection := fun n ↦ (I.recursiveFacts n).sidecars.selection
 
 end PreparedStepData
-
-structure Provider where
-  base : PreparedReachable H 0
-  baseDisplayed : ∀ n,
-    (base.nodes n).stage.displayed =
-      ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n
-  step : ∀ k (Z : PreparedReachable H k), Nonempty (PreparedStepData H Z)
-
-namespace Provider
-
-variable (P : Provider H)
-
-noncomputable def reachable : ∀ k, PreparedReachable H k
-  | 0 => P.base
-  | k + 1 =>
-      let Z := reachable k
-      (Classical.choice (P.step k Z)).next H
-
-noncomputable def stepData (k : ℕ) : PreparedStepData H (P.reachable H k) :=
-  Classical.choice (P.step k (P.reachable H k))
-
-@[simp] theorem reachable_succ_nodes (k : ℕ) :
-    (P.reachable H (k + 1)).nodes = (P.stepData H k).input.step.next := by
-  simp [reachable, stepData, PreparedStepData.next]
-
-def raw (n k : ℕ) : Data := ((P.reachable H k).nodes n).stage.displayed
-def canonical (n k : ℕ) : Data := ((P.stepData H k).input.pre n).geometric.base
-def terminalReference (n k : ℕ) : Data :=
-  (P.stepData H k).input.terminalFrontReference n
-
-noncomputable def coherence (k : ℕ) :
-    StepCoherence (fun n ↦ P.raw H n k) (fun n ↦ P.raw H n (k + 1))
-      (P.canonical H · k) (P.terminalReference H · k) where
-  initialPhase := (P.stepData H k).initialPhase
-  nextDisplayed_eq_phase n := by
-    simpa [raw, canonical, reachable_succ_nodes] using
-      (P.stepData H k).nextDisplayed_eq_phase n
-  rawDiagonalRangeEdge n := (P.stepData H k).rawDiagonalRangeEdge n
-  terminalReference_eq n := by
-    simpa [raw, terminalReference, reachable_succ_nodes] using
-      (P.stepData H k).terminalReference_eq n
-
-theorem rawDistance (n k : ℕ) :
-    dist (P.raw H n k) (P.canonical H n k) ≤ H.error n k := by
-  exact ((P.stepData H k).input.rawMetric n).dist_displayed_base_le.trans
-    ((P.stepData H k).input.edgeBudget_le_error n)
-
-noncomputable def system :
-    System (ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing)
-      H.error where
-  raw := P.raw H
-  canonical := P.canonical H
-  terminalReference := P.terminalReference H
-  base_eq n := by
-    simpa [raw, reachable] using P.baseDisplayed n
-  coherence := P.coherence H
-  rawDistance := P.rawDistance H
-
-end Provider
 
 end ConfiguredRecursiveEdgeRecostFinitePreparedReachableSystem

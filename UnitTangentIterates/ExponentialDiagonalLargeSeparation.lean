@@ -167,6 +167,8 @@ structure Output
       2 * rowRadius (shiftSequence C N) (shiftSequence d N) 0 <
     (2 * (shift D N).Hs 0 -
       rowRadius (shiftSequence C N) (shiftSequence d N) 0) / Real.pi
+  radius_small : ∀ n,
+    rowRadius (shiftSequence C N) (shiftSequence d N) n < 1 / 10
 
 theorem exists_output
     (D : ConstructedConfiguredSequenceWeighted.Data)
@@ -240,10 +242,10 @@ theorem exists_output
   have hElim := htail4.const_mul E
   simp only [zero_pow (by norm_num : (2 : ℕ) ≠ 0), mul_zero] at htail4 hElim
   simp only [mul_zero] at hTlim
-  have htarget : 0 < min 1 (b0 / 8) :=
-    lt_min zero_lt_one (div_pos hb0 (by norm_num))
+  have htarget : 0 < min (1 / 10) (b0 / 8) :=
+    lt_min (by norm_num) (div_pos hb0 (by norm_num))
   have hevT : ∀ᶠ H : ℝ in atTop,
-      T * ((1 + H) ^ 2 * Real.exp (-b' * H)) < min 1 (b0 / 8) :=
+      T * ((1 + H) ^ 2 * Real.exp (-b' * H)) < min (1 / 10) (b0 / 8) :=
     (tendsto_order.1 hTlim).2 _ htarget
   have hevE : ∀ᶠ H : ℝ in atTop,
       E * (((1 + H) ^ 2 * Real.exp (-(b' / 2) * H)) ^ 2) < b0 :=
@@ -273,7 +275,7 @@ theorem exists_output
     hstart1.trans (D'.separation_lower n)
   have hsmallT : ∀ n,
       T * ((1 + D'.Hs n) ^ 2 * Real.exp (-b' * D'.Hs n)) <
-        min 1 (b0 / 8) := fun n =>
+        min (1 / 10) (b0 / 8) := fun n =>
     hHT _ (hstartT.trans (D'.separation_lower n))
   have hsmallE : ∀ n,
       E * (((1 + D'.Hs n) ^ 2 * Real.exp (-(b' / 2) * D'.Hs n)) ^ 2) < b0 :=
@@ -286,7 +288,9 @@ theorem exists_output
   have hspeed : ∀ n, r n ≤ D'.Hs 0 := by
     intro n
     exact (hrow n).trans
-      ((hsmallT n).le.trans ((min_le_left _ _).trans hstart1))
+      ((hsmallT n).le.trans
+        ((min_le_left _ _).trans
+          ((show (1 / 10 : ℝ) ≤ 1 by norm_num).trans hstart1)))
   have hbaseLower : b0 ≤ ConfiguredInductiveTubeBudget.chordBase D'.model := by
     rw [chordBase_eq_min D'.model (configured_kstar_pos D'.model)]
     exact min_le_min hstart1 le_rfl
@@ -401,7 +405,11 @@ theorem exists_output
         _ = (ConfiguredInductiveTubeBudget.chordBase D'.model / 2) * D'.Hs 0 := by ring
   have hr0 := hradius0 0
   have hrOne : r 0 ≤ 1 :=
-    (hrow 0).trans ((hsmallT 0).le.trans (min_le_left _ _))
+    (hrow 0).trans ((hsmallT 0).le.trans
+      ((min_le_left _ _).trans (show (1 / 10 : ℝ) ≤ 1 by norm_num)))
+  have hradiusSmall : ∀ n, r n < 1 / 10 := by
+    intro n
+    exact (hrow n).trans_lt ((hsmallT n).trans_le (min_le_left _ _))
   have hgapStart :
       (Real.pi * Cw + (2 * Real.pi + 1) * r 0) / 2 < D'.Hs 0 := by
     have hreq : Hgap ≤ D'.Hs 0 := hstartGap
@@ -417,7 +425,8 @@ theorem exists_output
     stage_cap := ?_
     speed_tail := hspeed
     chord_tail := hchord
-    width_gap := hgap }⟩
+    width_gap := hgap
+    radius_small := hradiusSmall }⟩
   intro n k
   simpa [weightedDefect, shiftSequence, Nat.add_assoc] using hcap (N + n) k
 

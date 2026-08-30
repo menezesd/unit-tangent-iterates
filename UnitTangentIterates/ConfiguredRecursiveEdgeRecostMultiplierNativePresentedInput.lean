@@ -152,11 +152,14 @@ def terminal (B : BoundaryFacts I n bound) :=
 
 /-- The callback-free native pre-carrier boundary consumed by
 `NativeCore.PresentedInput.core`. -/
-def presentedInput (B : BoundaryFacts I n bound) :
+noncomputable def presentedInput (B : BoundaryFacts I n bound) :
     PresentedInput (I.step.next n).stage where
   base := B.geometry.presented
   bound := bound
   terminal := B.terminal
+  output := Classical.choice
+    (FiniteSmoothRearFamilyMarkingAwareChosenTerminal.exists_presentedOutputCore
+      (I.step.next n).stage.applied B.terminal)
   path_time_one := (I.pre (n + 1)).time_one
 
 /-- The resulting native successor pre-carrier. -/

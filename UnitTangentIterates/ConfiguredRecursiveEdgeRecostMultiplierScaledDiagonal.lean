@@ -1,5 +1,6 @@
 import UnitTangentIterates.ConfiguredRecursiveEdgeRecostPeriodScaledDiagonal
 import UnitTangentIterates.ConfiguredRecursiveEdgeRecostedAnalyticCarrier
+import UnitTangentIterates.FiniteSmoothRearFamilyMarkingAwareExactSuccessorAutomaticBounds
 
 /-! # Multiplier- and period-scaled direct recost diagonal -/
 
@@ -105,6 +106,73 @@ theorem multiplierRecostSourceAllowance_nonnegative
       (mul_nonneg
         (mul_nonneg (by norm_num) (recostPeriodScale_nonnegative D q))
         (edgePhysicalDefect_nonnegative D (q + 1))))
+
+/-- The fixed coefficient multiplying source mass in the outgoing-curvature
+estimate, specialized to the configured source curvature on both sides. -/
+def configuredCurvatureSourceMassCoeff : ℝ :=
+  (FiniteSmoothRearFamilyMarkingAwareExactSuccessorAutomaticBounds.sourceConst
+      (kh := sourceKh) (kap := sourceKh) + 2) + sourceKh ^ 2
+
+theorem configuredCurvatureSourceMassCoeff_nonnegative :
+    0 ≤ configuredCurvatureSourceMassCoeff := by
+  have hs : 0 ≤
+      FiniteSmoothRearFamilyMarkingAwareExactSuccessorAutomaticBounds.sourceConst
+        (kh := sourceKh) (kap := sourceKh) := by
+    simpa [FiniteSmoothRearFamilyMarkingAwareExactSuccessorAutomaticBounds.sourceConst,
+      FiniteSmoothRearFamilyMarkingAwareExactSuccessorAutomaticBounds.derivativeConst]
+      using ConfiguredRecursiveSourceP0Growth.intrinsicSourceConst_nonnegative
+  exact add_nonneg (add_nonneg hs (by norm_num)) (sq_nonneg sourceKh)
+
+theorem configuredCurvatureSourceMassMargin_positive :
+    0 < sourceKh - TubeConstants.kbar (1 / 2) := by
+  rw [sourceKh_eq]
+  norm_num [TubeConstants.kbar]
+
+/-- A fixed positive source-mass budget with strict room in the configured
+outgoing-curvature estimate. -/
+def configuredCurvatureSourceMassBudget : ℝ :=
+  (sourceKh - TubeConstants.kbar (1 / 2)) /
+    (2 * (configuredCurvatureSourceMassCoeff + 1))
+
+theorem configuredCurvatureSourceMassBudget_positive :
+    0 < configuredCurvatureSourceMassBudget := by
+  apply div_pos configuredCurvatureSourceMassMargin_positive
+  exact mul_pos (by norm_num)
+    (by linarith [configuredCurvatureSourceMassCoeff_nonnegative])
+
+theorem configuredCurvatureSourceMassBudget_curvature :
+    ((FiniteSmoothRearFamilyMarkingAwareExactSuccessorAutomaticBounds.sourceConst
+          (kh := sourceKh) (kap := sourceKh) + 2) + sourceKh ^ 2) *
+        configuredCurvatureSourceMassBudget <
+      sourceKh - TubeConstants.kbar (1 / 2) := by
+  change configuredCurvatureSourceMassCoeff *
+      ((sourceKh - TubeConstants.kbar (1 / 2)) /
+        (2 * (configuredCurvatureSourceMassCoeff + 1))) <
+    sourceKh - TubeConstants.kbar (1 / 2)
+  have hc := configuredCurvatureSourceMassCoeff_nonnegative
+  have hmargin := configuredCurvatureSourceMassMargin_positive
+  have hden : 0 < 2 * (configuredCurvatureSourceMassCoeff + 1) :=
+    mul_pos (by norm_num) (by linarith)
+  rw [show configuredCurvatureSourceMassCoeff *
+      ((sourceKh - TubeConstants.kbar (1 / 2)) /
+        (2 * (configuredCurvatureSourceMassCoeff + 1))) =
+      (configuredCurvatureSourceMassCoeff *
+        (sourceKh - TubeConstants.kbar (1 / 2))) /
+        (2 * (configuredCurvatureSourceMassCoeff + 1)) by ring]
+  rw [div_lt_iff₀ hden]
+  nlinarith
+
+theorem configuredCurvatureSourceMassBudget_le_one :
+    configuredCurvatureSourceMassBudget ≤ 1 := by
+  have hc := configuredCurvatureSourceMassCoeff_nonnegative
+  have hden : 0 < 2 * (configuredCurvatureSourceMassCoeff + 1) :=
+    mul_pos (by norm_num) (by linarith)
+  have hmargin : sourceKh - TubeConstants.kbar (1 / 2) ≤ 1 := by
+    rw [sourceKh_eq]
+    norm_num [TubeConstants.kbar]
+  unfold configuredCurvatureSourceMassBudget
+  apply (div_le_iff₀ hden).2
+  nlinarith
 
 /-- The updated public diagonal pays the complete multiplier source mass. -/
 theorem multiplierRecostSourceAllowance_le_diagonal
@@ -257,7 +325,25 @@ theorem multiplierRecostDirectDiagonal_summable
   exact Summable.of_nonneg_of_le
     (multiplierRecostDirectDiagonal_nonnegative D) hbound hs
 
-/-- A tail after which every actual multiplier source allowance is at most
+/-- A tail after which every actual multiplier source allowance is at most an
+arbitrary prescribed positive tolerance. -/
+theorem exists_multiplierRecostSourceAllowance_tail_le
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {MA NA E0 C0 C1 C2 M ε : ℝ}
+    (hε : 0 < ε)
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) (hM : 0 ≤ M) :
+    ∃ N, ∀ q, N ≤ q →
+      multiplierRecostSourceAllowance D E0 C0 C1 C2 q ≤ ε := by
+  have ht := (multiplierRecostDirectDiagonal_summable D
+    (E0 := E0) (C0 := C0) (C1 := C1) (C2 := C2)
+    hMA hNA hM).tendsto_atTop_zero
+  have he := ht.eventually (Iic_mem_nhds hε)
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 he
+  exact ⟨N, fun q hq ↦
+    (multiplierRecostSourceAllowance_le_diagonal D MA NA E0 C0 C1 C2 M q).trans
+      (hN q hq)⟩
+
+/-- Compatibility form of the multiplier source-allowance tail at tolerance
 one. -/
 theorem exists_multiplierRecostSourceAllowance_tail_le_one
     (D : ConstructedConfiguredSequenceWeighted.Data)
@@ -265,14 +351,8 @@ theorem exists_multiplierRecostSourceAllowance_tail_le_one
     (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) (hM : 0 ≤ M) :
     ∃ N, ∀ q, N ≤ q →
       multiplierRecostSourceAllowance D E0 C0 C1 C2 q ≤ 1 := by
-  have ht := (multiplierRecostDirectDiagonal_summable D
-    (E0 := E0) (C0 := C0) (C1 := C1) (C2 := C2)
-    hMA hNA hM).tendsto_atTop_zero
-  have he := ht.eventually (Iic_mem_nhds (show (0 : ℝ) < 1 by norm_num))
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 he
-  exact ⟨N, fun q hq ↦
-    (multiplierRecostSourceAllowance_le_diagonal D MA NA E0 C0 C1 C2 M q).trans
-      (hN q hq)⟩
+  exact exists_multiplierRecostSourceAllowance_tail_le D
+    (ε := 1) (by norm_num) hMA hNA hM
 
 /-- The exponential large-separation package may be started after an
 arbitrary preliminary mass tail. -/

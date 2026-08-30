@@ -137,6 +137,29 @@ theorem source_period_eq_unscaled
     I.source.P = (unscaled I).source.P := by
   rw [I.source_period_eq, (unscaled I).source_period_eq]
 
+/-- Multiplier scaling changes only the density envelope; the reanchored
+front family is exactly the one constructed by the unscaled successor. -/
+@[simp] theorem source_F_eq_unscaled
+    {P0u khu khatu Qmaxu : ℕ → ℝ} {j : ℕ}
+    {S : Stage P0u khu khatu Qmaxu j}
+    {C : ConfiguredRecursiveEdgeRecostedPreCarrier.Core S}
+    {P0Next khNext khatNext QmaxNext : ℝ}
+    (I : ConfiguredRecursiveEdgeRecostedScaledPreCarrier.Input C
+      P0Next khNext khatNext QmaxNext) :
+    I.source.F = (unscaled I).source.F := rfl
+
+/-- Multiplier scaling also leaves the reanchored curvature family unchanged.
+Terminal nonnegativity can therefore be propagated from the predecessor
+without proving a second analytic estimate. -/
+@[simp] theorem source_K_eq_unscaled
+    {P0u khu khatu Qmaxu : ℕ → ℝ} {j : ℕ}
+    {S : Stage P0u khu khatu Qmaxu j}
+    {C : ConfiguredRecursiveEdgeRecostedPreCarrier.Core S}
+    {P0Next khNext khatNext QmaxNext : ℝ}
+    (I : ConfiguredRecursiveEdgeRecostedScaledPreCarrier.Input C
+      P0Next khNext khatNext QmaxNext) :
+    I.source.K = (unscaled I).source.K := rfl
+
 /-- Scaling the density envelope does not change the selected rear marking.
 This is the compatibility needed to reuse phase normalization proved for the
 unscaled direct recost successor. -/

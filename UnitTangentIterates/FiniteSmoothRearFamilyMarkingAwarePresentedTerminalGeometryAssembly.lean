@@ -40,6 +40,9 @@ theorem exists_presentedTerminalGeometry
     physical_angle_eq := rfl
     physical_curvature_eq := rfl
     physical_cq_eq := rfl
+    physical_L_eq := rfl
+    physical_kb_eq := rfl
+    physical_kL_eq := rfl
     physical_dlt_eq := rfl
     physical_dlt_pos := by
       change 0 < M.dlt

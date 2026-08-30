@@ -199,14 +199,38 @@ theorem baseCap (P : SlicedRowPackage O) :
 def configuredCaps (P : SlicedRowPackage O) :
     SlicedCapFamily (core O P)
       (edgeEndpointConversion (D O) sourceKh O.Mend) (diagonal O) := by
-  simpa [core, edgeEndpointConversion, diagonal, edgePhysicalDefect] using
-    P.provider.capFamilyOfSeparate
-      (ConfiguredDiagonalStableRowDefectProvider.provider (D O)
-        (physicalCertificate (D O)))
-      (ConfiguredRecursiveEdgeSourceP0ConstructionCoreProvider.baseCorrelated
-        O.pair.input O.model_data (rowC O)
-        (separation_one O) (kstar_le_pathKhat O) khRow (Qmax O) P.source)
-      P.baseSlice (baseCap O P) (physicalDefect_nonneg (D O))
+  let oldCaps : SlicedCapFamily (core O P)
+      (mergedEndpointConversion (D O) sourceKh O.Mend) (diagonal O) := by
+    simpa [core, mergedEndpointConversion, diagonal, edgePhysicalDefect] using
+      P.provider.capFamilyOfSeparate
+        (ConfiguredDiagonalStableRowDefectProvider.provider (D O)
+          (physicalCertificate (D O)))
+        (ConfiguredRecursiveEdgeSourceP0ConstructionCoreProvider.baseCorrelated
+          O.pair.input O.model_data (rowC O)
+          (separation_one O) (kstar_le_pathKhat O) khRow (Qmax O) P.source)
+        P.baseSlice (baseCap O P) (physicalDefect_nonneg (D O))
+  have hdiag : ∀ j, 0 ≤ diagonal O j := by
+    intro j
+    exact edgePhysicalDefect_nonnegative (D O) j
+  refine
+    { base :=
+        { endpoint_dist := ?_
+          terminal_curvature := oldCaps.base.terminal_curvature }
+      successor := ?_ }
+  · intro n
+    exact (oldCaps.base.endpoint_dist n).trans
+      (mul_le_mul_of_nonneg_right
+        (mergedEndpointConversion_le_edgeEndpointConversion
+          (D O) sourceKh O.Mend n) (hdiag _))
+  · intro k
+    refine
+      { endpoint_dist := ?_
+        terminal_curvature := (oldCaps.successor k).terminal_curvature }
+    intro n
+    exact ((oldCaps.successor k).endpoint_dist n).trans
+      (mul_le_mul_of_nonneg_right
+        (mergedEndpointConversion_le_edgeEndpointConversion
+          (D O) sourceKh O.Mend n) (hdiag _))
 
 theorem basePhysical (P : SlicedRowPackage O) (n : ℕ) :
     Nonempty (PhysicalRearLimitKinematics sourceKh

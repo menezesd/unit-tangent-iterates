@@ -64,6 +64,21 @@ noncomputable def source
       (kstar_le_analyticKhat (data O)) n U
   exact V.physicalRigidFields A.translation A.rotation A.rotation_norm
 
+@[simp] theorem source_kx
+    (O : ConfiguredRecursiveEdgeSourceP0ScalarStart.Output MA NA)
+    (C : ℕ → ℝ) {MA0 NA0 K0 K1 K2 : ℝ} (n : ℕ) :
+    (source O C (MA0 := MA0) (NA0 := NA0)
+      (K0 := K0) (K1 := K1) (K2 := K2) n).kx =
+      SelInvFrontStripC2.stripCurvConst sourceKh := by
+  simp [source, ConfiguredRecursiveEdgeSourceP0BaseSourceAdapter.sourceOfOutput,
+    MarkingAwareSource.physicalRigidFields, MarkingAwareSource.phaseRigid,
+    edgeSourceAt, ConfiguredBaseProfiledInitialGaugeResidual.baseSource,
+    ConfiguredBaseProfiledInitialGaugeResidual.residual,
+    ConfiguredBaseInterpolationMarkingAwareSourceResidual.Residual.toSourceOfActual,
+    ConfiguredBaseInterpolationMarkingAwareSourceResidual.Residual.toSource,
+    edgeScaledBoundsAt, ConfiguredBaseProfiledInitialGaugeResidual.Bounds.scale,
+    edgeBoundsAt, ConfiguredBaseProfiledInitialGaugeResidual.auditedBounds]
+
 @[simp] theorem source_m
     (O : ConfiguredRecursiveEdgeSourceP0ScalarStart.Output MA NA)
     (C : ℕ → ℝ) {MA0 NA0 K0 K1 K2 : ℝ} (n : ℕ) (t : ℝ) :

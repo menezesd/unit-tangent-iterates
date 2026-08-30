@@ -1,4 +1,5 @@
 import UnitTangentIterates.ConfiguredRecursiveEdgeRecostFiniteIntrinsicStepAssembly
+import UnitTangentIterates.ConfiguredRecursiveEdgeRecostFinitePreparedReachableSystem
 import UnitTangentIterates.ConfiguredRecursiveEdgeRecostMultiplierBaseLayer
 import UnitTangentIterates.ConfiguredRecursiveEdgeRecostMultiplierBaseNodePresentedReadiness
 
@@ -15,7 +16,9 @@ namespace ConfiguredRecursiveEdgeRecostFiniteIntrinsicBaseLayer
 open ConfiguredRecursiveEdgePhysicalBaseFinalTailState
   ConfiguredRecursiveEdgeFiniteColumnGaugeMajorant
   ConfiguredRecursiveEdgeRecostFiniteIntrinsicStepAssembly
+  ConfiguredRecursiveEdgeRecostFinitePreparedReachableSystem
   ConfiguredRecursiveEdgeRecostMultiplierBaseLayer
+  ConfiguredRecursiveEdgeRecostMultiplierBaseNodePresentedReadiness
   ConfiguredRecursiveEdgeRecostMultiplierClosing
   ConfiguredRecursiveEdgeRecostMultiplierHistoryClosing
   ConfiguredRecursiveEdgeRecostMultiplierIntrinsicDiagonalRows
@@ -118,12 +121,9 @@ noncomputable def sourceFacts (H : Output R) (n : ℕ) :
 noncomputable def baseAncestry (H : Output R) (n : ℕ) :
     FiniteNonaffineMajorHistory.ConcreteAncestry (budget H n)
       (nodes (K0 := K0) (K1 := K1) (K2 := K2) H n).stage.Gamma
-      0 (defect H n) := by
-  let A := legacyState (K0 := K0) (K1 := K1) (K2 := K2) H n
-  simpa [A, legacyState, nodes, defect,
-    ConfiguredRecursiveEdgeRecostMultiplierIntrinsicReachableLayer.rowDefect,
-    ConfiguredRecursiveEdgePhysicalBaseFinalTailState.rowOutput] using
-      (ancestryOfDepthZero (budget H n) A.ancestry)
+      0 (defect H n) :=
+  ancestryOfDepthZero (budget H n)
+    (legacyState (K0 := K0) (K1 := K1) (K2 := K2) H n).ancestry
 
 /-- The finite-major state type at one physical base row. -/
 abbrev StateAt (H : Output R) (n : ℕ) :=
@@ -134,17 +134,15 @@ abbrev StateAt (H : Output R) (n : ℕ) :=
 
 /-- The physical base state charged to the unified base-plus-recost history
 epsilon at its public row index. -/
-noncomputable def normalized (H : Output R) (n : ℕ) : StateAt H n := by
+noncomputable def normalized (H : Output R) (n : ℕ) :
+    StateAt (K0 := K0) (K1 := K1) (K2 := K2) H n :=
   let A := legacyState (K0 := K0) (K1 := K1) (K2 := K2) H n
-  refine
-    { sourceFacts := sourceFacts (K0 := K0) (K1 := K1) (K2 := K2) H n
-      intrinsic := A.intrinsic
-      periodFloor := A.periodFloor
-      ancestry := baseAncestry (K0 := K0) (K1 := K1) (K2 := K2) H n
-      terminalJ_eq := ?_
-      terminalP_eq := ?_ }
-  · simpa [baseAncestry, A, legacyState] using A.terminalJ_eq
-  · simpa [baseAncestry, A, legacyState] using A.terminalP_eq
+  { sourceFacts := sourceFacts (K0 := K0) (K1 := K1) (K2 := K2) H n
+    intrinsic := A.intrinsic
+    periodFloor := A.periodFloor
+    ancestry := baseAncestry (K0 := K0) (K1 := K1) (K2 := K2) H n
+    terminalJ_eq := A.terminalJ_eq
+    terminalP_eq := A.terminalP_eq }
 
 /-- Callback-free finite-major depth-zero layer on the final history tail. -/
 noncomputable def layer (H : Output R) :
@@ -152,5 +150,28 @@ noncomputable def layer (H : Output R) :
       (nodes (K0 := K0) (K1 := K1) (K2 := K2) H) where
   normalized n := by
     simpa using (normalized (K0 := K0) (K1 := K1) (K2 := K2) H n)
+
+/-! ## Prepared coherent-system base -/
+
+/-- The finite-history depth-zero layer, its presented terminal boundary, and
+its source-specific successor-selection bounds form the exact prepared base
+consumed by the coherent reachable-system recursion. -/
+noncomputable def preparedBase (H : Output R) : PreparedReachable H 0 :=
+  PreparedReachable.zero H
+    (nodes (K0 := K0) (K1 := K1) (K2 := K2) H)
+    (fun n ↦ baseNode_displayed (K0 := K0) (K1 := K1) (K2 := K2)
+      H.toClosing n)
+    (layer (K0 := K0) (K1 := K1) (K2 := K2) H)
+    (baseNodePresentedInput H.toClosing)
+    (baseNodeSelection H.toClosing)
+
+@[simp] theorem preparedBase_coherentPhase (H : Output R) (n : ℕ) :
+    (preparedBase (K0 := K0) (K1 := K1) (K2 := K2) H).coherentPhase n = 0 :=
+  rfl
+
+@[simp] theorem preparedBase_displayed (H : Output R) (n : ℕ) :
+    ((preparedBase (K0 := K0) (K1 := K1) (K2 := K2) H).nodes n).stage.displayed =
+      ConfiguredRecursiveEdgeRecostMultiplierRowBudget.base H.toClosing n := by
+  exact baseNode_displayed H.toClosing n
 
 end ConfiguredRecursiveEdgeRecostFiniteIntrinsicBaseLayer

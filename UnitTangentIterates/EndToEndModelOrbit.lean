@@ -2,7 +2,6 @@ import Mathlib
 import UnitTangentIterates.TwoCapModelOrbit
 import UnitTangentIterates.LargeSeparation
 import UnitTangentIterates.MainTheoremModelChord
-import UnitTangentIterates.UnitTangentIteratesMain
 
 /-!
 # End-to-end model orbit with the large-separation threshold
