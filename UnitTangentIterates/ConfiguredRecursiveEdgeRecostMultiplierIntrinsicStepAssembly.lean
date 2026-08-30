@@ -116,7 +116,10 @@ def next_configured
   refine
     { P0_eq := ?_
       khat_eq := ?_
-      Qmax_eq := ?_ }
+      Qmax_eq := ?_
+      stageP0_at_index_eq := rfl
+      stageKhat_at_index_eq := rfl
+      stageQmax_at_index_eq := rfl }
   · change
       ConfiguredRecursiveEdgeSourceP0.edgeSourceP0 (globalData (J := J))
           (diagonal R n (k + 1)) =

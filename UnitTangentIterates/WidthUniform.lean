@@ -58,15 +58,11 @@ theorem exists_uniform_width_bound {Θ : ℝ → ℝ → ℝ} {Θs : ℝ → ℝ
       simpa using this
     have hev := h0.eventually (gt_mem_nhds (by norm_num : (0:ℝ) < 1))
     filter_upwards [hev, eventually_ge_atTop (0:ℝ)] with H hH hH0
-    have hexp : 0 < Real.exp (-beta * H) := Real.exp_pos _
-    have hle : C * Real.exp (-beta * H) * H
-        ≤ C * ((1 + H) ^ 2 * Real.exp (-beta * H)) := by
-      have hHle : H ≤ (1 + H) ^ 2 := by nlinarith
-      have hmul := mul_le_mul_of_nonneg_left hHle (mul_nonneg hC hexp.le)
-      calc C * Real.exp (-beta * H) * H
-          ≤ C * Real.exp (-beta * H) * (1 + H) ^ 2 := hmul
-        _ = C * ((1 + H) ^ 2 * Real.exp (-beta * H)) := by ring
-    linarith [hH.le]
+    have hmul := mul_le_mul_of_nonneg_left
+      (show H ≤ (1 + H) ^ 2 by nlinarith)
+      (mul_nonneg hC (Real.exp_pos (-beta * H)).le)
+    apply le_trans ?_ hH.le
+    simpa only [mul_assoc, mul_comm, mul_left_comm] using hmul
   obtain ⟨B, hB⟩ := Filter.eventually_atTop.mp hsmall
   refine ⟨max B 1, lt_of_lt_of_le zero_lt_one (le_max_right _ _), ?_⟩
   intro H hH

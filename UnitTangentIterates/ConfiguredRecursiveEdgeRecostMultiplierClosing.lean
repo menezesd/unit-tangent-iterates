@@ -1,4 +1,5 @@
 import UnitTangentIterates.ConfiguredRecursiveEdgeFullRecostMetricDiagonal
+import UnitTangentIterates.ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget
 import UnitTangentIterates.ConfiguredRecursiveEdgeRecostScaledPaperCapstone
 
 /-! # Final multiplier-aware recost closing shift -/
@@ -41,6 +42,11 @@ structure RecostClosingOutput
         physicalTransitionCeilings.C1 physicalTransitionCeilings.C2
         J.scalar.Mend) preShift)
     J.scalar.Cw
+  mass_curvature : ∀ q,
+    multiplierRecostSourceAllowance O.data distortionTotal
+      physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+      physicalTransitionCeilings.C2 (preShift + large.N + q) ≤
+        configuredCurvatureSourceMassBudget
   mass_small : ∀ q,
     multiplierRecostSourceAllowance O.data distortionTotal
       physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
@@ -86,6 +92,63 @@ theorem error_eq_multiplierDiagonal
         physicalTransitionCeilings.C1 physicalTransitionCeilings.C2
         J.scalar.Mend (R.preShift + R.large.N + n + k) := by
   simp [error, shiftSequence, Nat.add_assoc]
+
+/-- The local multiplier source allowance is one of the summands paid by the
+public cell error.  The statement is indexed on the final shifted data, so
+downstream recursive steps need no further prefix arithmetic. -/
+theorem multiplierRecostSourceAllowance_le_error
+    (R : RecostClosingOutput J O) (n k : ℕ) :
+    multiplierRecostSourceAllowance R.data distortionTotal
+        physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+        physicalTransitionCeilings.C2 (n + k) ≤ R.error n k := by
+  rw [R.error_eq_multiplierDiagonal]
+  have hshift :
+      multiplierRecostSourceAllowance R.data distortionTotal
+          physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+          physicalTransitionCeilings.C2 (n + k) =
+        multiplierRecostSourceAllowance O.data distortionTotal
+          physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+          physicalTransitionCeilings.C2
+            (R.preShift + R.large.N + n + k) := by
+    simp only [data, ConfiguredRecursiveEdgeRecostScaledPaperCapstone.data,
+      ConfiguredRecursiveEdgeFiniteColumnGaugeMajorant.Output.data]
+    rw [ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget.multiplierRecostSourceAllowance_shift]
+    rw [ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget.multiplierRecostSourceAllowance_shift]
+    rw [ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget.multiplierRecostSourceAllowance_shift]
+    rw [ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget.multiplierRecostSourceAllowance_shift]
+    simp [totalShift, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm]
+  rw [hshift]
+  exact
+    ConfiguredRecursiveEdgeFullRecostMetricDiagonal.multiplierRecostSourceAllowance_le_fullRecostMetricDiagonal
+      O.data choice.MA0 choice.NA0 distortionTotal
+      physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+      physicalTransitionCeilings.C2 J.scalar.Mend
+      (R.preShift + R.large.N + n + k)
+
+/-- The configured curvature source-mass budget on the final shifted data. -/
+theorem mass_curvature_final
+    (R : RecostClosingOutput J O) (q : ℕ) :
+    multiplierRecostSourceAllowance R.data distortionTotal
+      physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+      physicalTransitionCeilings.C2 q ≤
+        configuredCurvatureSourceMassBudget := by
+  have hshift :
+      multiplierRecostSourceAllowance R.data distortionTotal
+          physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+          physicalTransitionCeilings.C2 q =
+        multiplierRecostSourceAllowance O.data distortionTotal
+          physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+          physicalTransitionCeilings.C2
+            (R.preShift + R.large.N + q) := by
+    simp only [data, ConfiguredRecursiveEdgeRecostScaledPaperCapstone.data,
+      ConfiguredRecursiveEdgeFiniteColumnGaugeMajorant.Output.data]
+    rw [ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget.multiplierRecostSourceAllowance_shift]
+    rw [ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget.multiplierRecostSourceAllowance_shift]
+    rw [ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget.multiplierRecostSourceAllowance_shift]
+    rw [ConfiguredRecursiveEdgeRecostFiniteHistoryJetBudget.multiplierRecostSourceAllowance_shift]
+    simp [totalShift, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm]
+  rw [hshift]
+  exact R.mass_curvature q
 
 theorem error_nonnegative (R : RecostClosingOutput J O) :
     ∀ n k, 0 ≤ R.error n k := by
@@ -147,16 +210,30 @@ theorem width_gap (R : RecostClosingOutput J O) :
     ShadowingTails.tail, rowRadius, rowError, shiftSequence, Nat.add_assoc]
     using R.large.width_gap
 
+theorem radius_small (R : RecostClosingOutput J O) (n : ℕ) :
+    R.radius n < 1 / 10 := by
+  simpa [RecostClosingOutput.radius, RecostClosingOutput.data,
+    PullbackTubeTailBudget.radius, ShadowingTails.tail,
+    rowRadius, rowError, shiftSequence, Nat.add_assoc] using
+    R.large.radius_small n
+
+theorem separation_one (R : RecostClosingOutput J O) :
+    1 ≤ R.data.Hs 0 := by
+  rw [R.data_Hs_zero]
+  exact R.large.separation_one
+
 end RecostClosingOutput
 
 /-- Callback-free existence of the multiplier-aware closing output. -/
 theorem exists_recostClosingOutput
     (J : RowJetScalarOutput choice.MA0 choice.NA0) (O : GaugeOutput J) :
     Nonempty (RecostClosingOutput J O) := by
-  obtain ⟨N, hN⟩ := exists_multiplierRecostSourceAllowance_tail_le_one O.data
+  obtain ⟨N, hN⟩ := exists_multiplierRecostSourceAllowance_tail_le O.data
+    (ε := configuredCurvatureSourceMassBudget)
     (E0 := distortionTotal) (C0 := physicalTransitionCeilings.C0)
     (C1 := physicalTransitionCeilings.C1)
     (C2 := physicalTransitionCeilings.C2)
+    configuredCurvatureSourceMassBudget_positive
     choice.MA0_nonnegative choice.NA0_nonnegative J.scalar.Mend_positive.le
   obtain ⟨L⟩ := exists_fullRecostMetricOutputAfter O.data N
     (E0 := distortionTotal) (C0 := physicalTransitionCeilings.C0)
@@ -167,8 +244,10 @@ theorem exists_recostClosingOutput
   exact ⟨{
     preShift := N
     large := L
-    mass_small := fun q ↦ hN (N + L.N + q)
-      (by omega) }
+    mass_curvature := fun q ↦ hN (N + L.N + q) (by omega)
+    mass_small := fun q ↦
+      (hN (N + L.N + q) (by omega)).trans
+        configuredCurvatureSourceMassBudget_le_one }
   ⟩
 
 end ConfiguredRecursiveEdgeRecostMultiplierClosing

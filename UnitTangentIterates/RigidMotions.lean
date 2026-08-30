@@ -84,10 +84,8 @@ theorem curvature_rigidMotion {k : ℝ → ℝ} (hγ : ∀ s, HasDerivAt γ (T s
 def shift (c : ℝ) (γ : ℝ → ℂ) : ℝ → ℂ := fun s => γ (s + c)
 
 lemma hasDerivAt_shift (hγ : ∀ s, HasDerivAt γ (T s) s) (c : ℝ) (s : ℝ) :
-    HasDerivAt (shift c γ) (T (s + c)) s := by
-  have h : HasDerivAt (fun u : ℝ => u + c) 1 s := by
-    simpa using (hasDerivAt_id s).add_const c
-  simpa [shift] using (hγ (s + c)).scomp s h
+    HasDerivAt (shift c γ) (T (s + c)) s :=
+  (hγ (s + c)).comp_add_const s c
 
 /-- The unit-tangent transform commutes with a shift of the marked phase. -/
 theorem unitTangentMap_shift (hγ : ∀ s, HasDerivAt γ (T s) s) (c : ℝ) (s : ℝ) :
@@ -107,9 +105,7 @@ theorem curvature_shift {k : ℝ → ℝ} (hγ : ∀ s, HasDerivAt γ (T s) s)
   have hfun : deriv (shift c γ) = fun u => T (u + c) := by
     funext u; exact (hasDerivAt_shift hγ c u).deriv
   rw [hfun]
-  have h : HasDerivAt (fun u : ℝ => u + c) 1 s := by
-    simpa using (hasDerivAt_id s).add_const c
-  simpa using (hT (s + c)).scomp s h
+  exact (hT (s + c)).comp_add_const s c
 
 /-! ### The marking normalization -/
 
@@ -124,6 +120,6 @@ theorem existsUnique_rotation_of_marked_tangent {u v : ℂ} (hu : ‖u‖ = 1) (
   · rw [norm_div, hu, hv, div_one]
   · field_simp
   · rintro a ⟨-, hau⟩
-    rw [← hau, mul_div_assoc, div_self hu0, mul_one]
+    exact (eq_div_iff hu0).2 hau
 
 end RigidMotions

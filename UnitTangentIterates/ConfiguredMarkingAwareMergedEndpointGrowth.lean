@@ -131,11 +131,8 @@ theorem exists_mergedEndpointConversion_growth_majorant
   obtain ⟨A, hA0, hA⟩ :=
     exists_baseEndpointConversion_growth_majorant D hM hgamma
   obtain ⟨B, hB0, hB⟩ :=
-    ConfiguredGaugeEndpointCoefficientGrowth.exists_endpointLinearCoeff_growth_majorant
-      (ConfiguredCombinedPhysicalDiagonalLargeSeparation.configuredLinearInputBounds D)
-      (GaugeMarkedDataOfRearFamily.rearKappa1_nonneg hkh0 hkh1)
-      (GaugeMarkedDataOfRearFamily.rearKappa2_nonneg hkh0 hkh1)
-      hM D.kstar_nonneg D.kd_nonneg hgamma
+    ConfiguredCombinedPhysicalDiagonalLargeSeparation.exists_endpointConversion_growth_majorant
+      D hkh0 hkh1 hM hgamma
   refine ⟨A + B, add_nonneg hA0 hB0, ?_⟩
   intro n
   unfold mergedEndpointConversion mergedConversion

@@ -1,6 +1,6 @@
 import UnitTangentIterates.ConfiguredRecursiveEdgeFiniteColumnGaugeMajorant
 import UnitTangentIterates.ConfiguredRecursiveEdgeWeightedEffectiveError
-import UnitTangentIterates.ReachableVariableSpeedFrontCurvatureStable
+import UnitTangentIterates.ReachableVariableSpeedFrontCurvature
 
 /-! # Combined configured scalar closing data for finite columns -/
 

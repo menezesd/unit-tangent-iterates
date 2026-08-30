@@ -1,5 +1,6 @@
 import UnitTangentIterates.ConfiguredRecursiveEdgeRecostedPreCarrier
 import UnitTangentIterates.FiniteSmoothRearFamilyMarkingAwareExactSuccessorScaledDirectRecostSource
+import UnitTangentIterates.FiniteSmoothRearFamilyMarkingAwareExactSourceStopping
 
 /-! # Multiplier-aware direct recost pre-carrier
 
@@ -68,6 +69,18 @@ def source {C : Core S} (I : Input C p0 kh0 khat0 qmax0) :
     C.geometric.output.chosen.c2 C.eta_continuous C.eta1_continuous
     C.eta2_continuous I.bounds I.recostScalar
 
+/-- Multiplier scaling rebuilds, rather than assumes, the source-indexed
+spatial frame bounds for the enlarged density. -/
+def spatial {C : Core S} (I : Input C p0 kh0 khat0 qmax0) :
+    SpatialFrameRegularity C.path I.source.Ydot I.source.Theta
+      I.source.delta I.source.sf I.source.P I.source.m kh0 qmax0 := by
+  simpa [source] using
+    (FiniteSmoothRearFamilyMarkingAwareExactSuccessorScaledDirectRecostSource.scaledDirectSource_spatial
+        C.geometric.output.chosen I.selected I.pre I.gauge I.shifted
+        I.kh_nonnegative I.kh_lt_one I.scalar I.P0_pos
+        C.geometric.output.chosen.c2 C.eta_continuous C.eta1_continuous
+        C.eta2_continuous I.bounds I.recostScalar)
+
 /-- Slice facts are insensitive to the multiplier envelope: the carrier,
 marking, period, and spatial frame are unchanged. -/
 def slice {C : Core S} (I : Input C p0 kh0 khat0 qmax0) :
@@ -128,6 +141,25 @@ def slice {C : Core S} (I : Input C p0 kh0 khat0 qmax0) :
 @[simp] theorem source_phi1_eq {C : Core S}
     (I : Input C p0 kh0 khat0 qmax0) :
     I.source.phi1 = C.geometric.output.chosen.phi1 := rfl
+
+/-- Fresh Taylor-free selection bounds are reconstructed from the scaled
+source's retained slice floor and its automatic stopping theorem. -/
+theorem exists_selectionBounds {C : Core S}
+    (I : Input C p0 kh0 khat0 qmax0) :
+    Nonempty
+      (FiniteSmoothRearFamilyMarkingAwareExactSuccessorSelectionBounds.SelectionBounds
+        I.source) := by
+  exact
+    FiniteSmoothRearFamilyMarkingAwareExactSourceStopping.exists_selectionBounds
+      I.source I.spatial I.slice.normal_stopped
+      I.P0_pos I.slice.period_lower
+
+/-- Complete source-indexed regularity and selection sidecars for a scaled
+input, with no external recursive hypothesis. -/
+noncomputable def recursiveSidecars {C : Core S}
+    (I : Input C p0 kh0 khat0 qmax0) : RecursiveExactSidecars I.source :=
+  RecursiveExactSidecars.ofSource I.source
+    (Classical.choice (exists_selectionBounds I))
 
 def sourceJets {C : Core S} (I : Input C p0 kh0 khat0 qmax0) :
     FiniteSmoothRearFamilyMarkingAwareNonaffinePhysicalW.SourceNormalizedJetBounds
@@ -268,6 +300,18 @@ structure RecursiveFacts {C : Core S} (I : Input C p0 kh0 khat0 qmax0) where
   terminalCurvature_nonnegative : ∀ s, 0 ≤ I.source.K C.path.T s
   terminalRange : Set.range (I.source.F C.path.T) =
     Set.range C.geometric.output.jets.rear.1
+
+/-- Only terminal curvature and endpoint range remain geometric inputs; the
+scaled spatial and selection sidecars are intrinsic to `I`. -/
+def RecursiveFacts.ofTerminal {C : Core S}
+    (I : Input C p0 kh0 khat0 qmax0)
+    (terminalCurvature_nonnegative : ∀ s, 0 ≤ I.source.K C.path.T s)
+    (terminalRange : Set.range (I.source.F C.path.T) =
+      Set.range C.geometric.output.jets.rear.1) : RecursiveFacts I where
+  sidecars := I.recursiveSidecars
+  spatial := I.spatial
+  terminalCurvature_nonnegative := terminalCurvature_nonnegative
+  terminalRange := terminalRange
 
 def recursive {C : Core S} (I : Input C p0 kh0 khat0 qmax0)
     (H : RecursiveFacts I) :

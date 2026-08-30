@@ -101,14 +101,10 @@ theorem recursion_growth {H : ℕ → ℝ} {Delta : ℝ}
   induction n with
   | zero => simp
   | succ k ih =>
-    have hstep : H k + Delta / 2 ≤ H (k + 1) := by
-      have h := hPle (H (k + 1)) (hmem (k + 1))
-      rw [hrec k] at h
-      linarith
-    have : H 0 + Delta / 2 * k + Delta / 2 ≤ H (k + 1) := by linarith
-    calc H 0 + Delta / 2 * (k + 1 : ℕ) = H 0 + Delta / 2 * k + Delta / 2 := by
-          push_cast; ring
-      _ ≤ H (k + 1) := this
+    have hstep := hPle (H (k + 1)) (hmem (k + 1))
+    rw [hrec k] at hstep
+    push_cast
+    linarith
 
 end Recursion
 
@@ -185,23 +181,16 @@ theorem tail_bound (hd : 0 < d) (hbeta : 0 < beta) (hH0 : 0 ≤ H0) :
 /-- The tail bound tends to zero as the initial separation grows. -/
 theorem tendsto_tail_zero (hbeta : 0 < beta) :
     Tendsto (fun x : ℝ => (1 + x) ^ 2 * Real.exp (-beta * x)) atTop (nhds 0) := by
-  have h0 := Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 0
-  have h1 := Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1
-  have h2 := Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 2
-  have hF : Tendsto (fun u : ℝ => (1 + u / beta) ^ 2 * Real.exp (-u)) atTop (nhds 0) := by
-    have hsum := (h0.add (h1.const_mul (2 / beta))).add (h2.const_mul (1 / beta ^ 2))
-    simp only [mul_zero, add_zero] at hsum
-    apply hsum.congr
-    intro u
-    field_simp
-    ring
-  have hscale : Tendsto (fun x : ℝ => beta * x) atTop atTop :=
-    Filter.tendsto_id.const_mul_atTop hbeta
-  have h := hF.comp hscale
-  apply h.congr
+  have hpow (n : ℕ) :
+      Tendsto (fun x : ℝ => x ^ n * Real.exp (-beta * x)) atTop (nhds 0) := by
+    simpa only [Real.rpow_natCast] using
+      tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero (n : ℝ) beta hbeta
+  have hsum := ((hpow 0).add ((hpow 1).const_mul 2)).add (hpow 2)
+  simp only [mul_zero, add_zero] at hsum
+  apply hsum.congr
   intro x
-  simp only [Function.comp]
-  field_simp
+  simp only [pow_zero, pow_one]
+  ring
 
 end Tail
 

@@ -71,6 +71,64 @@ private theorem sourceConst_nonnegative :
       FiniteSmoothRearFamilyMarkingAwareSmoothSource.intrinsicDerivativeConst]
     positivity)
 
+/-- The source-indexed spatial certificate for the multiplier-scaled density.
+Naming this certificate keeps it available to the recursive successor rather
+than burying it in the source structure literal. -/
+def scaledSpatialCertificate
+    (B : DirectBounds W S R G T hkap0 hkap1 C hP0
+      hC2 heta heta1 heta2)
+    (K : RecostScalar W (kap := kap) (QmaxNext := QmaxNext)
+      hC2 heta heta1 heta2) :
+    SpatialFrameRegularity (carrier W hC2 heta heta1 heta2)
+      (rawSource W S R G T hkap0 hkap1 C hP0).Ydot
+      (rawSource W S R G T hkap0 hkap1 C hP0).Theta
+      (rawSource W S R G T hkap0 hkap1 C hP0).delta
+      (rawSource W S R G T hkap0 hkap1 C hP0).sf
+      (rawSource W S R G T hkap0 hkap1 C hP0).P
+      (scaledDensity W hC2 heta heta1 heta2 K) kap QmaxNext := by
+  let Delta' := carrier W hC2 heta heta1 heta2
+  let rho := density (kap := kap) W hC2 heta heta1 heta2
+  let dens := scaledDensity W hC2 heta heta1 heta2 K
+  have hsqrt : 0 < Real.sqrt (1 - kap ^ 2) :=
+    Real.sqrt_pos.mpr (by nlinarith)
+  have hpsi : rearOwnAngle (Theta S G.q) (delta S G.q) (sf S G.q) =
+      shiftedPsi R G := by
+    funext t x
+    exact psi_eq_shift S G.q t x
+  exact
+    { tangential := (geometricSpatialFrames S R G T hkap0 hkap1).1
+      normal := (geometricSpatialFrames S R G T hkap0 hkap1).2
+      tangential1_bound := by
+        intro t x
+        have hr : 0 ≤ rho t := by
+          dsimp [rho,
+            FiniteSmoothRearFamilyMarkingAwareExactSuccessorDirectRecostSource.density]
+          exact div_nonneg (Delta'.m_nonneg t) hsqrt.le
+        have hone : 1 ≤ K.coeff := K.coeff_ge_two.trans' (by norm_num)
+        exact (B.tangential1_bound t x).trans
+          (mul_le_mul_of_nonneg_left
+            (show rho t ≤ dens t by
+              dsimp [dens, scaledDensity]
+              exact le_mul_of_one_le_left hr hone)
+            (GaugeMarkedDataOfRearFamily.rearKappa1_nonneg hkap0 hkap1))
+      tangential2_bound := by
+        intro t x
+        have hr : 0 ≤ rho t := by
+          dsimp [rho,
+            FiniteSmoothRearFamilyMarkingAwareExactSuccessorDirectRecostSource.density]
+          exact div_nonneg (Delta'.m_nonneg t) hsqrt.le
+        have hone : 1 ≤ K.coeff := K.coeff_ge_two.trans' (by norm_num)
+        exact (B.tangential2_bound t x).trans
+          (mul_le_mul_of_nonneg_left
+            (show rho t ≤ dens t by
+              dsimp [dens, scaledDensity]
+              exact le_mul_of_one_le_left hr hone)
+            (GaugeMarkedDataOfRearFamily.rearKappa2_nonneg hkap0 hkap1))
+      tangential_period_bound := by
+        simpa [rawSource,
+          FiniteSmoothRearFamilyMarkingAwareExactSuccessorReadySource.source,
+          hpsi] using B.tangential_period_bound }
+
 /-- Multiplier-aware direct source with undoubled Jacobi constant. -/
 def scaledDirectSource
     (B : DirectBounds W S R G T hkap0 hkap1 C hP0
@@ -86,44 +144,13 @@ def scaledDirectSource
   have hsqrt : 0 < Real.sqrt (1 - kap ^ 2) :=
     Real.sqrt_pos.mpr (by nlinarith)
   have hd0 : 0 ≤ U.d := sourceConst_nonnegative (kh := kh) (kap := kap)
-  have hpsi : rearOwnAngle U.Theta U.delta U.sf = shiftedPsi R G := by
-    funext t x
-    exact psi_eq_shift S G.q t x
   refine
     { U with
       m := dens
       Dd := fun t ↦ (2 * U.d) * rho t
       frame_regularity := FrameRegularity.spatial
-        { tangential := (geometricSpatialFrames S R G T hkap0 hkap1).1
-          normal := (geometricSpatialFrames S R G T hkap0 hkap1).2
-          tangential1_bound := by
-            intro t x
-            have hr : 0 ≤ rho t := by
-              dsimp [rho,
-                FiniteSmoothRearFamilyMarkingAwareExactSuccessorDirectRecostSource.density]
-              exact div_nonneg (Delta'.m_nonneg t) hsqrt.le
-            have hone : 1 ≤ K.coeff := K.coeff_ge_two.trans' (by norm_num)
-            exact (B.tangential1_bound t x).trans
-              (mul_le_mul_of_nonneg_left
-                (show rho t ≤ dens t by
-                  dsimp [dens, scaledDensity]
-                  exact le_mul_of_one_le_left hr hone)
-                (GaugeMarkedDataOfRearFamily.rearKappa1_nonneg hkap0 hkap1))
-          tangential2_bound := by
-            intro t x
-            have hr : 0 ≤ rho t := by
-              dsimp [rho,
-                FiniteSmoothRearFamilyMarkingAwareExactSuccessorDirectRecostSource.density]
-              exact div_nonneg (Delta'.m_nonneg t) hsqrt.le
-            have hone : 1 ≤ K.coeff := K.coeff_ge_two.trans' (by norm_num)
-            exact (B.tangential2_bound t x).trans
-              (mul_le_mul_of_nonneg_left
-                (show rho t ≤ dens t by
-                  dsimp [dens, scaledDensity]
-                  exact le_mul_of_one_le_left hr hone)
-                (GaugeMarkedDataOfRearFamily.rearKappa2_nonneg hkap0 hkap1))
-          tangential_period_bound := by simpa [hpsi] using
-            B.tangential_period_bound }
+        (scaledSpatialCertificate W S R G T hkap0 hkap1 C hP0
+          hC2 heta heta1 heta2 B K)
       eta_link := ?_
       etaF_bound := ?_
       Dd_le := fun t ↦ by
@@ -176,6 +203,21 @@ def scaledDirectSource
     simp
   · have H := B.numerical_K
     nlinarith
+
+/-- The scaled source exposes the spatial certificate used in its
+`frame_regularity` field. -/
+def scaledDirectSource_spatial
+    (B : DirectBounds W S R G T hkap0 hkap1 C hP0
+      hC2 heta heta1 heta2)
+    (K : RecostScalar W (kap := kap) (QmaxNext := QmaxNext)
+      hC2 heta heta1 heta2) :
+    let D := scaledDirectSource W S R G T hkap0 hkap1 C hP0
+      hC2 heta heta1 heta2 B K
+    SpatialFrameRegularity (carrier W hC2 heta heta1 heta2)
+      D.Ydot D.Theta D.delta D.sf D.P D.m kap QmaxNext := by
+  simpa only [scaledDirectSource] using
+    (scaledSpatialCertificate W S R G T hkap0 hkap1 C hP0
+      hC2 heta heta1 heta2 B K)
 
 @[simp] theorem scaledDirectSource_m
     (B : DirectBounds W S R G T hkap0 hkap1 C hP0

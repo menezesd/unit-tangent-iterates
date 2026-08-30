@@ -12,7 +12,11 @@ namespace ConfiguredRecursiveEdgeFullRecostMetricDiagonal
 open ConfiguredApproximateDefectPathRowwise
   ConfiguredApproximateDefectPathRowwiseCost
   ConfiguredCombinedPhysicalDiagonalLargeSeparation
+  ConfiguredRecursiveEdgeFiniteColumnScalarClosing
+  ConfiguredRecursiveEdgeFiniteColumnGaugeMajorant
+  ConfiguredRecursiveEdgeRecostPeriodScaledDiagonal
   ConfiguredRecursiveEdgeRecostMultiplierScaledDiagonal
+  ConfiguredRecursiveEdgeRecostedAnalyticCarrier
   ConfiguredRecursiveEdgeSourceP0Growth
   ConfiguredRecursiveEdgeWeightedEffectiveError
   ConfiguredRowDefectProvider
@@ -35,12 +39,89 @@ theorem baseDisplayedMetricDiagonal_nonnegative
       sourceKh_lt_one q)
     (edgeCompositionPhysicalDefect_nonnegative D (q + 1))
 
-/-- Final displayed metric diagonal.  Its first summand remains the recursive
-source allowance; the second is used only for the base displayed edge. -/
+/-- Endpoint conversion applied to the actual recursive source allowance. -/
+def recursiveEndpointMetricDiagonal
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    (E0 C0 C1 C2 M : ℝ) (q : ℕ) : ℝ :=
+  edgeEndpointConversion D sourceKh M q *
+    multiplierRecostSourceAllowance D E0 C0 C1 C2 q
+
+theorem recursiveEndpointMetricDiagonal_nonnegative
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {E0 C0 C1 C2 M : ℝ} :
+    ∀ q, 0 ≤ recursiveEndpointMetricDiagonal D E0 C0 C1 C2 M q := by
+  intro q
+  exact mul_nonneg
+    (edgeEndpointConversion_nonnegative D sourceKh_nonnegative
+      sourceKh_lt_one q)
+    (multiplierRecostSourceAllowance_nonnegative D E0 C0 C1 C2 q)
+
+/-- The direct multiplier diagonal pays the variable-speed factor applied to
+the complete recursive source allowance. -/
+theorem recursivePathBudget_le_multiplierRecostDirectDiagonal
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    (MA NA E0 C0 C1 C2 M pathFactor : ℝ) (q : ℕ)
+    (hfactor : pathFactor ≤ edgeConversion D (analyticKhat D) MA NA q) :
+    pathFactor * multiplierRecostSourceAllowance D E0 C0 C1 C2 q ≤
+      multiplierRecostDirectDiagonal D MA NA E0 C0 C1 C2 M q := by
+  let c := directRecostCompositionCoeff D q
+  let L2 := recostPeriodScale D q
+  let T := configuredTarget E0 C0 C1 C2
+  let K := edgeConversion D (analyticKhat D) MA NA q
+  let B := edgeEndpointConversion D sourceKh M q
+  let e := edgePhysicalDefect D (q + 1)
+  have hc0 : 0 ≤ c := by
+    dsimp [c]
+    exact (by norm_num : (0 : ℝ) ≤ 2).trans
+      (directRecostCompositionCoeff_two_le D q)
+  have hL0 : 0 ≤ L2 := recostPeriodScale_nonnegative D q
+  have hT0 : 0 ≤ T := configuredTarget_nonnegative E0 C0 C1 C2
+  have hK0 : 0 ≤ K := edgeConversion_nonnegative D _ _ _ q
+  have hB0 : 0 ≤ B :=
+    edgeEndpointConversion_nonnegative D sourceKh_nonnegative
+      sourceKh_lt_one q
+  have he0 : 0 ≤ e := edgePhysicalDefect_nonnegative D (q + 1)
+  have hallow0 : 0 ≤ multiplierRecostSourceAllowance D E0 C0 C1 C2 q :=
+    multiplierRecostSourceAllowance_nonnegative D E0 C0 C1 C2 q
+  have hs := div_sqrt_sourceKh_le_two_mul hc0
+  have hscale0 : 0 ≤ 4 * T * (2 * L2 * e) :=
+    mul_nonneg (mul_nonneg (by norm_num) hT0)
+      (mul_nonneg (mul_nonneg (by norm_num) hL0) he0)
+  have hx0 : 0 ≤ 2 * L2 * K :=
+    mul_nonneg (mul_nonneg (by norm_num) hL0) hK0
+  have hcoeff :
+      (4 * T) * (2 * L2 * K) ≤
+        (4 * T + 1) * (2 * L2 * K + B) := by
+    exact mul_le_mul (by linarith) (le_add_of_nonneg_right hB0) hx0
+      (by linarith)
+  calc
+    pathFactor * multiplierRecostSourceAllowance D E0 C0 C1 C2 q ≤
+        K * multiplierRecostSourceAllowance D E0 C0 C1 C2 q :=
+      mul_le_mul_of_nonneg_right hfactor hallow0
+    _ = K * ((c / Real.sqrt (1 - sourceKh ^ 2)) *
+          (4 * T * (2 * L2 * e))) := by rfl
+    _ ≤ K * ((2 * c) * (4 * T * (2 * L2 * e))) :=
+      mul_le_mul_of_nonneg_left
+        (mul_le_mul_of_nonneg_right hs hscale0) hK0
+    _ = (2 * c) * (((4 * T) * (2 * L2 * K)) * e) := by ring
+    _ ≤ (2 * c) * (((4 * T + 1) * (2 * L2 * K + B)) * e) :=
+      mul_le_mul_of_nonneg_left
+        (mul_le_mul_of_nonneg_right hcoeff he0)
+        (mul_nonneg (by norm_num) hc0)
+    _ = multiplierRecostDirectDiagonal D MA NA E0 C0 C1 C2 M q := by
+      unfold multiplierRecostDirectDiagonal recostDirectDiagonal
+        weightedSequence recostDirectConversion recostCombinedConversion
+        recostEdgeConversion directScale
+      dsimp [c, L2, T, K, B, e]
+
+/-- Final displayed metric diagonal.  The first two summands pay the recursive
+path and endpoint charges; the last is reserved for the depth-zero physical
+displayed edge. -/
 def fullRecostMetricDiagonal
     (D : ConstructedConfiguredSequenceWeighted.Data)
     (MA NA E0 C0 C1 C2 M : ℝ) (q : ℕ) : ℝ :=
   multiplierRecostDirectDiagonal D MA NA E0 C0 C1 C2 M q +
+    recursiveEndpointMetricDiagonal D E0 C0 C1 C2 M q +
     baseDisplayedMetricDiagonal D MA NA M q
 
 theorem fullRecostMetricDiagonal_nonnegative
@@ -48,7 +129,9 @@ theorem fullRecostMetricDiagonal_nonnegative
     {MA NA E0 C0 C1 C2 M : ℝ} :
     ∀ q, 0 ≤ fullRecostMetricDiagonal D MA NA E0 C0 C1 C2 M q := by
   intro q
-  exact add_nonneg (multiplierRecostDirectDiagonal_nonnegative D q)
+  exact add_nonneg
+    (add_nonneg (multiplierRecostDirectDiagonal_nonnegative D q)
+      (recursiveEndpointMetricDiagonal_nonnegative D q))
     (baseDisplayedMetricDiagonal_nonnegative D q)
 
 theorem multiplierRecostSourceAllowance_le_fullRecostMetricDiagonal
@@ -58,7 +141,38 @@ theorem multiplierRecostSourceAllowance_le_fullRecostMetricDiagonal
       fullRecostMetricDiagonal D MA NA E0 C0 C1 C2 M q := by
   exact (multiplierRecostSourceAllowance_le_diagonal
     D MA NA E0 C0 C1 C2 M q).trans
-      (le_add_of_nonneg_right (baseDisplayedMetricDiagonal_nonnegative D q))
+      ((le_add_of_nonneg_right
+        (recursiveEndpointMetricDiagonal_nonnegative D q)).trans
+        (le_add_of_nonneg_right (baseDisplayedMetricDiagonal_nonnegative D q)))
+
+/-- At every recursive depth, both the raw path term and the endpoint cap are
+charged against the same multiplier source allowance. -/
+theorem recursiveRawEdgeBudget_le_fullRecostMetricDiagonal
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    (MA NA E0 C0 C1 C2 M pathFactor rawBound endpointCap : ℝ) (q : ℕ)
+    (hfactor : pathFactor ≤ edgeConversion D (analyticKhat D) MA NA q)
+    (hraw : rawBound ≤ multiplierRecostSourceAllowance D E0 C0 C1 C2 q)
+    (hraw0 : 0 ≤ rawBound)
+    (hendpoint : endpointCap ≤
+      edgeEndpointConversion D sourceKh M q *
+        multiplierRecostSourceAllowance D E0 C0 C1 C2 q) :
+    pathFactor * rawBound + endpointCap ≤
+      fullRecostMetricDiagonal D MA NA E0 C0 C1 C2 M q := by
+  let K := edgeConversion D (analyticKhat D) MA NA q
+  have hK0 : 0 ≤ K := edgeConversion_nonnegative D _ _ _ q
+  have hpath : pathFactor * rawBound ≤
+      multiplierRecostDirectDiagonal D MA NA E0 C0 C1 C2 M q :=
+    (mul_le_mul hfactor hraw hraw0 hK0).trans
+      (recursivePathBudget_le_multiplierRecostDirectDiagonal
+        D MA NA E0 C0 C1 C2 M K q le_rfl)
+  calc
+    pathFactor * rawBound + endpointCap ≤
+        multiplierRecostDirectDiagonal D MA NA E0 C0 C1 C2 M q +
+          recursiveEndpointMetricDiagonal D E0 C0 C1 C2 M q :=
+      add_le_add hpath (by
+        simpa [recursiveEndpointMetricDiagonal] using hendpoint)
+    _ ≤ fullRecostMetricDiagonal D MA NA E0 C0 C1 C2 M q :=
+      le_add_of_nonneg_right (baseDisplayedMetricDiagonal_nonnegative D q)
 
 theorem edgePhysicalDefect_le_edgeCompositionPhysicalDefect
     (D : ConstructedConfiguredSequenceWeighted.Data) (j : ℕ) :
@@ -79,30 +193,27 @@ theorem baseRawEdgeBudget_le_fullRecostMetricDiagonal
     (hraw : rawBound ≤ edgeCompositionPhysicalDefect D (q + 1))
     (hraw0 : 0 ≤ rawBound)
     (hendpoint : endpointCap ≤
-      edgeEndpointConversion D sourceKh M q * edgePhysicalDefect D (q + 1)) :
+      edgeEndpointConversion D sourceKh M q *
+        edgeCompositionPhysicalDefect D (q + 1)) :
     pathFactor * rawBound + endpointCap ≤
       fullRecostMetricDiagonal D MA NA E0 C0 C1 C2 M q := by
   let K := edgeConversion D (analyticKhat D) MA NA q
   let B := edgeEndpointConversion D sourceKh M q
   let dc := edgeCompositionPhysicalDefect D (q + 1)
-  let d := edgePhysicalDefect D (q + 1)
   have hK0 : 0 ≤ K := edgeConversion_nonnegative D _ _ _ q
-  have hB0 : 0 ≤ B := edgeEndpointConversion_nonnegative D
-    sourceKh_nonnegative sourceKh_lt_one q
-  have hdle : d ≤ dc := edgePhysicalDefect_le_edgeCompositionPhysicalDefect D _
   have hpath : pathFactor * rawBound ≤ K * dc :=
     mul_le_mul hfactor hraw hraw0 hK0
-  have hcap : endpointCap ≤ B * dc :=
-    hendpoint.trans (mul_le_mul_of_nonneg_left hdle hB0)
   calc
     pathFactor * rawBound + endpointCap ≤ K * dc + B * dc :=
-      add_le_add hpath hcap
+      add_le_add hpath hendpoint
     _ = baseDisplayedMetricDiagonal D MA NA M q := by
       simp [baseDisplayedMetricDiagonal, weightedSequence,
         edgeCombinedConversion, K, B, dc]
       ring
     _ ≤ fullRecostMetricDiagonal D MA NA E0 C0 C1 C2 M q :=
-      le_add_of_nonneg_left (multiplierRecostDirectDiagonal_nonnegative D q)
+      le_add_of_nonneg_left
+        (add_nonneg (multiplierRecostDirectDiagonal_nonnegative D q)
+          (recursiveEndpointMetricDiagonal_nonnegative D q))
 
 /-- Polynomial composition defects retain a pointwise exponential bound. -/
 theorem exists_edgeCompositionPhysicalDefect_exp_bound
@@ -198,6 +309,91 @@ theorem exists_baseDisplayedMetricDiagonal_exp_bound
       hCgrowth (edgeCompositionPhysicalDefect_nonnegative D)
       (fun j ↦ by simpa using hd j))
 
+theorem exists_recursiveEndpointMetricDiagonal_exp_bound
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {MA NA E0 C0 C1 C2 M : ℝ}
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) (hM : 0 ≤ M) :
+    ∃ beta K : ℝ, 0 < beta ∧ 0 ≤ K ∧ ∀ q,
+      recursiveEndpointMetricDiagonal D E0 C0 C1 C2 M q ≤
+        K * Real.exp (-(beta * D.Hs q)) := by
+  obtain ⟨beta0, K0, hbeta0, hK0, hdirect⟩ :=
+    exists_multiplierRecostDirectDiagonal_exp_bound D
+      (E0 := E0) (C0 := C0) (C1 := C1) (C2 := C2) hMA hNA hM
+  let gamma : ℝ := beta0 / 4
+  let beta : ℝ := beta0 / 2
+  have hgamma : 0 < gamma := div_pos hbeta0 (by norm_num)
+  have hbeta : 0 < beta := half_pos hbeta0
+  obtain ⟨C, hC0, hendpoint⟩ :=
+    exists_edgeEndpointConversion_growth_majorant D
+      sourceKh_nonnegative sourceKh_lt_one hM hgamma
+  obtain ⟨A, hA0, hpoly⟩ := exists_one_add_pow_le_exp 2 hgamma
+  let K : ℝ := C * A * K0
+  have hK : 0 ≤ K := mul_nonneg (mul_nonneg hC0 hA0) hK0
+  refine ⟨beta, K, hbeta, hK, ?_⟩
+  intro q
+  have hq0 : 0 ≤ D.Hs q := (D.model.separation_pos q).le
+  have hstep : D.Hs q ≤ D.Hs (q + 1) := by
+    linarith [D.separation_step q, D.deltaStep_pos]
+  have hgrowth : edgeEndpointConversion D sourceKh M q ≤
+      C * A * Real.exp ((2 * gamma) * D.Hs (q + 1)) := by
+    calc
+      edgeEndpointConversion D sourceKh M q ≤
+          C * (1 + D.Hs q) ^ 2 * Real.exp (gamma * D.Hs q) :=
+        hendpoint q
+      _ ≤ C * (A * Real.exp (gamma * D.Hs q)) *
+          Real.exp (gamma * D.Hs q) :=
+        mul_le_mul_of_nonneg_right
+          (mul_le_mul_of_nonneg_left (hpoly (D.Hs q) hq0) hC0)
+          (Real.exp_pos _).le
+      _ = C * A * Real.exp ((2 * gamma) * D.Hs q) := by
+        rw [show (2 * gamma) * D.Hs q =
+            gamma * D.Hs q + gamma * D.Hs q by ring, Real.exp_add]
+        ring
+      _ ≤ C * A * Real.exp ((2 * gamma) * D.Hs (q + 1)) :=
+        mul_le_mul_of_nonneg_left
+          (Real.exp_le_exp.mpr
+            (mul_le_mul_of_nonneg_left hstep
+              (mul_nonneg (by norm_num) hgamma.le)))
+          (mul_nonneg hC0 hA0)
+  have hallow : multiplierRecostSourceAllowance D E0 C0 C1 C2 q ≤
+      K0 * Real.exp (-(beta0 * D.Hs (q + 1))) :=
+    (multiplierRecostSourceAllowance_le_diagonal
+      D MA NA E0 C0 C1 C2 M q).trans (hdirect q)
+  calc
+    recursiveEndpointMetricDiagonal D E0 C0 C1 C2 M q ≤
+        (C * A * Real.exp ((2 * gamma) * D.Hs (q + 1))) *
+          (K0 * Real.exp (-(beta0 * D.Hs (q + 1)))) :=
+      mul_le_mul hgrowth hallow
+        (multiplierRecostSourceAllowance_nonnegative D E0 C0 C1 C2 q)
+        (mul_nonneg (mul_nonneg hC0 hA0) (Real.exp_pos _).le)
+    _ = K * Real.exp (-(beta * D.Hs (q + 1))) := by
+      rw [show -(beta * D.Hs (q + 1)) =
+          (2 * gamma) * D.Hs (q + 1) +
+            -(beta0 * D.Hs (q + 1)) by
+        dsimp [beta, gamma]
+        ring, Real.exp_add]
+      dsimp [K]
+      ring
+    _ ≤ K * Real.exp (-(beta * D.Hs q)) :=
+      mul_le_mul_of_nonneg_left
+        (Real.exp_le_exp.mpr (by
+          have := mul_le_mul_of_nonneg_left hstep hbeta.le
+          linarith)) hK
+
+theorem recursiveEndpointMetricDiagonal_summable
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    {MA NA E0 C0 C1 C2 M : ℝ}
+    (hMA : 0 ≤ MA) (hNA : 0 ≤ NA) (hM : 0 ≤ M) :
+    Summable (recursiveEndpointMetricDiagonal D E0 C0 C1 C2 M) := by
+  obtain ⟨beta, K, hbeta, hK, hbound⟩ :=
+    exists_recursiveEndpointMetricDiagonal_exp_bound D
+      (E0 := E0) (C0 := C0) (C1 := C1) (C2 := C2) hMA hNA hM
+  have hs :=
+    (ModelDefectSummable.summable_exp_neg_of_growth hbeta
+      D.deltaStep_pos D.separation_linear).mul_left K
+  exact Summable.of_nonneg_of_le
+    (recursiveEndpointMetricDiagonal_nonnegative D) hbound hs
+
 theorem exists_fullRecostMetricDiagonal_exp_bound
     (D : ConstructedConfiguredSequenceWeighted.Data)
     {MA NA E0 C0 C1 C2 M : ℝ}
@@ -209,32 +405,50 @@ theorem exists_fullRecostMetricDiagonal_exp_bound
     exists_multiplierRecostDirectDiagonal_exp_bound D
       (E0 := E0) (C0 := C0) (C1 := C1) (C2 := C2) hMA hNA hM
   obtain ⟨b2, K2, hb2, hK2, h2⟩ :=
+    exists_recursiveEndpointMetricDiagonal_exp_bound D
+      (E0 := E0) (C0 := C0) (C1 := C1) (C2 := C2) hMA hNA hM
+  obtain ⟨b3, K3, hb3, hK3, h3⟩ :=
     exists_baseDisplayedMetricDiagonal_exp_bound D hMA hNA hM
-  refine ⟨min b1 b2, K1 + K2, lt_min hb1 hb2, add_nonneg hK1 hK2, ?_⟩
+  refine ⟨min b1 (min b2 b3), K1 + K2 + K3,
+    lt_min hb1 (lt_min hb2 hb3), add_nonneg (add_nonneg hK1 hK2) hK3, ?_⟩
   intro q
   have hH : 0 ≤ D.Hs q := (D.model.separation_pos q).le
   have hnext : D.Hs q ≤ D.Hs (q + 1) := by
     linarith [D.separation_step q, D.deltaStep_pos]
   have he1 : Real.exp (-(b1 * D.Hs (q + 1))) ≤
-      Real.exp (-(min b1 b2 * D.Hs q)) := Real.exp_le_exp.mpr (by
-    have hmin : min b1 b2 * D.Hs q ≤ b1 * D.Hs q :=
-      mul_le_mul_of_nonneg_right (min_le_left b1 b2) hH
+      Real.exp (-(min b1 (min b2 b3) * D.Hs q)) := Real.exp_le_exp.mpr (by
+    have hmin : min b1 (min b2 b3) * D.Hs q ≤ b1 * D.Hs q :=
+      mul_le_mul_of_nonneg_right (min_le_left b1 (min b2 b3)) hH
     have hstep : b1 * D.Hs q ≤ b1 * D.Hs (q + 1) :=
       mul_le_mul_of_nonneg_left hnext hb1.le
     linarith)
   have he2 : Real.exp (-(b2 * D.Hs q)) ≤
-      Real.exp (-(min b1 b2 * D.Hs q)) := Real.exp_le_exp.mpr (by
-    have := mul_le_mul_of_nonneg_right (min_le_right b1 b2) hH
+      Real.exp (-(min b1 (min b2 b3) * D.Hs q)) := Real.exp_le_exp.mpr (by
+    have hmin : min b1 (min b2 b3) ≤ b2 :=
+      (min_le_right b1 (min b2 b3)).trans (min_le_left b2 b3)
+    have := mul_le_mul_of_nonneg_right hmin hH
+    linarith)
+  have he3 : Real.exp (-(b3 * D.Hs q)) ≤
+      Real.exp (-(min b1 (min b2 b3) * D.Hs q)) := Real.exp_le_exp.mpr (by
+    have hmin : min b1 (min b2 b3) ≤ b3 :=
+      (min_le_right b1 (min b2 b3)).trans (min_le_right b2 b3)
+    have := mul_le_mul_of_nonneg_right hmin hH
     linarith)
   calc
     fullRecostMetricDiagonal D MA NA E0 C0 C1 C2 M q ≤
-        K1 * Real.exp (-(b1 * D.Hs (q + 1))) +
-          K2 * Real.exp (-(b2 * D.Hs q)) := add_le_add (h1 q) (h2 q)
-    _ ≤ K1 * Real.exp (-(min b1 b2 * D.Hs q)) +
-          K2 * Real.exp (-(min b1 b2 * D.Hs q)) :=
-      add_le_add (mul_le_mul_of_nonneg_left he1 hK1)
-        (mul_le_mul_of_nonneg_left he2 hK2)
-    _ = (K1 + K2) * Real.exp (-(min b1 b2 * D.Hs q)) := by ring
+        (K1 * Real.exp (-(b1 * D.Hs (q + 1))) +
+          K2 * Real.exp (-(b2 * D.Hs q))) +
+            K3 * Real.exp (-(b3 * D.Hs q)) :=
+      add_le_add (add_le_add (h1 q) (h2 q)) (h3 q)
+    _ ≤ (K1 * Real.exp (-(min b1 (min b2 b3) * D.Hs q)) +
+          K2 * Real.exp (-(min b1 (min b2 b3) * D.Hs q))) +
+            K3 * Real.exp (-(min b1 (min b2 b3) * D.Hs q)) :=
+      add_le_add
+        (add_le_add (mul_le_mul_of_nonneg_left he1 hK1)
+          (mul_le_mul_of_nonneg_left he2 hK2))
+        (mul_le_mul_of_nonneg_left he3 hK3)
+    _ = (K1 + K2 + K3) *
+        Real.exp (-(min b1 (min b2 b3) * D.Hs q)) := by ring
 
 theorem fullRecostMetricDiagonal_summable
     (D : ConstructedConfiguredSequenceWeighted.Data)

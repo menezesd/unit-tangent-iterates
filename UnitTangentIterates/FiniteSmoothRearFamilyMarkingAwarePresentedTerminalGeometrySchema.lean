@@ -32,6 +32,9 @@ structure PresentedTerminalGeometry
   physical_angle_eq : physical.Theta = terminalAngle A
   physical_curvature_eq : physical.curvature = terminalCurvature A
   physical_cq_eq : physical.cq = terminalPeriod A
+  physical_L_eq : physical.L = terminalPeriod A
+  physical_kb_eq : physical.kb = GaugeMarkedDataOfRearFamily.rearKappa1 kh
+  physical_kL_eq : physical.kL = A.kx
   physical_dlt_eq : physical.dlt = dlt
   physical_dlt_pos : 0 < physical.dlt
   zero_floor_tube : IsTubeMember physical.cq 0 physical.dlt presented

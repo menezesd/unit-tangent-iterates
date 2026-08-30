@@ -45,10 +45,15 @@ noncomputable def applied (H : GeometricCompositionInvariant S) (n : ℕ) :
 
 noncomputable def geometry (H : GeometricCompositionInvariant S) (n : ℕ) :
     PresentedTerminalGeometry (S.source n) (applied H n) :=
-  Classical.choice
-    (FiniteSmoothRearFamilyMarkingAwareCompositionRecursivePresentedTerminalGeometry.CompositionRecursiveAnalyticSuccessor.exists_presentedTerminalGeometry
-      (currentAnalytic H n) (applied H n) (Qmax (n + k))
-      (S.source n).rear_period_le)
+  { Classical.choice
+      (FiniteSmoothRearFamilyMarkingAwareCompositionRecursivePresentedTerminalGeometry.CompositionRecursiveAnalyticSuccessor.exists_presentedTerminalGeometry
+        (currentAnalytic H n) (applied H n) (Qmax (n + k))
+        (S.source n).rear_period_le) with
+    Lmax := Qmax (n + k)
+    period_le := (S.source n).rear_period_le }
+
+@[simp] theorem geometry_Lmax (H : GeometricCompositionInvariant S) (n : ℕ) :
+    (geometry H n).Lmax = Qmax (n + k) := rfl
 
 private theorem frame_speed_one_zero
     {p q : Data} {Gamma : NormalPath p q}

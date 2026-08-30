@@ -764,7 +764,38 @@ theorem exists_edgeConversion_growth_majorant
 def edgeEndpointConversion
     (D : ConstructedConfiguredSequenceWeighted.Data)
     (kh M : ℝ) : ℕ → ℝ :=
-  mergedEndpointConversion D kh M
+  fun n ↦ max
+    (successorEndpointConversion D kh M n)
+    (mergedEndpointConversion D kh M n)
+
+theorem successorEndpointConversion_le_edgeEndpointConversion
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    (kh M : ℝ) (n : ℕ) :
+    successorEndpointConversion D kh M n ≤
+      edgeEndpointConversion D kh M n :=
+  le_max_left _ _
+
+theorem endpointConversion_succ_le_edgeEndpointConversion
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    (kh M : ℝ) (n : ℕ) :
+    endpointConversion D kh M (n + 1) ≤
+      edgeEndpointConversion D kh M n :=
+  successorEndpointConversion_le_edgeEndpointConversion D kh M n
+
+theorem mergedEndpointConversion_le_edgeEndpointConversion
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    (kh M : ℝ) (n : ℕ) :
+    mergedEndpointConversion D kh M n ≤
+      edgeEndpointConversion D kh M n :=
+  le_max_right _ _
+
+theorem endpointConversion_le_edgeEndpointConversion
+    (D : ConstructedConfiguredSequenceWeighted.Data)
+    (kh M : ℝ) (n : ℕ) :
+    endpointConversion D kh M n ≤
+      edgeEndpointConversion D kh M n :=
+  (le_max_right _ _).trans
+    (mergedEndpointConversion_le_edgeEndpointConversion D kh M n)
 
 def edgeCombinedConversion
     (D : ConstructedConfiguredSequenceWeighted.Data)
@@ -777,7 +808,8 @@ theorem edgeEndpointConversion_nonnegative
     {kh M : ℝ} (hkh0 : 0 ≤ kh) (hkh1 : kh < 1) :
     ∀ n, 0 ≤ edgeEndpointConversion D kh M n := by
   intro n
-  exact mergedEndpointConversion_nonnegative D hkh0 hkh1 n
+  exact (mergedEndpointConversion_nonnegative D hkh0 hkh1 n).trans
+    (mergedEndpointConversion_le_edgeEndpointConversion D kh M n)
 
 theorem edgeCombinedConversion_nonnegative
     (D : ConstructedConfiguredSequenceWeighted.Data)
@@ -795,9 +827,34 @@ theorem exists_edgeEndpointConversion_growth_majorant
     ∃ C0 : ℝ, 0 ≤ C0 ∧ ∀ n,
       edgeEndpointConversion D kh M n ≤
         C0 * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) := by
-  simpa [edgeEndpointConversion] using
-    (exists_mergedEndpointConversion_growth_majorant
-      D hkh0 hkh1 hM hgamma)
+  obtain ⟨A, hA0, hA⟩ :=
+    exists_successorEndpointConversion_growth_majorant
+      D hkh0 hkh1 hM hgamma
+  obtain ⟨B, hB0, hB⟩ :=
+    exists_mergedEndpointConversion_growth_majorant
+      D hkh0 hkh1 hM hgamma
+  refine ⟨A + B, add_nonneg hA0 hB0, ?_⟩
+  intro n
+  have hz : 0 ≤ (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) := by
+    positivity
+  unfold edgeEndpointConversion
+  apply max_le
+  · apply (hA n).trans
+    calc
+      A * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) =
+          A * ((1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n)) := by ring
+      _ ≤ (A + B) * ((1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n)) :=
+        mul_le_mul_of_nonneg_right (le_add_of_nonneg_right hB0) hz
+      _ = (A + B) * (1 + D.Hs n) ^ 2 *
+          Real.exp (gamma * D.Hs n) := by ring
+  · apply (hB n).trans
+    calc
+      B * (1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n) =
+          B * ((1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n)) := by ring
+      _ ≤ (A + B) * ((1 + D.Hs n) ^ 2 * Real.exp (gamma * D.Hs n)) :=
+        mul_le_mul_of_nonneg_right (le_add_of_nonneg_left hA0) hz
+      _ = (A + B) * (1 + D.Hs n) ^ 2 *
+          Real.exp (gamma * D.Hs n) := by ring
 
 theorem exists_edgeCombinedConversion_growth_majorant
     (D : ConstructedConfiguredSequenceWeighted.Data)

@@ -160,8 +160,10 @@ structure ConfiguredCapBounds
     ConfiguredCombinedPhysicalDiagonalLargeSeparation.speedCap D n
   length_le : R.terminalInput.physical.L ≤
     ConfiguredCombinedPhysicalDiagonalLargeSeparation.lengthCap D n
-  kb_le : R.terminalInput.physical.kb ≤ D.kstar
-  kL_le : R.terminalInput.physical.kL ≤ D.kd
+  kb_le : R.terminalInput.physical.kb ≤
+    ConfiguredCombinedPhysicalDiagonalLargeSeparation.analyticKhat D
+  kL_le : R.terminalInput.physical.kL ≤
+    ConfiguredCombinedPhysicalDiagonalLargeSeparation.analyticKd D
 
 /-- The configured source, scalar cost cap, and physical terminal ceilings
 construct all three numerical fields of `RowCap`. -/

@@ -41,12 +41,14 @@ structure ConfiguredCapBounds
       (n + (k + 1)) < M
   Lmax_le : R.terminalInput.Lmax ≤
     ConfiguredCombinedPhysicalDiagonalLargeSeparation.speedCap
-      (shift D N) n
+      (shift D N) (n + 1)
   length_le : R.terminalInput.physical.L ≤
     ConfiguredCombinedPhysicalDiagonalLargeSeparation.lengthCap
-      (shift D N) n
-  kb_le : R.terminalInput.physical.kb ≤ (shift D N).kstar
-  kL_le : R.terminalInput.physical.kL ≤ (shift D N).kd
+      (shift D N) (n + 1)
+  kb_le : R.terminalInput.physical.kb ≤
+    ConfiguredCombinedPhysicalDiagonalLargeSeparation.analyticKhat (shift D N)
+  kL_le : R.terminalInput.physical.kL ≤
+    ConfiguredCombinedPhysicalDiagonalLargeSeparation.analyticKd (shift D N)
 
 /-- The configured source cost and physical terminal ceilings supply all
 three fields of `GeometricPresentedRowCap`. -/
@@ -60,7 +62,7 @@ def ConfiguredCapBounds.rowCap
     {diagonal : ℕ → ℝ} {N : ℕ} {M kh0 : ℝ}
     (H : ConfiguredCapBounds R D diagonal N M kh0) :
     GeometricPresentedRowCap R M
-      (ConfiguredCombinedPhysicalDiagonalLargeSeparation.endpointConversion
+      (ConfiguredCombinedPhysicalDiagonalLargeSeparation.successorEndpointConversion
         (shift D N) kh0 M n)
       (ExponentialDiagonalLargeSeparation.shiftSequence diagonal N
         (n + (k + 1))) where
@@ -81,7 +83,7 @@ def ConfiguredCapBounds.rowCap
     have hell0 : 0 ≤ rearPeriod (S.source n) 0 :=
       ((S.source n).rear_period_pos 0).le
     have hell : rearPeriod (S.source n) 0 ≤
-        ConfiguredCombinedPhysicalDiagonalLargeSeparation.ellCap D' n := by
+        ConfiguredCombinedPhysicalDiagonalLargeSeparation.ellCap D' (n + 1) := by
       apply (R.terminalInput.rearPeriod_le 0).trans
       simpa [D', ConfiguredCombinedPhysicalDiagonalLargeSeparation.ellCap,
         ConfiguredCombinedPhysicalDiagonalLargeSeparation.speedCap] using H.Lmax_le
@@ -117,7 +119,8 @@ def ConfiguredCapBounds.rowCap
       FiniteSmoothRearFamilyMarkingAwareDirectCappedProvider.canonicalMarkingLinearConst_mono_fixed
         hQ0 H.Lmax_le hell0 hell hkappa hkappa2 hM0
         hL0 H.length_le hkb0 H.kb_le hkL0 H.kL_le
-    simpa [ConfiguredCombinedPhysicalDiagonalLargeSeparation.endpointConversion,
+    simpa [ConfiguredCombinedPhysicalDiagonalLargeSeparation.successorEndpointConversion,
+      ConfiguredCombinedPhysicalDiagonalLargeSeparation.endpointConversion,
       ConfiguredGaugeEndpointLinearRadius.endpointLinearCoeff, H.kh_eq, D'] using hmono
   cost_le_defect := by
     calc

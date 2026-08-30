@@ -120,15 +120,25 @@ structure GeometricPresentedRowCap
       R.terminalInput.physical.kL ≤ endpoint
   cost_le_defect : R.output.chosen.Delta.cost ≤ defect
 
-/-- The retained marking estimate linearizes the geometric row cap. -/
-theorem GeometricPresentedRowCap.endpoint_dist_le
+/-- A geometric row cap bounds the intrinsic marking correction before it is
+converted into an endpoint distance. -/
+theorem GeometricPresentedRowCap.markingC2Bound_le
     {Q current : ℕ → Data} {e : ℕ → ℕ → ℝ} {k n : ℕ}
     {P0 P1 khat G1 Cg C kh Qmax : ℕ → ℝ} {c dlt : ℝ}
     {S : GeometricCorrelatedColumn Q current e k P0 P1 khat G1 Cg C c dlt kh Qmax}
     {R : GeometricPresentedRowSelection (n := n) S}
     {M endpoint defect : ℝ} (hM : 0 ≤ M)
     (H : GeometricPresentedRowCap R M endpoint defect) :
-    dist R.output.jets.rear R.presented ≤ endpoint * defect := by
+    MarkingDeviationC2.markingC2Bound
+      (2 * R.terminalInput.Lmax * rearKappa1 (kh n) *
+        R.output.chosen.Delta.cost)
+      (MarkingFlowDefectC2.flowDefectC1Int (rearPeriod (S.source n) 0)
+        (rearKappa1 (kh n) * R.output.chosen.Delta.cost))
+      (MarkingFlowDefectC2.flowDefectC2Int (rearPeriod (S.source n) 0)
+        (rearKappa1 (kh n) * R.output.chosen.Delta.cost)
+        (rearKappa2 (kh n) * R.output.chosen.Delta.cost))
+      R.terminalInput.physical.L R.terminalInput.physical.kb
+      R.terminalInput.physical.kL ≤ endpoint * defect := by
   have hL : 0 ≤ R.terminalInput.physical.L := by
     rw [← R.terminalInput.physical.perim_eq]
     exact zero_le_one.trans R.terminal_perim_ge_one
@@ -142,13 +152,21 @@ theorem GeometricPresentedRowCap.endpoint_dist_le
         R.terminalInput.physical.curvature 1)).trans HL
     norm_num at H0
     exact H0
-  have hlinear : dist R.output.jets.rear R.presented ≤
+  have hlinear : MarkingDeviationC2.markingC2Bound
+      (2 * R.terminalInput.Lmax * rearKappa1 (kh n) *
+        R.output.chosen.Delta.cost)
+      (MarkingFlowDefectC2.flowDefectC1Int (rearPeriod (S.source n) 0)
+        (rearKappa1 (kh n) * R.output.chosen.Delta.cost))
+      (MarkingFlowDefectC2.flowDefectC2Int (rearPeriod (S.source n) 0)
+        (rearKappa1 (kh n) * R.output.chosen.Delta.cost)
+        (rearKappa2 (kh n) * R.output.chosen.Delta.cost))
+      R.terminalInput.physical.L R.terminalInput.physical.kb
+      R.terminalInput.physical.kL ≤
       InterpolationVariableSpeedSelInvAdapter.canonicalMarkingLinearConst
         R.terminalInput.Lmax (rearPeriod (S.source n) 0)
         (rearKappa1 (kh n)) (rearKappa2 (kh n)) M
         R.terminalInput.physical.L R.terminalInput.physical.kb
         R.terminalInput.physical.kL * R.output.chosen.Delta.cost := by
-    apply R.output.endpoint_dist.trans
     apply InterpolationVariableSpeedSelInvAdapter.markingC2Bound_flow_le_linear
     · exact ((S.source n).rear_period_pos 0).le.trans
         (R.terminalInput.rearPeriod_le 0)
@@ -178,6 +196,18 @@ theorem GeometricPresentedRowCap.endpoint_dist_le
     (mul_le_mul H.coefficient_le H.cost_le_defect
       R.output.chosen.Delta.cost_nonneg
       (hcanonical.trans H.coefficient_le))
+
+/-- The retained marking estimate linearizes the geometric row cap. -/
+theorem GeometricPresentedRowCap.endpoint_dist_le
+    {Q current : ℕ → Data} {e : ℕ → ℕ → ℝ} {k n : ℕ}
+    {P0 P1 khat G1 Cg C kh Qmax : ℕ → ℝ} {c dlt : ℝ}
+    {S : GeometricCorrelatedColumn Q current e k P0 P1 khat G1 Cg C c dlt kh Qmax}
+    {R : GeometricPresentedRowSelection (n := n) S}
+    {M endpoint defect : ℝ} (hM : 0 ≤ M)
+    (H : GeometricPresentedRowCap R M endpoint defect) :
+    dist R.output.jets.rear R.presented ≤ endpoint * defect := by
+  exact R.output.endpoint_dist.trans
+    (GeometricPresentedRowCap.markingC2Bound_le hM H)
 
 /-- All selected rows and the exact composition-stable successor sources. -/
 structure GeometricPresentedRowFamily

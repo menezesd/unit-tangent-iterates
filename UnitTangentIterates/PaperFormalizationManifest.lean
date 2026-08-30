@@ -26,8 +26,6 @@ import UnitTangentIterates.InterpolationGaugeCutoffSecondBound
 import UnitTangentIterates.InterpolationGaugeSmoothSpecialized
 import UnitTangentIterates.InterpolationPathEtaSmoothChain
 import UnitTangentIterates.InterpolationControlledJunctionOutput
-import UnitTangentIterates.MasterTheoremAssembly
-import UnitTangentIterates.UnitTangentIteratesDriver
 import UnitTangentIterates.UnitTangentPreliminariesComplete
 import UnitTangentIterates.HairpinSolitonComplete
 import UnitTangentIterates.TranslatingHairpinComplete
@@ -115,6 +113,7 @@ import UnitTangentIterates.StrictConstructedModelGeometry
 import UnitTangentIterates.VariableSpeedApproximatePullback
 import UnitTangentIterates.WeightedMarkedDefectThreshold
 import UnitTangentIterates.WeightedRecursiveDefect
+import UnitTangentIterates.Theorem11Status
 
 /-!
 # Paper-to-Code Formalization Manifest
@@ -127,45 +126,54 @@ and their formalization in Lean 4.
 
 ### **Section 1: Introduction & Main Result**
 * **Theorem 1.1 (Main Theorem: Noncircular Oval with Convex Iterates)**
-  - Formalized in `UnitTangentIterates.MasterTheoremAssembly.master_theorem_assembly`
-  - Formalized conditionally in `UnitTangentIterates.UnitTangentIteratesMain.unit_tangent_iterates_main_theorem`
-  - Integrated top-level pipeline in `UnitTangentIterates.UnitTangentIteratesDriver.unit_tangent_iterates_end_to_end_driver`
+  - **Current status: proved unconditionally.**  The canonical audit
+    declaration is the zero-argument theorem
+    `Theorem11Status.mainConclusion`.  Its construction is
+    `PaperMainTheoremUnconditional.mainConclusion`, defined in
+    `UnitTangentIterates/PaperMainTheoremUnconditional.lean`; it yields the full
+    smooth, embedded, genuinely noncircular infinite unit-tangent orbit.
+  - The former conditional assembly layers (the coherent-grid
+    `Theorem11Status.RemainingInput` boundary, the floor-free conditional
+    assemblies, and the legacy floor-positive variants) have been removed:
+    they were superseded by the unconditional construction above.
 
 ---
 
-### **Section 2: Geometric Preliminaries & Unit-Tangent Map**
-* **Definition 2.1 (Oval & Arclength Parametrization)**
+### **Section 2: One Tangent Step — Rear and Front Tracks**
+(Item numbers follow the current TeX: Lemma 2.1 is the low-curvature
+inverse and Lemma 2.2 the convex-consecutive-tracks lemma.)
+* **Oval definition & embeddedness (introduction / Section 2 conventions)**
   - `UnitTangentIterates.MainTheoremConditional.IsOval`
   - `UnitTangentIterates.TurningNumberDischarge.embedded_of_tube`
-* **Lemma 2.2 (Unit-Tangent Transformation Speed & Convexity)**
+* **Lemma 2.2 (Convex consecutive tracks: speed & strict convexity)**
   - `UnitTangentIterates.UnitTangentSpeed.unitTangentMap_speed`
   - `UnitTangentIterates.UnitTangentSpeed.curvature_pos_of_transform_curvature_nonneg`
   - `UnitTangentIterates.UnitTangentSpeed.curvature_pos_of_transform_curvature_nonneg_of_turning`
     — the paper's own exclusion of `k ≡ 0`, from the turning number rather than
     as a hypothesis
   - `UnitTangentIterates.UnitTangentPreliminariesComplete.unit_tangent_preliminaries_complete`
-* **Lemma 2.3 (Curvature under Unit-Tangent Action)**
+* **Curvature action `K = u' + u` under the unit-tangent map (Section 2 preliminaries)**
   - `UnitTangentIterates.UnitTangent.curvature_unit_tangent`
   - `UnitTangentIterates.UnitTangentSpeed.transform_curvature_eq_deriv_u_add_u`
-* **Proposition 2.4 (Total Turning of Pinched Closed Curves)**
+* **Total turning of pinched closed curves (embeddedness support)**
   - `UnitTangentIterates.TurningNumberDischarge.turning_two_pi_of_tube`
   - `UnitTangentIterates.TurningNumber.turning_eq_two_pi_of_pinched`
 
 ---
 
-### **Section 3: The Translating Hairpin Soliton**
+### **Section 3: A Translating Hairpin**
 * **Auxiliary profile-ODE interface (not used by the TeX route)**
   - `UnitTangentIterates.HairpinODERegularity.ProfileODE`
   - `UnitTangentIterates.HairpinODERegularity.ProfileODE.abs_second_le`
-* **Lemma 3.2 (Explicit Barrier Construction)**
+* **Lemma 3.3 (Explicit barriers)**
   - `UnitTangentIterates.Barriers.fMinus`, `UnitTangentIterates.Barriers.fPlus`
   - `UnitTangentIterates.BarrierEstimates.m_gt_one`
-* **Proposition 3.3 (Monotone Iteration & Profile Existence)**
+* **Lemmas 3.1–3.2 & Theorem 3.4 (Translator equation, monotone iteration & profile existence)**
   - `UnitTangentIterates.TranslatingHairpin.exists_hairpin_profile`
   - `UnitTangentIterates.TranslatingHairpin.exists_translating_hairpin`
   - `UnitTangentIterates.TranslatingHairpinComplete.translating_hairpin_complete`
   - `UnitTangentIterates.HairpinSolitonComplete.hairpin_soliton_complete`
-* **Lemma 3.4 (Uniform Boundary Positivity & Smooth Extension)**
+* **Uniform barrier positivity & smooth extension (Theorem 3.4 support; Lemma 3.5 pulse regularity)**
   - `UnitTangentIterates.ProfileBarrierBounds.profile_pos_of_lower_barrier`
   - `UnitTangentIterates.ProfileBarrierBounds.exists_pos_lower_bound`
   - `UnitTangentIterates.HairpinODERegularity.exists_smooth_positive_hairpin_extension`
@@ -173,8 +181,8 @@ and their formalization in Lean 4.
 
 ---
 
-### **Section 4: The Two-Cap Model Curves & Asymptotics**
-* **Definition 4.1 (Two-Cap Asymmetric Hairpin Pair)**
+### **Section 4: Exact Two-Cap Pairs**
+* **Proposition 4.3 (Exact two-cap pairs): construction & embeddedness**
   - `UnitTangentIterates.TwoCapPairs.two_cap_front`
   - `UnitTangentIterates.TwoCapPairsExistence.exact_two_cap_pair`
   - `UnitTangentIterates.TwoCapMarked.injOn_front` — the front is embedded,
@@ -213,12 +221,12 @@ and their formalization in Lean 4.
     curves: it requires `κ_max · L < 4π`, while the two-cap fronts have
     perimeter `2H → ∞`.  The exact turning identity of the prescribed curvature
     is what makes the model case unconditional.
-* **Proposition 4.2 (Perimeter Defect Value & Derivative Asymptotics)**
+* **Proposition 4.3 (Exact two-cap pairs): perimeter defect value & derivative asymptotics**
   - `UnitTangentIterates.HairpinDefect.hairpin_defect`
   - `UnitTangentIterates.HairpinDefectComplete.hairpin_defect_complete`
   - `UnitTangentIterates.TwoCapAsymptoticsComplete.two_cap_perimeter_defect_asymptotics`
   - `UnitTangentIterates.TwoCapAsymptoticsComplete.two_cap_perimeter_derivative_asymptotics`
-* **Lemma 4.3 (Recurrence Relation & Large-Separation Threshold)**
+* **Lemma 7.1 (Large-separation threshold; stated in Section 7 of the TeX)**
   - `UnitTangentIterates.LargeSeparation.exists_large_separation_threshold`
   - `UnitTangentIterates.LargeSeparationComplete.large_separation_complete`
   - `UnitTangentIterates.EndToEndModelOrbit.exists_end_to_end_model_orbit`
@@ -226,24 +234,24 @@ and their formalization in Lean 4.
 ---
 
 ### **Section 5: Curvature-Measure Matching**
-* **Theorem 5.1 (Curvature-Measure Matching L¹ Bound)**
+* **Theorem 5.2 (Curvature-measure matching L¹ bound; with Lemma 5.1 common phase)**
   - `UnitTangentIterates.IsolatedPulseMatchingComplete.isolated_pulse_complete`
   - `UnitTangentIterates.OverlapIntegral.pairwise_overlap_integral_le`
   - `UnitTangentIterates.MatchingHairpinComplete.hairpin_matching_complete`
-* **Proposition 5.2 (From L¹ Curvature Matching to C² Metric Distance)**
+* **From L¹ curvature matching to C² metric distance (Theorem 6.8 support)**
   - `UnitTangentIterates.CurvatureStabilityL1.dist_le_of_L1_curvature_close`
   - `UnitTangentIterates.MatchingToMetricDefect.dist_le_of_exp_L1_matching`
 
 ---
 
-### **Section 6: Infinitesimal Inverse & Marked Metric Space**
-* **Definition 6.1 (Complete Metric Space of Marked Curves)**
+### **Section 6: Regularizing Backward Shadowing — Marked Metric Space & Infinitesimal Inverse**
+* **Marked metric space of curves (Section 6 conventions)**
   - `UnitTangentIterates.MarkedSpace.tube`
-* **Lemma 6.2 (Curvature Interpolation & Chord-Arc Bound)**
+* **Lemma 6.2 (Curvature interpolation) & chord-arc control**
   - `UnitTangentIterates.CurvatureInterpolationComplete.curvature_interpolation_complete`
   - `UnitTangentIterates.ModelChordArc.model_chord_arc`
   - `UnitTangentIterates.ModelChordArcComplete.model_chord_arc_complete`
-* **Proposition 6.3 (Periodic Green Operator & Inverse Jacobi Estimates)**
+* **Lemma 6.4 (Inverse Jacobi estimates) & the periodic Green operator**
   - `UnitTangentIterates.PeriodicGreen.periodicGreen_hasDerivAt`
   - `UnitTangentIterates.JacobiEstimates.W_nonexpansive`
   - `UnitTangentIterates.JacobiEstimates.S0_gain`
@@ -272,11 +280,11 @@ and their formalization in Lean 4.
       `conj(ν_F)·Ḟ` is `−ξ sin δ + A cos δ`;
     * `inverse_jacobi_of_geometry`, `inverse_jacobi_of_variation` :
       `(1 + ∂ₓ)η_R = sec δ · η_F` with no scalar hypothesis.
-* **Lemma 6.4 (Tube Invariance & Smallness Threshold η_*)**
+* **Tube invariance & smallness threshold η_* (proof of Theorem 6.8)**
   - `UnitTangentIterates.TubeConstants.tube_invariance_bounds`
   - `UnitTangentIterates.TubeConstants.etaStar_bounds`
   - `UnitTangentIterates.TubeInvarianceComplete.tube_invariance_complete`
-* **Lemma 6.5 (Model Orbit Selected Inverse Construction & Periodic Steering)**
+* **Lemmas 2.1 & 6.7 (Low-curvature inverse; selected inverse on the closed strip) & periodic steering**
   - `UnitTangentIterates.SelectedSteeringComplete.selected_steering_complete`
   - `UnitTangentIterates.SelectedInverseStrip.selected_inverse_on_closed_strip`
   - `UnitTangentIterates.TwoCapRearEmbedded.selected_inverse_on_closed_strip_two_cap`
@@ -286,14 +294,14 @@ and their formalization in Lean 4.
 
 ---
 
-### **Section 7: Backward Shadowing & Closing Argument**
-* **Theorem 7.1 (Regularizing Backward Shadowing Scheme)**
+### **Section 7: Proof of the Main Theorem**
+* **Theorem 6.8 (Regularizing backward shadowing; stated in Section 6 of the TeX)**
   - `UnitTangentIterates.ShadowingScheme.exists_shadowing_orbit`
   - `UnitTangentIterates.MarkedSchemeTheoremCanonical.exists_canonical_marked_orbit`
   - `UnitTangentIterates.SelectedInverseContractive.exists_shadowing_orbit_on_invariant_tube`
   - `UnitTangentIterates.BackwardShadowingSchemeComplete.selected_rear_strip_geometry`
   - `UnitTangentIterates.BackwardShadowingSchemeComplete.tail_decay_of_summable_defects`
-* **Proposition 7.2 (Transverse Width Contradiction Gap & Noncircularity)**
+* **Closing step (excluding a circle) & Lemma 4.4 (Uniform transverse width)**
   - `UnitTangentIterates.ClosingArgument.not_isCircleOfPerimeter_of_hausdorffDist_le`
   - `UnitTangentIterates.ClosingArgument.not_isCircleOfPerimeter_of_width_lt`
   - `UnitTangentIterates.ClosingArgumentComplete.closing_argument_complete`
@@ -721,19 +729,15 @@ hypotheses:
 ### Faithfulness findings recorded in Lean
 
 * **The uniform curvature floor is incompatible with the paper's separations.**
-  `MasterTheoremAssembly.master_theorem_assembly` assumes both a positive floor
-  `0 < kmin <= kappas n s` and total turning `int_0^{H_n} kappa_n = pi`.
-  `CurvatureFloorObstruction.separation_le_of_curvature_floor` proves these
-  force `H_n <= pi / kmin`, and
-  `CurvatureFloorObstruction.not_forall_of_curvature_floor_of_linear_growth`
-  proves they are outright contradictory with the paper's `H_n >= H_0 + (Delta/2) n`.
-  The paper assumes only a common curvature *ceiling* `kappa_0 < 1`; the minima of
-  the periodized hairpin decay like `e^{-beta H_n}`.  The hypotheses are still
-  satisfiable (by a constant-separation family, as in `AdmissibleFrontFamily`),
-  so the theorem is not vacuous -- but it cannot be applied to the pseudo-orbit
-  it is meant for.  A faithful statement must let the lower bound depend on `n`,
-  or drop it in favour of the closed `kmin = 0` tube of
-  `UnconditionalAssembly.PaperFaithfulAssemblyRemainder`.
+  A positive floor `0 < kmin <= kappas n s` together with total turning
+  `int_0^{H_n} kappa_n = pi` forces `H_n <= pi / kmin`, contradicting the
+  paper's `H_n >= H_0 + (Delta/2) n`.  The paper assumes only a common
+  curvature *ceiling* `kappa_0 < 1`; the minima of the periodized hairpin decay
+  like `e^{-beta H_n}`.  The current formalization therefore works throughout
+  in the closed `kmin = 0` tube, with strict positivity recovered pointwise at
+  each stage (`UnitTangentSpeed.curvature_pos_of_transform_curvature_nonneg`).
+  The legacy floor-positive conditional assembly that motivated this finding
+  has been removed.
 
 * **The global barrier hypothesis is inconsistent with the extension route.**
   `Data.wide_pulse_and_derivative_bounds` asks for `forall t, fMinus eps t <= f t`,
@@ -742,20 +746,6 @@ hypotheses:
   collar of `[0,pi]`, while the barrier lower bound is `eps^{-1} - eps > 1`.
   Every proof uses the hypothesis only at angles in `[0,pi]`;
   `WideHairpinLocalBounds` restates the whole chain that way.
-
-* **The curvature floor: the constructive correction.**
-  `CurvatureFloorFreeFamily` completes the diagnosis above into a fix.  The
-  explicit family `H_n = 2*pi + n`, `kappa_n = pi / H_n` satisfies every
-  remaining hypothesis of the model family — continuity, `H_n`-periodicity,
-  nonnegative curvature, ceiling `1/2 < 1`, total turning `pi`, `H_0 <= H_n` —
-  **with `H_n` unbounded** (`exists_unbounded_floor_free_family`), and no
-  positive floor bounds it from below (`no_positive_floor`).  Moreover
-  `MarkedSpaceChord.exists_tube_member_of_oval_chord` never uses `0 < kmin`, so
-  `exists_model_orbit_tube_zero_floor` builds the model orbit in the closed
-  `kmin = 0` tube.  Conclusion: the model family's curvature hypothesis should be
-  **nonnegativity**, and then the separations are free to grow, as the paper
-  requires.  (The uniform chord-arc constant must then come from somewhere other
-  than `ModelChordArc.model_chord_arc`, whose proof does use `0 < kmin`.)
 
 * **The profile regularity demanded exceeds the paper's.**  The paper proves
   `f_eps in C^infinity(0,pi)` and states explicitly that no endpoint values are
@@ -916,637 +906,74 @@ perimeter-asymptotics block (`defect_pos`, `defect_eq`, `beta_pos`,
 it and constructing it was what forced the profile package through the
 perimeter-asymptotics chain.
 
-### Historical development log (superseded by the current audit below)
+### Current compiled status
 
-1. The paper-faithful propagation of admissible paths through the selected
-   inverse.  The TeX proves `W(BΓ) <= W(Γ)` and the `S₀,S₁,S₂` Jacobi gains,
-   then uses the vector tube inequalities of `TubeConstants.lean`.  The
-   the normal-gauge interpolation path has a generally non-affine marking and
-   therefore cannot be fed to the constant-speed interface
-   `SelInvRearFamilyFundamentalC2`.  The matching conditional interface is
-   `GaugeRearFamilyFromFront.exists_variableSpeed_normalPath_of_rearFamily_from_front`.
-   The concrete interpolation-to-selected-rear qualitative regularity and
-   spatial ODE identities are now packaged by
-   `InterpolationSelectedRearRegularity.interpolation_selectedRear_core_data`.
-   Its qualitative periodic closing, rear-period bounds, and raw front
-   endpoint identities are now supplied by
-   `InterpolationSelectedRearClosing.interpolation_selectedRear_closing_data`.
-   It remains to establish the quantitative frame/source derivative bounds
-   needed by that variable-speed construction.  Once it is produced,
-   `InterpolationVariableSpeedSelInvAdapter` removes the tube-membership and
-   constant-speed requirements from the terminal distance step.  The exact
-   canonical terminal selected-inverse tube/curvature data are now discharged
-   by `exists_terminalCertificate`.  The remaining inputs are the quantitative
-   gauge-field derivative bounds consumed by `MarkingDefectCostC2`; the `MarkingFlowDefectC2`
-   inequality itself is derived.  No endpoint equality, zero-distance, or
-   manually supplied terminal-distance step is required.  The
-   current marked-space driver instead assumes a
-   stronger scalar path-metric map bound.  In particular,
-   `selInvLipUniversal <= 1` is not asserted by the paper.
-2. The defect estimate for the paper's two-cap model orbit —
-   `dist (Qₙ) (B (Qₙ₊₁)) ≤ eₙ` with `eₙ` summable.  The analytic
-   curvature-measure estimate is proved in
-   `MatchingHairpinComplete.hairpin_matching_complete`, and
-   `ModelOrbitDefect.pathDistRigid_selInv_model_orbit` derives the orbit bound
-   from `ModelOrbitDefect.Config`.  What remains is to construct that full
-   `PaperHairpinConfig.ConfigRemainder` package from the paper's hairpin.  Strip
-   control and curvature positivity now have derived certificate interfaces;
-   rear cell/period estimates now also have a derived certificate interface.
-   Mass and fixed `ProfileConstants` are now supplied by
-   `PaperHairpinQuantitativeData`, and
-   `ConfigRemainder.exists_separation_threshold` performs the actual `Config`
-   field assembly after a single large-separation choice.  What remains is to
-   instantiate its explicit `PulsePairAnalyticData`, prior periodized-strip
-   and positivity certificates coherently for each consecutive pair in the
-   recursive hairpin sequence.  It also remains to transfer the rigid path-distance estimate to the marked tube
-   `PaperHairpinQuantitativeData.ConsecutiveData` now supplies the correct
-   same-profile coherence package: it carries the translator map and an
-   explicit pulse derivative, defines the prior pulse as the canonical phase
-   translate of the current pulse, and its `local_phase` theorem derives the
-   exact `PaperHairpinData.local_phase` identity from
-   `HairpinFrontCurvature.front_curvature_identity_shifted`.
-   `TranslatorData.transfer_extension` proves that every translator identity
-   survives a smooth extension agreeing on `[0,pi]`, and
-   `ConsecutiveData.exists_of_smooth_extension` then constructs `Data`, an
-   explicit pulse derivative, and `ConsecutiveData` on that one extension.
-   The remaining profile regularity boundary is now isolated exactly.
-   `TranslatorConsecutiveBridge` restates
-   `ConsecutiveData.exists_of_smooth_extension` in the shape the translator
-   construction delivers (`forall n, ContDiffOn n`, and positivity on the whole
-   line), discharging the notational half of the mismatch via
-   `contDiffOn_infty`.  What is left is a single analytic statement: the
-   translating-hairpin profile is smooth on a *neighbourhood* `(-r, pi+r)` of the
-   closed angle interval, whereas
-   `TranslatorTranslation.exists_translating_hairpin_translation` proves
-   smoothness only on the open interval `(0, pi)`.  That widening is genuinely
-   extra — smoothness on an open interval does not extend to its closure — and
-   it is not assumed anywhere: `exists_consecutiveData_of_profile` takes it as
-   an explicit hypothesis.  Since every canonical angle lies in `(0,pi)`, the
-   paper needs only this interior smoothness.  The Lean constructor
-   `exists_data` and its upstream decay/relative-derivative packages currently
-   request global `ContDiff f`; they should be localized to `ContDiffOn
-   (0,pi)` (or supplied directly from their already stored pulse data).
-   Treating the translator and smooth extension as independent profiles would
-   destroy the phase identity and is not valid.
-   An auxiliary endpoint-continuation route is staged soundly by
-   `HairpinODERegularity.ProfileODE`: it stores the two derivative witnesses
-   and `f''+f=f^{-3}` on the interior, while `ProfileODE.abs_second_le` derives
-   the uniform bound `|f''| <= M+m^{-3}` directly from the global positive
-   barriers.  The remaining step is to prove that the constructed fixed-point
-   profile satisfies this ODE package; no such implication is presently
-   asserted, and this auxiliary ODE is not substituted for the TeX argument.
-   On the paper-faithful route,
-   `HairpinPulse.curvature_deriv_eq_of_translator` solves the established
-   Frenet/translation identity for
-   `K'=(1+K^2)sqrt(1+K^2)(K o sigma)-K-K^3` without endpoint hypotheses.
-   `HairpinTails.sin_le_exp_of_logHalf_sub_le` and
-   `curvField_shift_harnack` now derive the required bounded-shift comparison
-   directly: the exact half-angle derivative and barriers give
-   `K(v) <= (M/m) exp(D/m) K(u)` whenever `|v-u|<=D`.  Combined with
-   `HairpinPulse.abs_curvatureDeriv_le_of_shift_harnack`, this closes the first
-   intrinsic relative derivative estimate without endpoint regularity.  The
-   coefficient differentiation and the exact next identity are now supplied
-   by `HairpinPulse.hasDerivAt_curvatureAmp` and
-   `curvature_second_eq_of_translator`; the latter expresses `K''` entirely in
-   terms of `K,K',K o sigma,K' o sigma` and the bounded speed.
-   `abs_curvatureSecond_le_of_shift_harnack` takes absolute values in that
-   formula and combines the first relative estimate with the same Harnack
-   constant to give an explicit `|K''| <= D2 K`, without endpoint regularity.
-   The remaining analytic core is continuing this finite differentiation
-   through the third and fourth pulse derivatives consumed by C3
-   periodization, and transferring the bounds through the front-arclength
-   inverse to the pulse.  The TeX fixes a sufficiently wide hairpin before
-   choosing finite relative derivative constants; it does not require those
-   constants to be uniform in the width.
-   The coordinate transfer has now been started independently of that
-   induction: `PulseFromCurvature.pulseDD` is the explicit second pulse
-   derivative in front arclength, and `hasDerivAt_pulseD` proves it directly
-   from the first two rear-curvature derivatives and the inverse-arclength
-   equation, with no global profile regularity.
-   The earlier wrapper had discarded a regularity theorem already proved by
-   the canonical construction.  The strong translation theorem now retains
-   its arctangent shift and derivative witnesses, and
-   `exists_smoothOn_translatorData` packages those with
-   `forall n, ContDiffOn n f (0,pi)` for the same `f` and
-   `g = Translator.next f`.  Thus the remaining jet construction has the
-   required interior differentiability and still needs no endpoint
-   continuation.
-   `HairpinPulseSmooth.contDiff_nat_of_autonomousOn` and
-   `contDiff_nat_compOn` now perform the autonomous-flow bootstrap on an open
-   invariant state domain, while
-   `HairpinRelative.contDiffOn_curvField_nat` and
-   `contDiffOn_pulseField_nat` provide the required finite-order fields from
-   the profile's interior regularity.  These lemmas turn the retained
-   `ContDiffOn` package into global finite smoothness along the actual angle
-   and pulse trajectories without extending `f` through either endpoint.
-   `ShiftedCurvatureJetMajorant` isolates the safe algebraic part of the
-   order-three/four argument.  Its `RelMajorant` calculus is closed under
-   addition, subtraction, bounded coefficients, products of relative terms,
-   Harnack-controlled shifted composition, powers of the bounded curvature,
-   and finite sums.  `rel_of_eq` then converts any corrected exact
-   differentiated identity into a relative estimate.  This module assumes no
-   derivative formula and therefore does not depend on the quarantined draft
-   calculation in `HairpinPulse`.
-   Its `PulseJet4` and `PulseJetRelative` packages isolate exactly the five
-   pulse functions consumed by `PeriodizedPulseSmooth`.
-   `pulseJet_exp_bounds` transfers the isolated pulse's exponential decay to
-   all five orders from relative estimates, and
-   `pulseJet_common_exp_bound` replaces their separate constants by the one
-   common majorant required for termwise periodization.
-   The exact finite identities are now represented without a fragile manual
-   expansion: `secondRhs` is the established order-two expression,
-   `thirdRhs` and `fourthRhs` are its successive derivatives, and
-   `third_eq_canonical`/`fourth_eq_canonical` identify actual derivative
-   witnesses with those expressions by uniqueness.  The remaining estimate
-   step is to expand these canonical derivatives into the majorant algebra.
-3. The final unconditional assembly `P(H_{n+1}) = H_n ⇝ shadowing ⇝ X₀`
-   is now audited by `UnconditionalAssembly.UnconditionalAssemblyRemainder`.
-   `UnconditionalAssembly.ConfiguredModelSequence` records the single
-   coherence equality identifying each model curvature with the previous side
-   of its paper `Config`.  Its derived theorems discharge separation
-   positivity, curvature continuity and periodicity, the uniform upper bound,
-   and total turning.  The smart constructor
-   `UnconditionalAssemblyRemainder.ofConfiguredModel` therefore removes those
-   six redundant capstone hypotheses in the legacy fixed-tube route.
-   A critical quantifier audit shows that uniform strictly positive curvature
-   pinching is **not** a paper obligation.  The TeX assumes a common upper
-   ceiling `kappa0 < 1`, proves each finite model and pullback strictly convex,
-   retains only nonnegative curvature under geometric `C2` convergence, and
-   recovers strict positivity of the limit from the exact unit-tangent
-   relation.  Along the expanding hairpin sequence the curvature minima may
-   tend to zero, so no fixed positive `kmin` is asserted.
-   `UnconditionalAssembly.PaperFaithfulAssemblyRemainder` records the correct
-   quantifiers: configuration-derived regularity and turning, per-model
-   strict positivity, a uniform upper ceiling below one, and the output of the
-   shrinking variable-tube shadowing argument.  Its `conclude` theorem carries
-   out the width closing step with no lower-curvature parameter.  The older
-   `UnconditionalAssemblyRemainder` and `UnconditionalAssembly.conclude` are
-   retained only as internally valid legacy fixed-tube statements and are no
-   longer claimed as the paper's assembly route.
-   Its `config_from_paper` field records provenance through
-   `PaperHairpinData.toConfig`; the still-missing content is exposed chiefly
-   by `marked_interpolation_defect`, the marked-tube selected-inverse
-   hypotheses, summability, and the final transverse gap.  The theorem
-   `PaperFaithfulAssemblyRemainder.conclude` derives the full noncircular
-   infinite unit-tangent orbit from the paper-faithful shadowing output, but
-   does not assert that this remaining shadowing record has yet been
-   constructed.
-   The output is no longer monolithic.  In
-   `PaperFaithfulAssemblyRemainder.exists_markedLimit_of_summable_pullbackSteps`,
-   completeness of the closed `kmin=0` marked tube turns summable distances
-   between consecutive terminal pullbacks into an exact marked inverse orbit
-   with the sharp tail bound.  This formulation accepts the marked distance
-   produced by the variable-speed interpolation adapter and does not impose
-   the obsolete `IsConstantSpeedNormalPath` predicate.
-   `shadowingOrbit_of_markedLimit` derives the forward unit-tangent orbit,
-   period, Hausdorff model estimate, and perimeter estimate from that marked
-   limit.  Finally `shadowingOrbit_of_summable_pullbackSteps` composes both
-   steps.  It isolates exactly three remaining theorem-level inputs from the
-   regularizing shadowing proof: the propagated variable-speed step estimate
-   for every pullback depth, invariance of all pullbacks in the shrinking
-   nonnegative-curvature/chord-arc tube, and the selected-inverse differential
-   regularity data for the marked inverse-orbit limits.
-   `PaperFaithfulAssemblyRemainder.LimitStrictnessData` is that exact latter
-   interface.  `isOval_ev_of_limitStrictnessData` now discharges the convexity
-   upgrade itself: `UnitTangentSpeed.curvature_pos_of_transform_curvature_nonneg`
-   turns nonnegative curvature of consecutive exact unit-tangent tracks into
-   pointwise strict positivity, while the positive chord-arc constant yields
-   injectivity on a period.  Thus `IsOval` and strict convexity are no longer
-   assumptions of the shadowing constructor.  The remaining regularity input
-   is only the differentiable intrinsic-curvature package; the analytic
-   bootstrap is formalized by `RearRegularity.rear_contDiff`, while an adapter
-   from the abstract marked selected-inverse limit to its steering ODE data is
-   still needed.  The main geometric orbit conclusion and closing estimates
-   are derived rather than assumed.
-   `SelectedInverseLimitRegularity kh c dlt` now names this adapter precisely
-   for `SelectedInverseMap.selInv kh`, and
-   `ofSelectedInversePullbackSteps` is the paper-specific capstone constructor.
-   This specialization also exposes a genuine closure issue: the current
-   `SelectedInverseMap.isMarkedSelectedInverse_selInv`, `selInv_spec`, and
-   `InterpolationVariableSpeedSelInvAdapter.exists_terminalCertificate`
-   require a strictly positive input `kmin`.  They certify every finite
-   pullback but do not yet prove that `selInv` retains the canonical
-   closed-strip rear interpretation, continuity, and right-inverse identity at
-   a `kmin=0` marked limit.  Those facts cannot follow from the abstract map
-   definition, whose fallback branch is the identity.
-   No marked-metric nonexpansiveness is assumed in the specialized constructor.
-   The paper proves contraction of the normal/Jacobi path quantities, while
-   the variable-speed endpoint estimate has its explicit `c2ConstVar` factor.
-   Accordingly `hstep` is the propagated additive-cost estimate itself; it may
-   include an expansion factor, provided its chosen majorant `d` is summable.
-   Thus the remaining propagation task must use the paper's `W,S0,S1,S2`
-   inequalities (or a geometric `K^k d_{n+k}` bound with `K theta < 1`), not an
-   unsupported assertion that `selInv` is nonexpansive in the marked metric.
-   The completion route is now formalized abstractly by
-   `PaperFaithfulAssemblyRemainder.DenseExtensionData`.  Its `extension` takes
-   the unique limit along a dense inducing subspace;
-   `continuous_extension`, `extension_eq`, and `map_extension_eq` prove
-   continuity, agreement on finite stages, and passage of continuous
-   identities to the closure.  `PositiveTube c dlt` allows the positive lower
-   bound to depend on the approximant, `NonnegativeTube c dlt` is its intended
-   closed target, and `positiveToNonnegative` is the inclusion.
-   `SelectedInverseCompletionData kh c dlt` specializes the construction to
-   the finite-stage canonical `selInv`; `completedSelInv` is the resulting
-   closure operator and `completedSelInv_rightInverse` transfers the forward
-   right-inverse identity by continuity.
-   Two concrete analytic inputs remain to instantiate this package: density
-   of `PositiveTube` in `NonnegativeTube` while preserving the chord bound,
-   and existence of the image limit along every approximating filter from the
-   additive Jacobi/path Cauchy estimate.  The pullback engine also currently
-   accepts a total `Data -> Data` map, whereas `completedSelInv` naturally has
-   domain the invariant tube subtype.  The correct adapter is relative
-   continuity along tube-valued sequences; extending by an arbitrary fallback
-   outside the tube would not justify global continuity.
-   That subtype adapter is now implemented.
-   `SelectedInverseSelfCompletionData` adds the finite-stage tube-invariance
-   lift to the dense completion package, and `closedSelInv` is consequently a
-   continuous self-map of `NonnegativeTube`.  Its right-inverse identity is
-   transferred from the dense positive stages by
-   `closedSelInv_rightInverse`.  `closedPullback` defines all terminal
-   pullbacks in the subtype; `exists_closedTube_shadowingLimit` obtains their
-   Cauchy limits and exact inverse orbit; and `closedTube_forwardOrbit`
-   transfers this to the forward map.  The geometric adapter
-   `shadowingOrbit_of_closedTubeSteps` derives ovals, unit-tangent ranges,
-   Hausdorff shadowing, and perimeter control.  Finally
-   `ofCompletedSelectedInverseSteps` feeds this output directly into the
-   paper-faithful capstone.  This route has neither a total-map fallback nor a
-   global `Data -> Data` continuity hypothesis.
-   On the quantitative side,
-   `InterpolationRearCostBridge.JacobiCostCertificate.of_inverseJacobi`
-   discharges the `S₀,S₁,S₂` bounds and their cost comparisons, while
-   `RearDensityCertificate.of_rearCostConst` discharges all three nonlinear
-   rear-density inequalities.  The remaining concrete interpolation input is
-   isolated in `ConcreteInterpolationBounds`: the uniform `Kx` estimate and
-   tangential-rate comparison produced from the actual C⁴ selected-rear
-   family.
-   `ConcreteInterpolationBoundsOn.exists_of_compact` now supplies the uniform
-   constants on the actual compact interpolation interval from continuity and
-   positivity, and `tangentialEnvelope` records the exact coefficient produced
-   by `RearOwnTangentialCost.abs_gaugeRate_le_cost_density`.  What remains is
-   to instantiate the continuous `Kx` function and the positive density from
-   the concrete selected-steering family.
-   More specifically,
-   `ConcreteInterpolationBoundsOn.abs_selectedKx_le` applies the existing
-   strip estimate directly to `(K-sin delta)/cos(delta)^3`, and
-   `explicit_selectedSteering_bounds` chooses its constant envelope together
-   with the tangential envelope.  Thus no compactness argument is needed for
-   these two quantities; the remaining geometric task is proving the explicit
-   interpolation and its selected steering stay in the asserted common strip
-   and linking the envelope to the actual gauge rate.
-   `kappaInterp_mem_common_strip` and
-   `exists_selectedSteering_kappaInterp` now prove those strip statements for
-   every interpolation slice `t ∈ [0,1]`, and
-   `gaugeRate_le_tangentialEnvelope` identifies the output of
-   `RearOwnTangentialCost.abs_gaugeRate_le_cost_density` with the bridge's
-   envelope.  Joint C⁴ regularity continues to use the existing globally
-   extended interpolation interface rather than falsely extrapolating the
-   affine strip bound outside `[0,1]`.
-   At zero lower curvature, `SelectedInverseMap.eq_selInv_of_isMarkedSelectedInverse`
-   and `selInv_spec_of_markedRear` now remove the strict-positive hypothesis
-   from the canonical-map identification step.  Consequently
-   `closedTubeInvarianceResidual_selInv` reduces closed-tube invariance to the
-   pointwise construction of a weak-convex marked rear with the same uniform
-   speed and chord-arc constants; it does not assume injectivity for every
-   steering solution.  The remaining geometric lemma is precisely the weak
-   analogue of `ConvexEmbedded.injOn_Ico_of_turning_one`: nondecreasing tangent
-   angle, positive speed, closure, and one total turn imply injectivity, after
-   which `ChordArc.exists_chord_arc` supplies a positive (and ultimately
-   uniform) chord constant.
-   `LowCurvatureAssembly.steering_pos_of_nonnegative_nonzero` now supplies the
-   missing flat-curvature argument for the actual selected rear: a periodic
-   nonnegative steering solution driven by `K ≥ 0`, `K ≢ 0`, is everywhere
-   positive.  Its integrating-factor proof shows `exp(s) δ(s)` is monotone;
-   a hypothetical zero propagates backward and periodicity moves a nonzero
-   forcing point into that zero region.  Thus the selected rear angle is
-   strictly increasing and the existing strict `ConvexEmbedded` theorem, not
-   a new assumed weak injectivity principle, applies.  The chord constant is
-   then produced pointwise by `ChordArc.exists_chord_arc`; preservation of the
-   already chosen initial `dlt` remains the quantitative one-step invariance
-   estimate and is not inferred from an unjustified universal compactness
-   bound.
-   `ChordArc.chord_arc_stable` now formalizes the required near/far split for
-   a prescribed target chord constant.  Its acceleration-bounded corollary
-   `chord_arc_stable_of_acc_bound` converts the selected rear's normalized
-   acceleration ceiling into the velocity modulus.  The explicit thresholds
-   are `A*rho ≤ c/2`, `rho ≤ 1/2`, `dlt ≤ c/2`, and
-   `2*eps ≤ (d0-dlt)*rho`; choosing `dlt=d0/2` leaves a transparent positive
-   far-separation margin.  Instantiating `eps` by the variable-speed C1 path
-   cost and `A` by the rear curvature/perimeter ceiling is now the only
-   arithmetic wiring needed for fixed-chord one-step invariance.
-   For the primary summable-normal-path route,
-   `summable_weighted_shift_of_summable` converts the summable nonnegative
-   L1-matching majorant into every shifted weighted series
-   `Σ K^k d_(n+k)` when `0≤K≤1`.  The choice theorem
-   `choose_summable_defect_normalPaths` simultaneously selects the explicit
-   interpolation/selected-rear defect paths, retains their constant-speed
-   geometry certificates, and proves summability of their actual costs from
-   the majorant.  Thus exponential separation growth need only discharge
-   `Summable d` (via the existing `ModelDefectSummable` estimates); remaining
-   concrete work is the endpoint identification showing each explicit
-   variable-speed selected-rear interpolation path has endpoints
-   `Q n` and `selInv kh (Q (n+1))` with cost bounded by that `d n`.
-   The base/transport roles are now type-audited.  The interpolation theorem
-   `InterpolationPathDist.exists_normalPath_interp` produces the base defect
-   path and its `interpPathCost` bound, whereas
-   `GaugeRearFamilyFromFront.exists_variableSpeed_normalPath_of_rearFamily_from_front`
-   transports an arbitrary front path under the selected rear and produces a
-   genuinely variable-speed certificate.  Consequently the old
-   constant-speed `SummableNormalPathLimit.exists_limit_of_summable_costs`
-   cannot be used for the transported chain.  The new
-   `exists_limit_of_summable_variableSpeed_costs` is the correct completeness
-   endpoint.  To feed it sequencewise, the path-dependent outputs
-   `costP1`, `costG1`, and the mixed second-derivative constant must be
-   majorized by fixed ceilings using the summable-cost/tube smallness bound;
-   replacing them by a constant-speed certificate would be false.
-   `exists_markedLimit_of_variableSpeed_pullbackPaths` is now the actual
-   variable-speed pullback-limit analogue.  It accepts the recursively
-   transported paths, one uniform `IsVariableSpeedNormalPath P0 P1 khat G1 Cg`
-   ceiling, and costs bounded by the shifted majorant; it derives marked step
-   bounds with the factor `c2ConstVar`, invokes distance completeness, and
-   returns closed-tube membership, convergence, the exact inverse identity,
-   and the sharp tail of `c2ConstVar*e`.  Thus uniform majorization of the
-   `GaugeRearFamilyFromFront` outputs is cleanly separated from base-path
-   construction by `exists_normalPath_interp` and its L1/interpPathCost bound.
-   `exists_variableSpeed_pullbackPath` now performs the recursive path
-   construction itself: depth zero is the interpolation defect `Λ_n`, and the
-   successor is the uniformly majorized selected-rear transport of the path at
-   `(n+1,k)`.  It proves the exact cost `K^k d_(n+k)`.  The composition theorem
-   `exists_markedLimit_of_variableSpeed_transport` feeds these paths and their
-   weighted summability directly into variable-speed pullback completeness.
-   The remaining analytic instantiation is a single uniform transport lemma:
-   bound the `GaugeRearFamilyFromFront` values `costP1`, `costG1`, and mixed
-   `Cg` at the total remaining cost, using their monotonicity and the common
-   rear-period/curvature ceilings.
-   The scalar uniformization is now formalized by
-   `GaugeFlowDerivCost.costP1_le`, `costG1_le`, and `mixedCost_le`.  For
-   `0≤ell≤Qmax` and `0≤M≤Mtotal`, they bound all three path-dependent outputs
-   by the explicit fixed choices
-   `costP1 Qmax khat Mtotal`,
-   `costG1 Qmax khat (rearKappa2 kh) Mtotal`, and the corresponding mixed sum.
-   `IsVariableSpeedNormalPath.mono` supplies structural monotonicity when
-   `P1`, `G1`, and `Cg` are enlarged, and
-   `GaugeMarkedDataOfRearFamily.uniformize_variableSpeed_certificate` combines
-   it with the scalar bounds.  Thus every path produced by
-   GaugeRearFamilyFromFront is promoted to the one fixed `Qmax/Mtotal`
-   certificate consumed by recursive pullback transport.  The remaining
-   application is only the theorem's geometric hypothesis block and endpoint
-   identification, not any further quantitative uniformization.
-   `uniform_transport_of_raw_gauge` packages the final implication needed by
-   recursive pullback transport: the raw GaugeRearFamilyFromFront path, cost
-   factor, and path-dependent certificate are converted to the fixed uniform
-   transport result without changing endpoints or cost.  The unassembled
-   remainder is now exactly the raw-gauge invocation from the interpolation
-   core/closing data and the Jacobi/rear-density certificates.
-   Mixed-partial symmetry is already available as
-   `MixedPartials.deriv_partial_comm`.  The new
-   `source_bound_of_common_profile` and density variant implement stopped-time
-   normalization without division: `|gS|≤D*w`, `mF=C*w`, and `D≤d*C` imply
-   `|gS|≤d*mF`, including points where `w=0`.  The remaining explicit lemma is
-   the factorized bound for the canonical spatial derivative of the
-   transported front-normal source.
-   `profiledSourceShape` and `hasDerivAt_profiled_source` now give the exact
-   quotient/chain-rule formula and factor the common time profile before any
-   estimate.  Specializing `N` and `NS` to interpolation `normalVel` and
-   `normalVelDeriv` leaves only a uniform bound for the displayed shape, using
-   the existing strip, normal-velocity, and normal-velocity-derivative bounds.
-   `abs_profiledSourceShape_le` now proves that bound explicitly as
-   `NSmax/v0^2 + Nmax*kh*Kx`.  Therefore the interpolation specialization uses
-   the existing global `normalVel`/`normalVelDeriv` estimates, the selected
-   strip cosine floor, and `abs_selectedKx_le`; no compactness or density
-   division remains in the source estimate.  This specialization is now the
-   theorem `abs_interpolation_profiledSourceShape_le`, and
-   `interpolation_profiled_source_bound` applies
-   `source_bound_of_common_profile` to give the density inequality directly
-   for any nonnegative stopped profile.
-   The remaining raw-gauge aggregation cannot be inferred from the named
-   quantitative certificates alone: `JacobiCostCertificate` records bounds
-   but not the inverse-Jacobi derivative equation, and `TerminalCertificate`
-   records canonical endpoint geometry but not equality of the gauge-flow
-   endpoint with that canonical marking.  Those two identification equations
-   are therefore the exact interfaces still required before the uniform
-   recursive transport theorem can be invoked without additional geometric
-   hypotheses.
-   In particular, `MarkingFlowDefectC2.dist_le_of_flow_marking_int` supplies a
-   `pathDist` estimate, not a normal path attaining that estimate.  Because
-   `pathDist` is an infimum, it yields only an `E+ε` comparison path; an
-   arbitrary such near-minimizer has no exported variable-speed geometric
-   certificate.  Consequently it is sound to append the marking defect at the
-   distance-estimate stage by the triangle inequality, but not to claim a
-   uniformly certified recursive transport path without first constructing
-   an explicit reparameterization path and proving its derivative bounds.
-   The hybrid route is now formalized by
-   `canonical_increment_le_of_gauge_endpoint` and
-   `exists_limit_of_summable_gauge_canonical_increments`: variable-speed paths
-   control the distance to gauge-marked intermediate endpoints, the explicit
-   `MarkingFlowDefectC2` estimate controls their canonical marking correction,
-   and the triangle inequality gives summable direct increments of the
-   canonical sequence.  Completeness therefore needs no normal path attaining
-   the marking-defect distance.
-   At the pullback-sequence level,
-   `exists_markedLimit_of_summable_hybrid_pullbackSteps` accepts the
-   gauge-transport and canonical-marking bounds as two separately summable
-   sequences.  It forms the direct canonical increments by triangle, returns
-   the tail of their pointwise sum, and reuses the pullback shift argument to
-   obtain the exact inverse identity.  Thus canonical corrections never enter
-   the recursively transported path certificate.
-   The model-sequence specialization
-   `exists_markedLimit_of_hybrid_pullbackSteps_of_L1_majorant` takes the common
-   summable L¹ defect sequence and fixed uniform gauge/marking constants.  It
-   discharges summability of both contributions by scalar multiplication and
-   yields canonical shadowing limits with the explicit combined tail and exact
-   inverse orbit relation.
-   The scalar linearization is now split into reusable exact pieces:
-   `flowDefectInt_linear_bounds` bounds both exponential flow defects by
-   explicit multiples of `x` on `0≤x≤M`, and
-   `markingC2Bound_le_mul_of_component_linear` absorbs the remaining quadratic
-   velocity term using `x²≤Mx`.  Their resulting `Cmark` is nonnegative by
-   construction and can be fed directly to the common-L¹-majorant theorem.
-   `canonicalMarkingLinearConst` now records that explicit maximum, and
-   `markingC2Bound_flow_le_linear` combines the two scalar lemmas into the
-   precise terminal correction estimate used by the selected-rear gauge
-   adapter.  Its nonnegativity is exported separately for summability and
-   monotonicity arguments.
-   A final endpoint-type obstruction remains before this can be instantiated
-   recursively from the raw gauge theorem.  Raw transport maps a path `p→q`
-   to a path `B p→g`, where `g` is the flow-marked rear, while the next
-   recursive transport requires an actual path ending at the canonical
-   `B q`.  `MarkingFlowDefectC2` supplies only `dist g (B q)≤E`, not such a
-   path, so it cannot repair the endpoint type needed by recursion.  The
-   hybrid completeness theorem is valid once gauge paths are supplied at every
-   depth independently, but base interpolation paths plus raw transport alone
-   do not construct that family.  Completing this step requires either an
-   explicit normal path realizing the marking reparameterization (with a
-   transportable variable-speed certificate) or a transport theorem formulated
-   directly on metric increments rather than normal paths.
-   Remedy (b) is now implemented.  `dist_map_le_of_gaugePath_and_marking`
-   eliminates the raw gauge endpoint by triangle and gives the direct metric
-   transport constant `c2ConstVar+Cmark`.  `pullbackSteps_of_metric_transport`
-   propagates model defects with the exact weight `Ctransport^k`, and
-   `exists_markedLimit_of_metric_transport` exposes the sole summability input
-   for the regularizing weighted-tail construction while retaining the exact
-   inverse identity.
-   This multiplicative marked-metric route is an auxiliary conditional route,
-   not yet the paper-faithful transported-parameter argument.  A gauge-flow
-   rear has curve `rearOwn ... (Phi t u)` and generally nonconstant speed
-   `∂ᵤPhi`; hence it is not the affine-own-arclength datum characterized by
-   `SelectedInverseMap.IsMarkedSelectedInverse`.  Its unit-tangent transform
-   recovers the front at the transported parameter, so `T(B p)=p` holds for
-   ranges but not pointwise as marked data unless the front marking is
-   transported simultaneously.  Consequently no path-independent operator
-   `B : Data → Data` with both the raw gauge endpoint equality and exact marked
-   right-inverse identity can be defined from the present objects.  The
-   paper-faithful replacement must enlarge the state by a transported periodic
-   parameter (or quotient marked data by orientation-preserving periodic
-   reparameterization) and formulate the `W/S₀/S₁/S₂` triangular estimates
-   on that enlarged/quotient state.
-   The stronger proposed quotient statement, that all four path functionals
-   are invariant under arbitrary orientation-preserving periodic
-   reparameterization, is false.  `PathFunctionalsReparam` gives the correct
-   laws: the L¹ term acquires an inverse lower-Jacobian factor, `S₁` an upper
-   first-derivative factor, and `S₂` both first- and second-derivative
-   factors.  Only the curve range (and geometric unit-tangent range) is
-   invariant.  Therefore junctions modulo reparameterization can be used only
-   together with explicit uniform bounds on the transition diffeomorphisms;
-   quotienting alone cannot justify concatenation or summable C² costs.
-   `MarkedSchemeTheoremRange` already supplies the correct final range-orbit
-   conclusion, while `ArclengthReparamEstimates` and
-   `GaugeReparamVariableSpeed` are the appropriate interfaces for a faithful
-   transported-parameter chain.
-   The remaining controlled-junction constructor is not currently present.
-   `GaugeReparamAssembly.exists_normalPath_of_reparam_jacobi` constructs a new
-   rear path from slice Jacobi data; it is not a theorem that precomposes an
-   arbitrary existing `NormalPath` by a fixed periodic diffeomorphism.  The
-   recursive chain needs precisely that latter operation, with endpoint
-   equality to the preceding gauge marking and with the transformed density
-   controlled by `reparamCW/reparamC0/reparamC1/reparamC2`.  Although the
-   exported flow certificate provides the required positive first derivative
-   and bounded first/second derivatives of `Phi`, those bounds cannot be fed to
-   recursion until a generic `NormalPath.reparamSpace` constructor proves the
-   time derivative, normality, stopping, and cost fields after composition.
-   Moreover such a constructor cannot be generic over the current
-   `NormalPath` structure: that structure bounds `iteratedDeriv j eta` but does
-   not require `eta(t,·)` or its first derivative to be differentiable.
-   `ArclengthReparamEstimates.estimates_reparam` correctly requires explicit
-   `HasDerivAt eta eta1` and `HasDerivAt eta1 eta2` witnesses.  Without them the
-   chain-rule identities for the reparameterized `S₁/S₂` densities are
-   unavailable (and `deriv` defaults at nondifferentiability, so numerical
-   bounds alone do not repair this).  A sound `reparamSpace` theorem must
-   therefore take a strengthened C²-normal-path certificate carrying these
-   two spatial derivative witnesses and their periodicity/continuity, or be
-   restricted to the smooth interpolation/gauge paths where those witnesses
-   have already been constructed.
-   `C2NormalPathData` now implements that strengthened certificate, and
-   `NormalPath.reparamSpace` implements fixed controlled spatial
-   reparameterization with the explicit multiplier `reparamCostConst`.
-   Instantiating it reveals one further export gap.  The existential result of
-   `InterpolationPathDist.exists_normalPath_interp` does not state that the
-   returned path's `eta` is the displayed `pathEta`; likewise
-   `GaugeRearFamilyFromFront` identifies the returned `X` and `m` but does not
-   identify `eta` with `frameNormal ... ∘ Phi`.  Hence the available
-   `scaledEta` and inverse-Jacobi derivative theorems cannot be rewritten into
-   `C2NormalPathData` for those opaque existential witnesses.  The two core
-   constructors must be strengthened, preserving their old APIs, to export
-   `eta` equality together with the first/second spatial derivative witnesses
-   (and periodicity/boundedness).  After that, the controlled junction theorem
-   applies directly.
-   For the interpolation constructor this cannot be implemented as a wrapper
-   around the present theorem: its public witness is only the terminal
-   `psi(u)=Phi(1,u)`, whereas `Gamma.eta` uses the full flow
-   `Phi(B(t),u)`.  The full `Phi` and its first/second spatial flow derivatives
-   are local to the proof and are erased by the existential conclusion.  A
-   faithful strengthened declaration must refactor the defining theorem to
-   return `Phi`, the equality `Gamma.eta=pathEta ... Phi`, and the corresponding
-   flow-derivative witnesses; the old `exists_normalPath_interp` should then be
-   recovered as a projection of that stronger theorem.
-   `RangeClosingAdapters` discharges the marking-independent part of the final
-   TeX closing step: directional width, circle/noncircle status, and an exact
-   unit-tangent range orbit transfer across transported representatives depend
-   only on curve images.  Thus the eventual controlled-reparameterization
-   chain may change markings at its junctions without changing the width gap
-   or the final noncircular range conclusion.
-   ENDPOINT-FREE ROUTE, COMPLETED THROUGH THE CONFIGURED MODEL SEQUENCE.
-   The paper's `thm:hairpin` states "No endpoint values are assigned", so the
-   profile is `C^∞` only on the open interval `(0,π)`; and the extension route
-   is not merely unproved but false (`f(t) = 2 + sin(1/t)` is smooth and
-   positive on `(0,π)` with no smooth extension).  The chain from the paper's
-   own hypotheses to a configured model sequence with summable step defects is
-   now free of every appeal to the closed interval:
-   * `HairpinLowerComparisonInterior.hairpin_curv_ge_pulse_interior` proves the
-     lower comparison `K_* ≥ b₀ y` with `b₀ = exp(−D₁A²M/2)` explicit.  The
-     compactness extraction of `min f` and `max f` over `[0,π]` is replaced by
-     the paper's own barrier bounds on `(0,π)`; the coordinates are given, not
-     reconstructed; the abstract engine `HairpinMass.Kstar_lower_bound` is
-     reused verbatim.
-   * `CanonicalConsecutiveInterior` supplies the three certificates the
-     configured-model capstone consumes on top of `ConsecutiveData`
-     (`currentPulse_nonneg`, `current_x_deriv`,
-     `exists_previous_lower_comparison`) from interior data.
-   * `CanonicalConsecutivePaperWitness`, `CanonicalConsecutiveGeometricCertificates`
-     and `CanonicalConfiguredModelCapstone` were localized in place — they had
-     no other callers, so no duplicate global variants remain.
-   * `PaperHairpinQuantitativeData.consecutiveData_of_interior` exposes the
-     consecutive package as a definition whose projections reduce definitionally
-     (the destructuring `obtain` that blocked reduction was replaced by
-     projections), so the capstone can be applied to it directly.
-   * `InteriorConfiguredModelSequence.exists_configuredModelSequence_of_interior`
-     is the composition: from `f ∈ C^∞(0,π)`, the barriers `m ≤ f ≤ Am` there,
-     the hairpin coordinates, the order-zero curvature tail, the relative bounds
-     at `j ≤ 4` and the translator relations, it produces the configured model
-     sequence together with the SUMMABLE defect series.
-   CURRENT COMPILED BOUNDARY (this statement supersedes the historical
-   development notes above).
-   * `StrictConstructedModelGeometry.exists_strict_constructedModelGeometry_of_eps`
-     constructs the epsilon-profile model sequence with strict levelwise
-     geometry.  Strict model curvature is therefore no longer a residual.
-   * `ConstructedConfiguredSequenceWeighted.exists_data_of_eps` retains
-     positivity, the linear lower growth of `Hs`, and every sign needed by the
-     closing estimates.  `WeightedMarkedDefectThreshold` proves summability at
-     the exact condition `K * exp (-(beta * deltaStep)) < 1`; no assumption
-     `K <= 1` remains.
-   * `VariableSpeedApproximatePullback`, `ApproximatePullbackClosedTube`, and
-     `ApproximatePaperAssemblyResidual` turn approximate transported paths and
-     approximate base-defect paths into an exact marked inverse orbit and the
-     final noncircular range orbit.  `DirectMarkedLimitOrbit` and
-     `ApproximatePaperAssemblySelectedInverse` specialize this to
-     `B = SelectedInverseMap.selInv kh` without an auxiliary total map `T` or
-     hypotheses `hTB` and `hTev`.
-   * `ConstructedPulseWidth` produces a uniform width constant for the retained
-     periodized pulse.  `ConstructedWeightedClosingGap` proves an explicit
-     weighted shadow-tail bound and an explicit starting-separation inequality
-     implying the exact final transverse gap.
+The historical development log that previously occupied this section
+described the conditional intermediate layers.  Those layers are
+superseded by the unconditional construction and have been removed.
 
-    These results do NOT yet constitute an unconditional proof of the main
-    theorem.  The exact remaining interfaces are:
-    * `ConfiguredApproximateDefectPath.Residual`, namely the explicit
-     interpolation endpoint identification and its uniform `P0/P1/G1/Cg` and
-     cost domination for every configured edge.  The canonical stopped-flow
-     derivative bounds themselves are constructed by
-     `ProfiledInterpolationBoundsConstructor`.
-   * The approximate selected-inverse transport theorem `hmap`, continuity of
-     `selInv kh`, and a `ClosedTubeInvarianceResidual`.
-     `PhysicalRearLimitKinematicClosure` reduces construction of the former
-     physical limit-component family to `PhysicalRearKinematicClosureResidual`:
-     closure of the finite normalized steering, inverse-arclength, and exact
-     front/rear identities under marked convergence, including noncollapse of
-     the limiting steering.
-   * The physical stage package is still an input, but it now supplies the
-     forward range orbit directly: `range_front_eq_unitTangent_rear` combines
-     the rear Frenet derivative, the exact rear-track formula, and surjectivity
-     of the rear-arclength inverse.  No separate positive-pinching
-     `RangeProvider` remains.
-   * The final wiring identifying the width furnished by
-     `ConstructedPulseWidth` with the initial configured model front, retaining
-     that common `Cw` through the arbitrary-start sequence, and choosing the
-     start above the explicit `ConstructedWeightedClosingGap` threshold.
+ENDPOINT-FREE ROUTE, COMPLETED THROUGH THE CONFIGURED MODEL SEQUENCE.
+The paper's `thm:hairpin` states "No endpoint values are assigned", so the
+profile is `C^∞` only on the open interval `(0,π)`; and the extension route
+is not merely unproved but false (`f(t) = 2 + sin(1/t)` is smooth and
+positive on `(0,π)` with no smooth extension).  The chain from the paper's
+own hypotheses to a configured model sequence with summable step defects is
+now free of every appeal to the closed interval:
+* `HairpinLowerComparisonInterior.hairpin_curv_ge_pulse_interior` proves the
+  lower comparison `K_* ≥ b₀ y` with `b₀ = exp(−D₁A²M/2)` explicit.  The
+  compactness extraction of `min f` and `max f` over `[0,π]` is replaced by
+  the paper's own barrier bounds on `(0,π)`; the coordinates are given, not
+  reconstructed; the abstract engine `HairpinMass.Kstar_lower_bound` is
+  reused verbatim.
+* `CanonicalConsecutiveInterior` supplies the three certificates the
+  configured-model capstone consumes on top of `ConsecutiveData`
+  (`currentPulse_nonneg`, `current_x_deriv`,
+  `exists_previous_lower_comparison`) from interior data.
+* `CanonicalConsecutivePaperWitness`, `CanonicalConsecutiveGeometricCertificates`
+  and `CanonicalConfiguredModelCapstone` were localized in place — they had
+  no other callers, so no duplicate global variants remain.
+* `PaperHairpinQuantitativeData.consecutiveData_of_interior` exposes the
+  consecutive package as a definition whose projections reduce definitionally
+  (the destructuring `obtain` that blocked reduction was replaced by
+  projections), so the capstone can be applied to it directly.
+* `InteriorConfiguredModelSequence.exists_configuredModelSequence_of_interior`
+  is the composition: from `f ∈ C^∞(0,π)`, the barriers `m ≤ f ≤ Am` there,
+  the hairpin coordinates, the order-zero curvature tail, the relative bounds
+  at `j ≤ 4` and the translator relations, it produces the configured model
+  sequence together with the SUMMABLE defect series.
+CURRENT COMPILED STATUS.
+* `PaperMainTheoremUnconditional.mainConclusion`, defined in
+  `UnitTangentIterates/PaperMainTheoremUnconditional.lean`, is the closed
+  paper-facing theorem.  Its conclusion is
+  `PaperMainTheoremGenuineNoncircularStatement.MainConclusion`, which includes
+  a smooth embedded oval, parameter-independent geometric noncircularity,
+  and a smooth infinite forward unit-tangent orbit.
+* `Theorem11Status.mainConclusion` is the canonical zero-argument audit
+  declaration and delegates to that unconditional construction.
+* The prepared initial/next-step and recursive-chain modules now construct
+  the actual-depth
+  `ConfiguredRecursiveEdgeRecostFinitePreparedChosenChain.ChosenChain`.
+  The chosen-chain completion and physical-cell/package modules supply the
+  coherent physical closure consumed by
+  `ConfiguredRecursiveEdgeRecostFinitePreparedChosenChainUnconditionalMain`.
+* The scalar choices, summable recost error, shadowing tail, starting shift,
+  transverse width gap, limiting strictness, smoothness projection,
+  noncircularity upgrade, recursive chosen chain, and coherent physical grid
+  are all discharged before the paper-facing theorem.
+* The former conditional assembly layers and compatibility declarations
+  (`Theorem11Status.RemainingInput`, the coherent-grid boundary, the
+  floor-positive and floor-free conditional assemblies, and
+  `PhysicalRearKinematicClosureReduction.lean`) have been removed: each was
+  superseded by the unconditional construction.
 
-   Until those interfaces are constructed, the repository verifies a sharp
-   conditional capstone and its supporting analytic/geometric lemmas, not the
-   paper's unconditional main theorem.
+Consequently the repository contains an unconditional proof of Theorem 1.1,
+with `Theorem11Status.mainConclusion` as the canonical formalization boundary.
 -/
 
 namespace Manifest
 
-/-- The formalization manifest is fully checked and all imported theorems are verified. -/
+/-- This only records that the manifest module elaborates.  The canonical
+zero-argument statement of Theorem 1.1 is `Theorem11Status.mainConclusion`. -/
 theorem manifest_verified : True := trivial
 
 end Manifest

@@ -46,13 +46,10 @@ theorem tangentAngle_eq_of_hasDerivAt {theta kappa : ℝ → ℝ} {θ₀ : ℝ}
   have hd : ∀ x : ℝ, HasDerivAt (fun y => theta y - tangentAngle kappa θ₀ y) 0 x := by
     intro x
     simpa using (hθ x).sub (hasDerivAt_tangentAngle (θ₀ := θ₀) hk x)
-  have hdiff : Differentiable ℝ fun y => theta y - tangentAngle kappa θ₀ y :=
-    fun x => (hd x).differentiableAt
-  have hconst := is_const_of_deriv_eq_zero (f := fun y => theta y - tangentAngle kappa θ₀ y)
-    hdiff (fun x => (hd x).deriv) s 0
-  have h0 : tangentAngle kappa θ₀ 0 = θ₀ := tangentAngle_zero
-  rw [h0] at hconst
-  linarith [hconst]
+  apply sub_eq_iff_eq_add.mp
+  simpa only [tangentAngle_zero] using
+    is_const_of_deriv_eq_zero (fun x => (hd x).differentiableAt)
+      (fun x => (hd x).deriv) s 0
 
 /-- **A unit-speed curve with curvature `κ` is a rigid image of the
 reconstruction `interpCurve κ θ₀ L`.**  The rotation is by the difference of the
@@ -72,14 +69,10 @@ theorem eq_rigid_interpCurve {X : ℝ → ℂ} {theta kappa : ℝ → ℝ} {θ�
       rw [hw, ← tau_add]
       congr 1
       exact tangentAngle_eq_of_hasDerivAt (θ₀ := θ₀) hk hθ x
-    have := (hX x).sub h1
-    rwa [h2, sub_self] at this
-  have hdiff : Differentiable ℝ fun y => X y - w * interpCurve kappa θ₀ L y :=
-    fun x => (hd x).differentiableAt
-  have hconst := is_const_of_deriv_eq_zero (f := fun y => X y - w * interpCurve kappa θ₀ L y)
-    hdiff (fun x => (hd x).deriv) s 0
-  have : X s - w * interpCurve kappa θ₀ L s = X 0 - w * interpCurve kappa θ₀ L 0 := hconst
-  linear_combination (norm := ring_nf) this
+    simpa only [h2, sub_self] using (hX x).sub h1
+  exact sub_eq_iff_eq_add.mp
+    (is_const_of_deriv_eq_zero (fun x => (hd x).differentiableAt)
+      (fun x => (hd x).deriv) s 0)
 
 /-- The existential form of the rigidity. -/
 theorem exists_rigid_interpCurve {X : ℝ → ℂ} {theta kappa : ℝ → ℝ} (θ₀ L : ℝ)

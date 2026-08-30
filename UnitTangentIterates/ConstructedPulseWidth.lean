@@ -4,6 +4,7 @@ import UnitTangentIterates.AdmissibleFrontFamily
 import UnitTangentIterates.ModelWidth
 import UnitTangentIterates.ConstructedConfiguredSequenceWeighted
 import UnitTangentIterates.ActualFrontCurvatureLargePeriod
+import UnitTangentIterates.HairpinPulseDataInterior
 
 /-!
 # Uniform width from the retained constructed pulse

@@ -36,16 +36,11 @@ def toSmoothPhysicalBaseInputExact
     (baseInput : PhysicalBaseInput R)
     (F : System (base R) R.error)
     (automatic :
-      CoherentPhaseReachableMetricRangeAutomaticClosure.Input R F
-        (fun n ↦ (representatives R baseInput n).q) baseInput.kh0)
-    (tubeC_eq : R.data.Hs 0 = baseInput.cb)
-    (tubeDlt_eq :
-      ConfiguredInductiveTubeBudget.chordBase R.data.model / 2 =
-        baseInput.db) :
+      CoherentPhaseReachableMetricRangeAutomaticClosure.Input R baseInput F
+        (fun n ↦ (representatives R baseInput n).q)) :
     SmoothPhysicalBaseInput R where
   base := baseInput
-  fixedRows := fun n ↦ by
-    simpa only [tubeC_eq, tubeDlt_eq] using automatic.toFixedRowInput n
+  fixedRows := automatic.toFixedRowInput
 
 /-- Extensional version of `toSmoothPhysicalBaseInputExact`.  The equality
 transport is stated explicitly because `FixedRowInput` is indexed by its two
@@ -55,17 +50,12 @@ def ofExtensionalLimits
     (F : System (base R) R.error)
     {X : ℕ → Data}
     (automatic :
-      CoherentPhaseReachableMetricRangeAutomaticClosure.Input R F X
-        baseInput.kh0)
-    (limit_eq : ∀ n, X n = (representatives R baseInput n).q)
-    (tubeC_eq : R.data.Hs 0 = baseInput.cb)
-    (tubeDlt_eq :
-      ConfiguredInductiveTubeBudget.chordBase R.data.model / 2 =
-        baseInput.db) :
+      CoherentPhaseReachableMetricRangeAutomaticClosure.Input R baseInput F X)
+    (limit_eq : ∀ n, X n = (representatives R baseInput n).q) :
     SmoothPhysicalBaseInput R where
   base := baseInput
   fixedRows := fun n ↦ by
-    simpa only [limit_eq n, limit_eq (n + 1), tubeC_eq, tubeDlt_eq] using
+    simpa only [limit_eq n, limit_eq (n + 1)] using
       automatic.toFixedRowInput n
 
 /-- A single record packaging the final direct-branch constructor target. -/
@@ -74,20 +64,17 @@ structure Input where
   system : System (base R) R.error
   rowLimit : ℕ → Data
   automatic :
-    CoherentPhaseReachableMetricRangeAutomaticClosure.Input R system rowLimit
-      baseInput.kh0
+    CoherentPhaseReachableMetricRangeAutomaticClosure.Input R baseInput system
+      rowLimit
   rowLimit_eq_representative : ∀ n,
     rowLimit n = (representatives R baseInput n).q
-  tubeC_eq : R.data.Hs 0 = baseInput.cb
-  tubeDlt_eq :
-    ConfiguredInductiveTubeBudget.chordBase R.data.model / 2 = baseInput.db
 
 /-- Mechanical projection from coherent physical row data to the existing
 smooth configured capstone input. -/
 def Input.toSmoothPhysicalBaseInput (I : Input R) :
     SmoothPhysicalBaseInput R :=
   ofExtensionalLimits R I.baseInput I.system I.automatic
-    I.rowLimit_eq_representative I.tubeC_eq I.tubeDlt_eq
+    I.rowLimit_eq_representative
 
 /-- The strongest configured paper conclusion follows immediately after the
 single coherent automatic input record has been built. -/

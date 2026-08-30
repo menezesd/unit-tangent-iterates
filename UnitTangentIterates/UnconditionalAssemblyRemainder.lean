@@ -1,6 +1,7 @@
 import Mathlib
 import UnitTangentIterates.PaperHairpinConfig
-import UnitTangentIterates.UnitTangentIteratesMain
+import UnitTangentIterates.ModelChordArc
+import UnitTangentIterates.ShadowingScheme
 import UnitTangentIterates.CurveDistance
 import UnitTangentIterates.TubePullbackLimit
 import UnitTangentIterates.SelectedInverseMap
@@ -9,10 +10,11 @@ import UnitTangentIterates.InterpolationVariableSpeedSelInvAdapter
 /-!
 # Exact remainder for the unconditional paper theorem
 
-This record is an audit boundary, not an unconditional theorem.  It records
-that every model-orbit configuration comes from `PaperHairpinData`, then lists
-the marked interpolation and backward-shadowing hypotheses still required by
-`unit_tangent_iterates_main_theorem`.
+The first record below is the historical fixed-positive-tube audit boundary,
+not an unconditional theorem and not the current paper-faithful route.  The
+canonical closed statement of Theorem 1.1 is `Theorem11Status.mainConclusion`;
+this module now serves only as a support library for the completed route
+(notably `LimitStrictnessData` and `isOval_ev_of_limitStrictnessData`).
 -/
 
 noncomputable section
@@ -136,7 +138,8 @@ structure UnconditionalAssemblyRemainder
   rear_period_pos : ∀ n, 0 < P n
   marked_defect_summable : Summable fun n =>
     l1Modulus M (eps n) (P n) * (2 * Hs n) ^ 2 * (1 + kb * (2 * Hs n))
-  /-- The presently missing concrete interpolation-to-marked-tube bridge. -/
+  /-- Historical fixed-positive-tube interpolation input.  This is not the
+  current top-level residual for the paper-faithful route. -/
   marked_interpolation_defect : ∀ (n : ℕ) (p q : tube (2 * Hs 0) kmin
       (ModelChordArc.modelChordConst kmin kap (Hs 0) * (2 * Hs 0))),
     ev ((p : Data)) = TwoCapPairsAssembly.front (kappas n) (theta0 n) (Hs n) →
@@ -1585,29 +1588,5 @@ def UnconditionalAssemblyRemainder.ofConfiguredModel
     marked_defect_summable := hsum, marked_interpolation_defect := hbridge,
     shadow_factor := hCsh, direction_unit := hdir, model_width := hwidth,
     transverse_gap := hgap }
-
-/-- Legacy fixed-positive-tube endpoint.  It is not the paper-faithful route
-for an expanding hairpin sequence; use
-`PaperFaithfulAssemblyRemainder.conclude` for the paper's quantifiers. -/
-theorem conclude {kappas : ℕ → ℝ → ℝ} {Hs theta0 : ℕ → ℝ}
-    {kmin kap Cw Csh kb M : ℝ} {eps cw P : ℕ → ℝ} {dir : ℂ}
-    {B T : tube (2 * Hs 0) kmin
-      (ModelChordArc.modelChordConst kmin kap (Hs 0) * (2 * Hs 0)) →
-      tube (2 * Hs 0) kmin
-        (ModelChordArc.modelChordConst kmin kap (Hs 0) * (2 * Hs 0))}
-    (r : UnconditionalAssemblyRemainder kappas Hs theta0 kmin kap Cw Csh kb M
-      eps cw P dir B T) :
-    ∃ (X : ℕ → ℝ → ℂ) (LX : ℝ),
-      (∀ n, MainTheoremConditional.IsOval (X n)) ∧
-      (∀ n, range (X (n + 1)) = range (UnitTangent.unitTangentMap (X n))) ∧
-      0 < LX ∧ Periodic (X 0) LX ∧
-      ¬ ClosingArgument.IsCircleOfPerimeter (range (X 0)) LX :=
-  MarkedSpace.unit_tangent_iterates_main_theorem
-    r.kmin_pos r.separation_pos r.separation_mono r.curvature_continuous
-    r.curvature_periodic r.curvature_lower r.curvature_upper r.total_turning
-    r.selected_inverse_nonexpansive r.selected_inverse_continuous
-    r.front_right_inverse r.front_realizes_unit_tangent r.derivative_bound_pos
-    r.rear_period_pos r.marked_defect_summable r.marked_interpolation_defect
-    r.shadow_factor r.direction_unit r.model_width r.transverse_gap
 
 end UnconditionalAssembly

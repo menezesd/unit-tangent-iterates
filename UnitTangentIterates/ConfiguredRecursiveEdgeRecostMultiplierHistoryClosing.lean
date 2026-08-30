@@ -69,6 +69,9 @@ theorem nonempty (R : RecostClosingOutput J O) : Nonempty (Output R) := by
   let Rc : RecostClosingOutput J O := {
     preShift := P
     large := L
+    mass_curvature := fun q => by
+      simpa [P, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
+        R.mass_curvature (N + L.N + q)
     mass_small := fun q => by
       simpa [P, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
         R.mass_small (N + L.N + q) }
@@ -225,6 +228,16 @@ theorem error_nonnegative {R : RecostClosingOutput J O} (H : Output R) :
 
 theorem error_summable {R : RecostClosingOutput J O} (H : Output R) :
     ∀ n, Summable (H.error n) := H.toClosing.error_summable
+
+/-- The strict configured curvature source-mass budget survives the additional
+history tail. -/
+theorem mass_curvature_final {R : RecostClosingOutput J O}
+    (H : Output R) (q : ℕ) :
+    multiplierRecostSourceAllowance H.data distortionTotal
+      physicalTransitionCeilings.C0 physicalTransitionCeilings.C1
+      physicalTransitionCeilings.C2 q ≤
+        configuredCurvatureSourceMassBudget := by
+  exact H.toClosing.mass_curvature_final q
 
 /-- The multiplier source-mass bound survives the additional tail. -/
 theorem mass_small {R : RecostClosingOutput J O}

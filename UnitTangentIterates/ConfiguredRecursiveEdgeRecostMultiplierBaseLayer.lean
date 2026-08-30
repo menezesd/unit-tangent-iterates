@@ -19,20 +19,23 @@ variable {J : ConfiguredRecursiveEdgeSourceP0RowJetTail.RowJetScalarOutput
     ConfiguredRecursiveSourceP0FixedDistortion.choice.NA0}
   {O : GaugeOutput J} {K0 K1 K2 : ℝ}
 
-/-- The physical base source is retained definitionally; only its four scalar
-parameters are named as fields of the intrinsic node. -/
+/-- The physical base retains the canonical unary stage definitionally.  The
+three synchronized scalar fields remain the recursive successor contract. -/
 noncomputable def baseNode
     (R : RecostClosingOutput J O) (n : ℕ) : Node where
   P0 := ConfiguredRecursiveEdgeRecostedRawMetricDiagonalRows.Profiles.P0
-    (ConfiguredRecursiveEdgeSourceP0CappedRowProduction.D J.scalar)
-      (rowOutput R n).N 0
+    (ConfiguredRecursiveEdgeSourceP0CappedRowProduction.D J.scalar) (rowOutput R n).N 0
   khat := ConfiguredRecursiveEdgeRecostedRawMetricDiagonalRows.Profiles.khat
-    (ConfiguredRecursiveEdgeSourceP0CappedRowProduction.D J.scalar)
-      (rowOutput R n).N 0
+    (ConfiguredRecursiveEdgeSourceP0CappedRowProduction.D J.scalar) (rowOutput R n).N 0
   Qmax := ConfiguredRecursiveEdgeRecostedRawMetricDiagonalRows.Profiles.Qmax
+    (ConfiguredRecursiveEdgeSourceP0CappedRowProduction.D J.scalar) (rowOutput R n).N 0
+  stageP0 := ConfiguredRecursiveEdgeSourceP0.edgeSourceP0
     (ConfiguredRecursiveEdgeSourceP0CappedRowProduction.D J.scalar)
-      (rowOutput R n).N 0
-  stage := (baseStage (K0 := K0) (K1 := K1) (K2 := K2) R n).asUnary
+  stageKhat := fun _ ↦ ConfiguredRecursiveEdgeSourceP0CappedRowProduction.pathKhat J.scalar
+  stageQmax := ConfiguredRecursiveEdgeSourceP0CappedRowProduction.Qmax J.scalar
+  stageIndex := (rowOutput R n).N
+  stage := ConfiguredRecursiveEdgeRecostedRawDiagonalBase.unaryStage
+    (K0 := K0) (K1 := K1) (K2 := K2) J (rowOutput R n).N
 
 @[simp] theorem baseNode_displayed
     (R : RecostClosingOutput J O) (n : ℕ) :
@@ -46,7 +49,13 @@ def baseNode_configured
     (R : RecostClosingOutput J O) (n : ℕ) :
     ConfiguredNode R n
       (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n) := by
-  refine { P0_eq := ?_, khat_eq := ?_, Qmax_eq := ?_ } <;>
+  refine
+    { P0_eq := ?_
+      khat_eq := ?_
+      Qmax_eq := ?_
+      stageP0_at_index_eq := ?_
+      stageKhat_at_index_eq := ?_
+      stageQmax_at_index_eq := ?_ } <;>
     simp [baseNode,
       ConfiguredRecursiveEdgeRecostedRawMetricDiagonalRows.Profiles.P0,
       ConfiguredRecursiveEdgeRecostedRawMetricDiagonalRows.Profiles.khat,
@@ -54,8 +63,82 @@ def baseNode_configured
       ConfiguredRecursiveEdgeRecostedDiagonalRows.Sync.P0,
       ConfiguredRecursiveEdgeRecostedDiagonalRows.Sync.khat,
       ConfiguredRecursiveEdgeRecostedDiagonalRows.Sync.Qmax,
+      ConfiguredRecursiveEdgeSourceP0CappedRowProduction.pathKhat,
+      ConfiguredRecursiveEdgeSourceP0CappedRowProduction.Qmax,
+      ConfiguredRecursiveEdgeSourceP0CappedRowProduction.D,
+      ConfiguredCombinedPhysicalDiagonalLargeSeparation.analyticKhat,
+      ConstructedConfiguredInductiveTubeBudget.WeightedData.shift,
       ConfiguredRecursiveEdgeRecostMultiplierClosing.RecostClosingOutput.totalShift,
       Nat.add_assoc]
+
+private theorem baseNode_source_eq
+    (R : RecostClosingOutput J O) (n : ℕ) :
+    (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage.source =
+      (baseStage (K0 := K0) (K1 := K1) (K2 := K2) R n).asUnary.source := by
+  simp [baseNode, baseStage,
+    FiniteSmoothRearFamilyMarkingAwareActualPullbackSynchronizedRows.Stage.asUnary,
+    ConfiguredRecursiveEdgeRecostedRawDiagonalBase.stage,
+    ConfiguredRecursiveEdgeRecostMultiplierClosing.RecostClosingOutput.totalShift,
+    Nat.add_assoc]
+
+private theorem baseNode_Gamma_eq
+    (R : RecostClosingOutput J O) (n : ℕ) :
+    (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage.Gamma =
+      (baseStage (K0 := K0) (K1 := K1) (K2 := K2) R n).asUnary.Gamma := by
+  simp [baseNode, baseStage,
+    FiniteSmoothRearFamilyMarkingAwareActualPullbackSynchronizedRows.Stage.asUnary,
+    ConfiguredRecursiveEdgeRecostedRawDiagonalBase.stage,
+    ConfiguredRecursiveEdgeRecostMultiplierClosing.RecostClosingOutput.totalShift,
+    Nat.add_assoc]
+
+private noncomputable def normalizedSourceFacts
+    (R : RecostClosingOutput J O) (n : ℕ) :
+    ConfiguredRecursiveEdgeRecostedReachableFacts.SourceFacts
+      ((finalGaugeOutput R).shiftOutput n)
+      (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage.source
+      (rowP1 R n) 0 := by
+  let H := ConfiguredRecursiveEdgePhysicalBaseFinalTailState.state
+    (K0 := K0) (K1 := K1) (K2 := K2) R n
+  rw [baseNode_source_eq R n]
+  simpa [rowP1,
+    ConfiguredRecursiveEdgeRecostMultiplierClosing.RecostClosingOutput.totalShift,
+    Nat.add_assoc] using H.sourceFacts
+
+private noncomputable def normalizedIntrinsic
+    (R : RecostClosingOutput J O) (n : ℕ) :
+    FiniteSmoothRearFamilyMarkingAwareNonaffineFullyPhysicalHistoryLink.IntrinsicFrontFunctionalFacts
+        (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage.source := by
+  let H := ConfiguredRecursiveEdgePhysicalBaseFinalTailState.state
+    (K0 := K0) (K1 := K1) (K2 := K2) R n
+  rw [baseNode_source_eq R n]
+  exact H.intrinsic
+
+private theorem normalizedPeriodFloor
+    (R : RecostClosingOutput J O) (n : ℕ) (t : ℝ) :
+    1 ≤ FiniteSmoothRearFamilyMarkingAwareAppliedSource.rearPeriod
+      (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage.source t := by
+  let H := ConfiguredRecursiveEdgePhysicalBaseFinalTailState.state
+    (K0 := K0) (K1 := K1) (K2 := K2) R n
+  rw [baseNode_source_eq R n]
+  exact H.periodFloor t
+
+private theorem exists_normalizedAncestry
+    (R : RecostClosingOutput J O) (n : ℕ) :
+    ∃ A : ConfiguredRecursiveEdgeNonaffineChosenMajorEndpoints.ConcreteAncestry
+        (RJ := J) (O := (finalGaugeOutput R).shiftOutput n)
+        (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage.Gamma
+        0 (rowDefect R n),
+      A.terminalJ =
+          (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage.source.phi1 ∧
+        A.terminalP =
+          (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage.source.P := by
+  let H := ConfiguredRecursiveEdgePhysicalBaseFinalTailState.state
+    (K0 := K0) (K1 := K1) (K2 := K2) R n
+  refine ⟨H.ancestry, ?_, ?_⟩
+  · rw [baseNode_source_eq R n]
+    exact H.terminalJ_eq
+  · rw [baseNode_source_eq R n]
+    exact H.terminalP_eq
 
 /-- The callback-free normalized base state, with no source transport. -/
 noncomputable def normalized
@@ -64,12 +147,16 @@ noncomputable def normalized
       ((finalGaugeOutput R).shiftOutput n)
       (baseNode (K0 := K0) (K1 := K1) (K2 := K2) R n).stage
       (rowP1 R n) 0 (rowDefect R n) := by
-  convert (ConfiguredRecursiveEdgePhysicalBaseFinalTailState.state
-    (K0 := K0) (K1 := K1) (K2 := K2) R n) using 1 <;>
-    simp [baseNode, rowP1, rowDefect,
-      ConfiguredRecursiveEdgePhysicalBaseFinalTailState.rowOutput,
-      ConfiguredRecursiveEdgeRecostMultiplierClosing.RecostClosingOutput.totalShift,
-      Nat.add_assoc]
+  let hA := exists_normalizedAncestry (K0 := K0) (K1 := K1) (K2 := K2) R n
+  let A := Classical.choose hA
+  let hA_spec := Classical.choose_spec hA
+  exact
+    { sourceFacts := normalizedSourceFacts R n
+      intrinsic := normalizedIntrinsic R n
+      periodFloor := normalizedPeriodFloor R n
+      ancestry := A
+      terminalJ_eq := hA_spec.1
+      terminalP_eq := hA_spec.2 }
 
 /-- Rear of base row `n` is the displayed physical initial of row `n+1`. -/
 theorem baseNode_range

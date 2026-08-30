@@ -47,17 +47,28 @@ variable {P0u khatu Qmaxu : ℕ → ℝ} {r depth : ℕ}
   {P1 edgeDefect : ℝ}
 
 /-- The exact source and normalized-history certificate retained at one
-reachable node. -/
-structure State (O : ConfiguredRecursiveEdgeFiniteColumnGaugeMajorant.Output
+reachable node.  Only the source and path are genuine dependencies; the
+remaining fields of the ambient stage are deliberately absent. -/
+structure StateCore (O : ConfiguredRecursiveEdgeFiniteColumnGaugeMajorant.Output
+    RJ Etotal Dtarget) {p q : Data} (Gamma : NormalPath p q)
+    {P0 khat Qmax : ℝ}
+    (source : MarkingAwareSource Gamma P0
+      ConfiguredCombinedPhysicalDiagonalLargeSeparation.sourceKh khat Qmax)
+    (P1 : ℝ) (depth : ℕ) (edgeDefect : ℝ) where
+  sourceFacts : SourceFacts O source P1 depth
+  intrinsic : IntrinsicFrontFunctionalFacts source
+  periodFloor : ∀ t, 1 ≤ rearPeriod source t
+  ancestry : ConcreteAncestry (O := O) Gamma depth edgeDefect
+  terminalJ_eq : ancestry.terminalJ = source.phi1
+  terminalP_eq : ancestry.terminalP = source.P
+
+/-- Stage-facing compatibility name.  It erases stage metadata that no field
+of the normalized certificate uses. -/
+abbrev State (O : ConfiguredRecursiveEdgeFiniteColumnGaugeMajorant.Output
     RJ Etotal Dtarget) (S : Stage P0u
       (fun _ => ConfiguredCombinedPhysicalDiagonalLargeSeparation.sourceKh)
-      khatu Qmaxu r) (P1 : ℝ) (depth : ℕ) (edgeDefect : ℝ) where
-  sourceFacts : SourceFacts O S.source P1 depth
-  intrinsic : IntrinsicFrontFunctionalFacts S.source
-  periodFloor : ∀ t, 1 ≤ rearPeriod S.source t
-  ancestry : ConcreteAncestry (O := O) S.Gamma depth edgeDefect
-  terminalJ_eq : ancestry.terminalJ = S.source.phi1
-  terminalP_eq : ancestry.terminalP = S.source.P
+      khatu Qmaxu r) (P1 : ℝ) (depth : ℕ) (edgeDefect : ℝ) :=
+  StateCore O S.Gamma S.source P1 depth edgeDefect
 
 namespace State
 

@@ -1,4 +1,5 @@
 import Mathlib
+import UnitTangentIterates.CurvatureFromMarkedDistance
 import UnitTangentIterates.PathMetric
 import UnitTangentIterates.MarkedReparamRigidity
 
@@ -29,7 +30,7 @@ This file provides the two notions needed to state such a bound.
 
 noncomputable section
 
-open Set Function MarkedSpace
+open Set Function MarkedSpace CurvatureFromMarkedDistance
 
 namespace MarkedShift
 
@@ -41,6 +42,10 @@ def shiftData (b : ℝ) (p : Data) : Data :=
   (p.1.compContinuous (shiftMap b), p.2.1.compContinuous (shiftMap b),
     p.2.2.compContinuous (shiftMap b))
 
+/-- The canonical representative in `[0,1]` of a marking phase modulo one. -/
+def normalizedPhase (q : ℝ) : Set.Icc (0 : ℝ) 1 :=
+  ⟨Int.fract q, Int.fract_nonneg q, (Int.fract_lt_one q).le⟩
+
 @[simp] theorem shiftData_curve (b : ℝ) (p : Data) (u : ℝ) :
     (shiftData b p).1 u = p.1 (u + b) := rfl
 
@@ -49,6 +54,10 @@ def shiftData (b : ℝ) (p : Data) : Data :=
 
 @[simp] theorem shiftData_acc (b : ℝ) (p : Data) (u : ℝ) :
     (shiftData b p).2.2 u = p.2.2 (u + b) := rfl
+
+/-- Curvature is equivariant under a shift of the marking. -/
+@[simp] theorem dataCurv_shiftData (b : ℝ) (p : Data) (u : ℝ) :
+    dataCurv (shiftData b p) u = dataCurv p (u + b) := rfl
 
 @[simp] theorem shiftData_zero (p : Data) : shiftData 0 p = p := by
   refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> ext u <;> simp
@@ -181,6 +190,31 @@ theorem isTubeMember_shiftData {c kmin delta : ℝ} {p : Data}
       ring
     rw [hcyc]
     simpa [hfract] using hchord
+
+/-- Normalizing a phase modulo one does not change the shifted tube member. -/
+theorem shiftData_normalizedPhase (q : ℝ) (p : Data) {c kmin delta : ℝ}
+    (hp : IsTubeMember c kmin delta p) :
+    shiftData (normalizedPhase q : ℝ) p = shiftData q p := by
+  have hcurve : ∀ u,
+      (shiftData (normalizedPhase q : ℝ) p).1 u =
+        (shiftData q p).1 (u + 0) := by
+    intro u
+    simp only [shiftData_curve, add_zero]
+    change p.1 (u + Int.fract q) = p.1 (u + q)
+    calc
+      p.1 (u + Int.fract q) =
+          p.1 ((u + q) - ((⌊q⌋ : ℤ) : ℝ) * 1) := by
+            congr 1
+            rw [Int.fract]
+            ring
+      _ = p.1 (u + q) := hp.periodic.sub_int_mul_eq (x := u + q) ⌊q⌋
+  have hEq :
+      shiftData (normalizedPhase q : ℝ) p = shiftData 0 (shiftData q p) :=
+    eq_shiftData_of_curve
+      (isTubeMember_shiftData hp q)
+      (isTubeMember_shiftData hp (normalizedPhase q : ℝ))
+      (b := 0) hcurve
+  simpa using hEq
 
 /-! ### Shifting a normal path -/
 
