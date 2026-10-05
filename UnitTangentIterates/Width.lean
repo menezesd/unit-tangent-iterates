@@ -1,149 +1,167 @@
-import Mathlib
+module
+
+public import UnitTangentIterates.CurveFromCurvature
+public import UnitTangentIterates.PeriodizationEstimates
 
 /-!
-# Directional widths and Hausdorff perturbations
+# Width of a centrally symmetric curve built from its curvature (Lemma 4.4, geometric part)
 
-The closing argument of the paper *A Noncircular Oval with Convex Unit-Tangent
-Iterates* excludes a circle by comparing widths: the shadowing curve `X₀` is
-Hausdorff-close to the model `Q₀`, and
+Let `κ ≥ 0` be continuous and `L`-periodic with `∫₀ᴸ κ = π`, and let `X` be the centered curve
+of curvature `κ` (equation (6.2)), with tangent angle `Θ`.  Rotate so that the tangent angle at
+`s = -L/2` is horizontal: put `φ(s) = Θ(s) - Θ(-L/2)`.  The *width*
 
-> a Hausdorff perturbation of size `d` changes every directional width by at
-> most `2d`, whereas a circle with perimeter `L` has width `L/π`.
+`W = ∫_{-L/2}^{L/2} sin φ(s) ds`
 
-This file formalizes those two geometric facts in a real inner product space.
-The directional width of a set `A` in the direction of a unit vector `e` is
-written through the support function
-
-```
-  h_A(e) = sup { ⟪x, e⟫ : x ∈ A },      width_A(e) = h_A(e) + h_A(-e).
-```
-
-Main results:
-
-* `support_le_of_hausdorffDist_le` : `h_A(e) ≤ h_B(e) + d` when
-  `hausdorffDist A B ≤ d` and `‖e‖ ≤ 1`;
-* `abs_width_sub_le` : a Hausdorff perturbation of size `d` changes every
-  directional width by at most `2d`;
-* `width_closedBall` : the width of a disc of radius `r` is `2r`, so a circle
-  of perimeter `L = 2πr` has width `L/π`.
+is the width of `X` in the direction `v = i τ(Θ(-L/2))` normal to that tangent: the whole curve
+lies in the strip `-W/2 ≤ ⟨X, v⟩ ≤ W/2`.
 -/
 
-noncomputable section
+@[expose] public section
 
-open Metric Set
+namespace Ovals
 
-namespace Width
+open Complex Real intervalIntegral MeasureTheory
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+/-- The width `W = ∫_{-L/2}^{L/2} sin (Θ(s) - Θ(-L/2)) ds` of the curve of curvature `κ`. -/
+noncomputable def curveWidth (θ₀ : ℝ) (κ : ℝ → ℝ) (L : ℝ) : ℝ :=
+  ∫ s in (-L / 2)..(L / 2), Real.sin (angleOfCurvature θ₀ κ s - angleOfCurvature θ₀ κ (-L / 2))
 
-/-- The support function `h_A(e) = sup {⟪x, e⟫ : x ∈ A}`. -/
-def support (A : Set E) (e : E) : ℝ := sSup ((fun x => (inner ℝ x e : ℝ)) '' A)
+variable {θ₀ L : ℝ} {κ : ℝ → ℝ}
 
-/-- The width of `A` in the direction `e`. -/
-def width (A : Set E) (e : E) : ℝ := support A e + support A (-e)
+/-- `Re (τ(a) · conj (i τ(b))) = sin (a - b)`. -/
+lemma re_tau_mul_conj_I_tau (a b : ℝ) :
+    (tau a * (starRingEnd ℂ) (I * tau b)).re = Real.sin (a - b) := by
+  rw [tau_eq, tau_eq, Real.sin_sub]
+  simp [Complex.mul_re, Complex.mul_im, -Complex.ofReal_sin, -Complex.ofReal_cos]
 
-lemma bddAbove_image (A : Set E) (hA : Bornology.IsBounded A) {e : E} (he : ‖e‖ ≤ 1) :
-    BddAbove ((fun x => (inner ℝ x e : ℝ)) '' A) := by
-  obtain ⟨R, hR⟩ := (isBounded_iff_forall_norm_le).mp hA
-  refine ⟨R, ?_⟩
-  rintro _ ⟨x, hx, rfl⟩
-  calc (inner ℝ x e : ℝ) ≤ ‖x‖ * ‖e‖ := real_inner_le_norm x e
-    _ ≤ R * 1 := by
-        apply mul_le_mul (hR x hx) he (norm_nonneg _)
-        exact le_trans (norm_nonneg _) (hR x hx)
-    _ = R := by ring
-
-lemma le_support {A : Set E} (hA : Bornology.IsBounded A) {e : E} (he : ‖e‖ ≤ 1)
-    {x : E} (hx : x ∈ A) : (inner ℝ x e : ℝ) ≤ support A e :=
-  le_csSup (bddAbove_image A hA he) ⟨x, hx, rfl⟩
-
-/-- **A Hausdorff perturbation moves the support function by at most `d`.** -/
-theorem support_le_of_hausdorffDist_le {A B : Set E} (hA : A.Nonempty) (hB : B.Nonempty)
-    (hAb : Bornology.IsBounded A) (hBb : Bornology.IsBounded B) {e : E} (he : ‖e‖ ≤ 1)
-    {d : ℝ} (hd : hausdorffDist A B ≤ d) :
-    support A e ≤ support B e + d := by
-  have hfin : hausdorffEDist A B ≠ ⊤ :=
-    hausdorffEDist_ne_top_of_nonempty_of_bounded hA hB hAb hBb
-  apply csSup_le (hA.image _)
-  rintro _ ⟨x, hx, rfl⟩
-  refine le_of_forall_pos_le_add ?_
-  intro eps heps
-  have hinf : infDist x B ≤ d := le_trans (infDist_le_hausdorffDist_of_mem hx hfin) hd
-  have hlt : infDist x B < d + eps := by linarith
-  obtain ⟨y, hy, hxy⟩ := (infDist_lt_iff hB).mp hlt
-  have hsplit : (inner ℝ x e : ℝ) = (inner ℝ y e : ℝ) + (inner ℝ (x - y) e : ℝ) := by
-    rw [inner_sub_left]
-    ring
-  have hcs : (inner ℝ (x - y) e : ℝ) ≤ ‖x - y‖ * ‖e‖ := real_inner_le_norm _ _
-  have hnorm : ‖x - y‖ = dist x y := (dist_eq_norm x y).symm
-  have hbound : (inner ℝ (x - y) e : ℝ) ≤ d + eps := by
-    calc (inner ℝ (x - y) e : ℝ) ≤ ‖x - y‖ * ‖e‖ := hcs
-      _ ≤ ‖x - y‖ * 1 := by
-          apply mul_le_mul_of_nonneg_left he (norm_nonneg _)
-      _ = dist x y := by rw [mul_one, hnorm]
-      _ ≤ d + eps := hxy.le
-  have hy' : (inner ℝ y e : ℝ) ≤ support B e := le_support hBb he hy
-  show (inner ℝ x e : ℝ) ≤ support B e + d + eps
-  rw [hsplit]
-  linarith
-
-/-- **A Hausdorff perturbation of size `d` changes every directional width by
-at most `2d`.** -/
-theorem abs_width_sub_le {A B : Set E} (hA : A.Nonempty) (hB : B.Nonempty)
-    (hAb : Bornology.IsBounded A) (hBb : Bornology.IsBounded B) {e : E} (he : ‖e‖ ≤ 1)
-    {d : ℝ} (hd : hausdorffDist A B ≤ d) :
-    |width A e - width B e| ≤ 2 * d := by
-  have hne : ‖-e‖ ≤ 1 := by simpa using he
-  have hd' : hausdorffDist B A ≤ d := by rwa [hausdorffDist_comm]
-  have h1 := support_le_of_hausdorffDist_le hA hB hAb hBb he hd
-  have h2 := support_le_of_hausdorffDist_le hA hB hAb hBb hne hd
-  have h3 := support_le_of_hausdorffDist_le hB hA hBb hAb he hd'
-  have h4 := support_le_of_hausdorffDist_le hB hA hBb hAb hne hd'
-  rw [abs_le]
-  constructor <;> simp only [width] <;> linarith
-
-/-! ### The width of a disc -/
-
-/-- The support function of a closed ball of radius `r ≥ 0` in a unit direction
-is `⟪c, e⟫ + r`. -/
-theorem support_closedBall {c : E} {r : ℝ} (hr : 0 ≤ r) {e : E} (he : ‖e‖ = 1) :
-    support (closedBall c r) e = (inner ℝ c e : ℝ) + r := by
-  have hbdd : Bornology.IsBounded (closedBall c r) := isBounded_closedBall
-  apply le_antisymm
-  · apply csSup_le ((nonempty_closedBall.mpr hr).image _)
-    rintro _ ⟨x, hx, rfl⟩
-    have hx' : ‖x - c‖ ≤ r := by
-      rw [← dist_eq_norm]
-      exact mem_closedBall.mp hx
-    have : (inner ℝ (x - c) e : ℝ) ≤ ‖x - c‖ * ‖e‖ := real_inner_le_norm _ _
-    rw [he, mul_one] at this
-    have hsplit : (inner ℝ x e : ℝ) = (inner ℝ c e : ℝ) + (inner ℝ (x - c) e : ℝ) := by
-      rw [inner_sub_left]; ring
-    show (inner ℝ x e : ℝ) ≤ (inner ℝ c e : ℝ) + r
-    rw [hsplit]
-    linarith
-  · have hmem : c + r • e ∈ closedBall c r := by
-      rw [mem_closedBall, dist_eq_norm]
-      simp [norm_smul, he, abs_of_nonneg hr]
-    have := le_support hbdd (le_of_eq he) hmem
-    have hval : (inner ℝ (c + r • e) e : ℝ) = (inner ℝ c e : ℝ) + r := by
-      rw [inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, he]
-      ring
-    rwa [hval] at this
-
-/-- **The width of a disc of radius `r` is `2r`.**  Hence a circle of perimeter
-`L = 2πr` has width `L/π`. -/
-theorem width_closedBall {c : E} {r : ℝ} (hr : 0 ≤ r) {e : E} (he : ‖e‖ = 1) :
-    width (closedBall c r) e = 2 * r := by
-  have hne : ‖-e‖ = 1 := by simpa using he
-  rw [width, support_closedBall hr he, support_closedBall hr hne, inner_neg_right]
+/-- The angle difference is the integral of the curvature. -/
+lemma angleOfCurvature_sub (hκ : Continuous κ) (a b : ℝ) :
+    angleOfCurvature θ₀ κ b - angleOfCurvature θ₀ κ a = ∫ r in a..b, κ r := by
+  unfold angleOfCurvature
+  rw [← intervalIntegral.integral_add_adjacent_intervals (a := 0) (b := a) (c := b)
+    (hκ.intervalIntegrable _ _) (hκ.intervalIntegrable _ _)]
   ring
 
-/-- A circle of perimeter `L = 2πr` has width `L/π` in every direction. -/
-theorem width_closedBall_of_perimeter {c : E} {r L : ℝ} (hr : 0 ≤ r)
-    (hL : L = 2 * Real.pi * r) {e : E} (he : ‖e‖ = 1) :
-    width (closedBall c r) e = L / Real.pi := by
-  rw [width_closedBall hr he, hL]
-  field_simp [Real.pi_ne_zero]
+/-- **The curve lies in a strip of width `W`.** -/
+theorem curveOfCurvature_strip (hκ : Continuous κ) (hκ0 : ∀ s, 0 ≤ κ s)
+    (hκp : Function.Periodic κ L) (hint : ∫ r in (0 : ℝ)..L, κ r = π) (hL : 0 < L) (s : ℝ) :
+    -(curveWidth θ₀ κ L / 2) ≤
+        (curveOfCurvature θ₀ κ L s * (starRingEnd ℂ) (I * tau (angleOfCurvature θ₀ κ (-L / 2)))).re ∧
+      (curveOfCurvature θ₀ κ L s * (starRingEnd ℂ) (I * tau (angleOfCurvature θ₀ κ (-L / 2)))).re ≤
+        curveWidth θ₀ κ L / 2 := by
+  set Θ := angleOfCurvature θ₀ κ with hΘ
+  set θ₁ := Θ (-L / 2)
+  set v := I * tau θ₁
+  set p : ℝ → ℝ := fun s => (curveOfCurvature θ₀ κ L s * (starRingEnd ℂ) v).re with hp
+  set W := curveWidth θ₀ κ L
+  have hΘc : Continuous Θ := continuous_angleOfCurvature hκ
+  have hsc : Continuous (fun s => Real.sin (Θ s - θ₁)) :=
+    Real.continuous_sin.comp (hΘc.sub continuous_const)
+  have hpd : ∀ s, HasDerivAt p (Real.sin (Θ s - θ₁)) s := by
+    intro s
+    have h := ((hasDerivAt_curveOfCurvature (θ₀ := θ₀) (L := L) hκ s).mul_const
+      ((starRingEnd ℂ) v))
+    have h2 := Complex.reCLM.hasFDerivAt.comp_hasDerivAt s h
+    rw [← re_tau_mul_conj_I_tau]
+    exact h2
+  have hFTC : ∀ a b, p b - p a = ∫ r in a..b, Real.sin (Θ r - θ₁) := fun a b =>
+    (intervalIntegral.integral_eq_sub_of_hasDerivAt (fun r _ => hpd r)
+      (hsc.intervalIntegrable _ _)).symm
+  have hΘper : Θ (L / 2) = θ₁ + π := by
+    have := angleOfCurvature_add_period (θ₀ := θ₀) hκ hκp hint (-L / 2)
+    rw [show -L / 2 + L = L / 2 by ring] at this
+    exact this
+  have hsinnn : ∀ r ∈ Set.Icc (-L / 2) (L / 2), 0 ≤ Real.sin (Θ r - θ₁) := by
+    intro r hr
+    have h1 : 0 ≤ Θ r - θ₁ := by
+      rw [angleOfCurvature_sub hκ]
+      exact intervalIntegral.integral_nonneg hr.1 fun t _ => hκ0 t
+    have h2 : Θ r - θ₁ ≤ π := by
+      have : Θ (L / 2) - Θ r = ∫ t in r..(L / 2), κ t := angleOfCurvature_sub hκ _ _
+      have h3 : 0 ≤ ∫ t in r..(L / 2), κ t :=
+        intervalIntegral.integral_nonneg hr.2 fun t _ => hκ0 t
+      linarith
+    exact Real.sin_nonneg_of_nonneg_of_le_pi h1 h2
+  have hW : p (L / 2) - p (-L / 2) = W := hFTC _ _
+  have hanti : ∀ s, p (s + L) = -p s := fun s => by
+    simp only [hp, curveOfCurvature_add_period hκ hκp hint s, neg_mul, Complex.neg_re]
+  have hend : p (L / 2) = -p (-L / 2) := by
+    rw [← hanti, show -L / 2 + L = L / 2 by ring]
+  have hcell : ∀ r ∈ Set.Icc (-L / 2) (L / 2), |p r| ≤ W / 2 := by
+    intro r hr
+    have h1 : 0 ≤ p r - p (-L / 2) := by
+      rw [hFTC]
+      exact intervalIntegral.integral_nonneg hr.1 fun t ht => hsinnn t ⟨ht.1, ht.2.trans hr.2⟩
+    have h2 : 0 ≤ p (L / 2) - p r := by
+      rw [hFTC]
+      exact intervalIntegral.integral_nonneg hr.2 fun t ht => hsinnn t ⟨hr.1.trans ht.1, ht.2⟩
+    rw [abs_le]; constructor <;> linarith
+  have habsper : Function.Periodic (fun s => |p s|) L := fun s => by
+    simp only [hanti, abs_neg]
+  obtain ⟨k, hk⟩ := exists_int_cell hL s
+  have := hcell (s - k * L) ⟨by linarith [(abs_le.1 hk).1], by linarith [(abs_le.1 hk).2]⟩
+  have e : |p (s - k * L)| = |p s| := habsper.sub_int_mul_eq k
+  rw [e] at this
+  exact abs_le.1 this
 
-end Width
+/-- **The width is positive** when the curvature is. -/
+theorem curveWidth_pos (hκ : Continuous κ) (hκ0 : ∀ s, 0 < κ s)
+    (hκp : Function.Periodic κ L) (hint : ∫ r in (0 : ℝ)..L, κ r = π) (hL : 0 < L) :
+    0 < curveWidth θ₀ κ L := by
+  have hΘc : Continuous (angleOfCurvature θ₀ κ) := continuous_angleOfCurvature hκ
+  have hΘper : angleOfCurvature θ₀ κ (L / 2) = angleOfCurvature θ₀ κ (-L / 2) + π := by
+    have := angleOfCurvature_add_period (θ₀ := θ₀) hκ hκp hint (-L / 2)
+    rw [show -L / 2 + L = L / 2 by ring] at this
+    exact this
+  refine intervalIntegral.intervalIntegral_pos_of_pos_on
+    ((Real.continuous_sin.comp (hΘc.sub continuous_const)).intervalIntegrable _ _)
+    (fun r hr => ?_) (by linarith)
+  have h1 : 0 < angleOfCurvature θ₀ κ r - angleOfCurvature θ₀ κ (-L / 2) := by
+    rw [angleOfCurvature_sub hκ]
+    exact intervalIntegral.intervalIntegral_pos_of_pos_on (hκ.intervalIntegrable _ _)
+      (fun t _ => hκ0 t) hr.1
+  have h2 : 0 < angleOfCurvature θ₀ κ (L / 2) - angleOfCurvature θ₀ κ r := by
+    rw [angleOfCurvature_sub hκ]
+    exact intervalIntegral.intervalIntegral_pos_of_pos_on (hκ.intervalIntegrable _ _)
+      (fun t _ => hκ0 t) hr.2
+  exact Real.sin_pos_of_pos_of_lt_pi h1 (by linarith)
+
+/-- **Width bound from turning bounds.**  If the turning `∫_{-L/2}^s κ` on the left half-cell
+is at most `g₁`, and the remaining turning `∫_s^{L/2} κ` on the right half-cell is at most
+`g₂`, then `W ≤ ∫_{-L/2}^0 g₁ + ∫_0^{L/2} g₂` (using `sin x ≤ min (x, π - x)`). -/
+theorem curveWidth_le (hκ : Continuous κ) (hκ0 : ∀ s, 0 ≤ κ s)
+    (hκp : Function.Periodic κ L) (hint : ∫ r in (0 : ℝ)..L, κ r = π) (hL : 0 < L)
+    {g₁ g₂ : ℝ → ℝ} (hg₁ : Continuous g₁) (hg₂ : Continuous g₂)
+    (h₁ : ∀ s ∈ Set.Icc (-L / 2) 0, ∫ r in (-L / 2)..s, κ r ≤ g₁ s)
+    (h₂ : ∀ s ∈ Set.Icc 0 (L / 2), ∫ r in s..(L / 2), κ r ≤ g₂ s) :
+    curveWidth θ₀ κ L ≤ (∫ s in (-L / 2)..0, g₁ s) + ∫ s in (0 : ℝ)..(L / 2), g₂ s := by
+  have hΘc : Continuous (angleOfCurvature θ₀ κ) := continuous_angleOfCurvature hκ
+  have hsc : Continuous (fun s => Real.sin (angleOfCurvature θ₀ κ s -
+      angleOfCurvature θ₀ κ (-L / 2))) :=
+    Real.continuous_sin.comp (hΘc.sub continuous_const)
+  have hΘper : angleOfCurvature θ₀ κ (L / 2) = angleOfCurvature θ₀ κ (-L / 2) + π := by
+    have := angleOfCurvature_add_period (θ₀ := θ₀) hκ hκp hint (-L / 2)
+    rw [show -L / 2 + L = L / 2 by ring] at this
+    exact this
+  unfold curveWidth
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0)
+    (hsc.intervalIntegrable _ _) (hsc.intervalIntegrable _ _)]
+  refine add_le_add (intervalIntegral.integral_mono_on (by linarith)
+    (hsc.intervalIntegrable _ _) (hg₁.intervalIntegrable _ _) fun s hs => ?_)
+    (intervalIntegral.integral_mono_on (by linarith)
+    (hsc.intervalIntegrable _ _) (hg₂.intervalIntegrable _ _) fun s hs => ?_)
+  · rw [angleOfCurvature_sub hκ]
+    have h0 : 0 ≤ ∫ r in (-L / 2)..s, κ r :=
+      intervalIntegral.integral_nonneg hs.1 fun t _ => hκ0 t
+    exact (Real.sin_le h0).trans (h₁ s hs)
+  · have e : angleOfCurvature θ₀ κ s - angleOfCurvature θ₀ κ (-L / 2) =
+        π - ∫ r in s..(L / 2), κ r := by
+      rw [← angleOfCurvature_sub hκ, hΘper]; ring
+    have h0 : 0 ≤ ∫ r in s..(L / 2), κ r :=
+      intervalIntegral.integral_nonneg hs.2 fun t _ => hκ0 t
+    rw [e, Real.sin_pi_sub]
+    exact (Real.sin_le h0).trans (h₂ s hs)
+
+end Ovals
+
+end

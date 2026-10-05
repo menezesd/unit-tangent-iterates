@@ -1,128 +1,128 @@
 # Formalization Summary: *A Noncircular Oval with Convex Unit-Tangent Iterates*
 
-This document provides a comprehensive technical overview of the formalization of the paper *A Noncircular Oval with Convex Unit-Tangent Iterates* (by Dean Menezes) in Lean 4.
+Technical overview of the Lean 4 formalization of Dean Menezes' paper
+*A Noncircular Oval with Convex Unit-Tangent Iterates*.
 
 ---
 
-## **1. Global Project Status**
-* **Main Theorem:** proved **unconditionally** — `Theorem11Status.mainConclusion` depends only on `propext`, `Classical.choice`, and `Quot.sound`
-* **Total Formalized Modules:** **1,214 Lean modules** (after removal of all superseded conditional-pipeline modules)
-* **`sorry` Count:** **0**
-* **Custom `axiom` Count:** **0** (strictly depends on standard Lean 4 / Mathlib foundational axioms)
-* **Build Status:** **100% clean compilation across all modules**
-* **Unified Master Targets:**
-  * `UnitTangentIterates.AllModules`: Typechecks and loads every other module simultaneously.
-  * `UnitTangentIterates.PaperFormalizationManifest`: Provides an exact 1-to-1 mapping from the paper to Lean 4.
-  * `UnitTangentIterates.Theorem11Status`: The canonical zero-argument unconditional main theorem.
+## 1. Global project status
+
+* **Main theorem:** proved **unconditionally** — `Ovals.exists_noncircular_oval_iterates_ovals`
+  (`UnitTangentIterates/Main.lean`) depends only on `propext`, `Classical.choice`, `Quot.sound`.
+* **Modules:** 63 files, about 12,700 lines.
+* **`sorry` count:** 0. **Custom `axiom` count:** 0.
+* **Build:** `lake build UnitTangentIterates` compiles cleanly.
+
+The plane is modelled as `ℂ`. Everything lives in the `Ovals` namespace.
 
 ---
 
-## **2. Detailed Section-by-Section Formalization Mapping**
+## 2. How the proof is assembled
 
-### **Section 1: Introduction & Main Theorem**
-* **Master Theorem (Theorem 1.1) — proved unconditionally:**
-  * `UnitTangentIterates.Theorem11Status.mainConclusion` (canonical zero-argument statement)
-  * `UnitTangentIterates.PaperMainTheoremUnconditional.mainConclusion` (closed construction)
-  * Proves the existence of a noncircular initial oval $X_0$ whose unit-tangent iterates $X_{n+1} = \mathcal{T}(X_n)$ remain strictly convex, smooth embedded ovals for all $n \ge 0$, with every construction input produced internally.
+`Main.lean` reduces Theorem 1.1 to a single statement:
 
-### **Section 2: One Tangent Step — Rear and Front Tracks**
-* **Bicycle equations & unit-tangent speed (eqs. 2.1–2.3):**
-  * `UnitTangentIterates.UnitTangentSpeed.unitTangentMap_speed`
-  * `UnitTangentIterates.UnitTangentSpeed.transform_curvature_eq_deriv_u_add_u`
-  * Proves $\|(\mathcal{T}X)'\| = \sqrt{1 + k^2}$ and $K_{\mathcal{T}} = u' + u$ with $u = k/\sqrt{1 + k^2}$.
-* **Lemma 2.1 (Low-curvature inverse):**
-  * `UnitTangentIterates.SelectedSteeringComplete.selected_steering_complete`
-  * `UnitTangentIterates.SelectedInverseModelCoupling.exists_marked_model_selected_inverse`
-  * Unique periodic steering solution on the branch $0 < \delta < \pi/2$ with the rear curvature bound.
-* **Lemma 2.2 (Convex consecutive tracks):**
-  * `UnitTangentIterates.UnitTangentSpeed.curvature_pos_of_transform_curvature_nonneg`
-  * `UnitTangentIterates.UnitTangentPreliminariesComplete.unit_tangent_preliminaries_complete`
-  * Proves that $K_{\mathcal{T}} \ge 0 \implies k > 0$ strictly.
-* **Oval definition, embeddedness & total turning (introduction / Section 2 conventions):**
-  * `UnitTangentIterates.MainTheoremConditional.IsOval`
-  * `UnitTangentIterates.TurningNumberDischarge.embedded_of_tube`
-  * `UnitTangentIterates.TurningNumberDischarge.turning_two_pi_of_tube`
-  * `UnitTangentIterates.TurningNumber.turning_eq_two_pi_of_pinched`
-  * Establishes the $2\pi$ turning number and embeddedness for all tube members.
+```
+exists_ovalOrbit_bounded_width :
+  ∃ (X : ℕ → ℝ → ℂ) (p : ℕ → ℝ) (φ : ℕ → ℝ → ℝ) (W : ℝ),
+    IsOvalOrbit X p φ ∧ (∀ n, every pair of points of X n is within W in some fixed direction)
+```
 
-### **Section 3: A Translating Hairpin**
-* **Lemmas 3.1–3.2 (Translator equation & monotone translator operator):**
-  * `UnitTangentIterates.TranslatingHairpinComplete.translating_hairpin_complete`
-  * Monotone convergence of the translator operator $\mathcal{P}$ to a positive profile solving $\int_\theta^{g(\theta)} f = \sin \theta$.
-* **Lemma 3.3 (Explicit barriers):**
-  * `UnitTangentIterates.Barriers.fMinus`, `UnitTangentIterates.Barriers.fPlus`
-  * `UnitTangentIterates.BarrierEstimates.m_gt_one`
-  * `UnitTangentIterates.ProfileBarrierBounds.exists_pos_lower_bound`
-  * Establishes $f_\varepsilon^- \le \mathcal{P}f_\varepsilon^- \le \mathcal{P}f_\varepsilon^+ \le f_\varepsilon^+$ and the uniform lower bound $f \ge \varepsilon^{-1} - \varepsilon > 0$.
-* **Theorem 3.4 (Translating hairpin):**
-  * `UnitTangentIterates.HairpinSolitonComplete.hairpin_soliton_complete`
-  * `UnitTangentIterates.HairpinODERegularity.exists_smooth_positive_hairpin_extension`
-  * `UnitTangentIterates.TranslatorTranslation.exists_translating_hairpin_translation`
-  * Smooth strictly convex complete hairpin with $\mathcal{T}(C) = C + (V, 0)$ and $V > 0$.
-* **Lemma 3.5 (Hairpin pulse estimates):**
-  * `UnitTangentIterates.HairpinAsymptoticsComplete.exists_hairpin_pulse_package`
-  * `UnitTangentIterates.HairpinDefectComplete.hairpin_defect_complete`
-  * `UnitTangentIterates.ConstructedPeriodizationAllOrders.interiorCoefficientRecurrenceProvider`
-  * Exponential decay of $y$ and all derivatives, relative bounds $|y^{(j)}| \le D_j y$, steering mass $\int y = \pi$, and defect positivity $\Delta = \int (1 - \cos \delta)\,ds > 0$.
+i.e. an infinite orbit `X (n+1) = 𝒯 (X n) ∘ φₙ` of ovals, up to increasing reparametrizations,
+all lying in strips of one common width `W`. Given this orbit:
 
-### **Section 4: Exact Two-Cap Pairs**
-* **Lemmas 4.1–4.2 (Exponential periodization & front periodization error):**
-  * `UnitTangentIterates.ConstructedPeriodizationAllOrders.exists_constructed_certificate_unconditional`
-  * `UnitTangentIterates.FrontPeriodizationPositivity`
-  * `UnitTangentIterates.IsolatedPulseMatchingComplete.isolated_pulse_complete`
-  * Periodization $C^r$/$\partial_H$ bounds and the pairwise overlap estimate $\le C e^{-\beta H}$.
-* **Proposition 4.3 (Exact two-cap pairs):**
-  * `UnitTangentIterates.TwoCapPairsExistence.exact_two_cap_pair`
-  * `UnitTangentIterates.TwoCapAsymptoticsComplete.two_cap_perimeter_defect_asymptotics`
-  * `UnitTangentIterates.TwoCapAsymptoticsComplete.two_cap_perimeter_derivative_asymptotics`
-  * Exact centrally symmetric pairs $\mathcal{T}R_H = F_H$ with $|(H - P(H)) - \Delta| \le C_1 e^{-\beta' H}$ and $|P'(H) - 1| \le C_2 e^{-\alpha H}$.
-* **Lemma 4.4 (Uniform transverse width):**
-  * `UnitTangentIterates.TransverseWidthPositivity`
-  * `UnitTangentIterates.ClosingArgumentComplete.closing_argument_complete`
-  * Uniform bound $0 < W_H \le C$ for all large $H$.
+* `Ovals.main_of_orbit` (`Reparam.lean`) turns it into an honest iterate orbit
+  `𝒯ⁿ Γ₀ = X n ∘ Φₙ` of `Γ₀ = X 0`, so every `𝒯ⁿ Γ₀` is an oval.
+* `Ovals.not_isCircle_of_iterates_width_le` (`Reduction.lean`) rules out `Γ₀` being a circle:
+  the iterates of a circle of radius `r` are circles of radius `√(r² + n)`
+  (`Ovals.norm_unitTangentTransform_sub_center`), so they cannot all fit in a strip of width `W`.
 
-### **Section 5: Curvature-Measure Matching**
-* **Lemma 5.1 & Theorem 5.2 (Common phase; curvature-measure matching $L^1$ bound):**
-  * `UnitTangentIterates.IsolatedPulseMatchingComplete.isolated_pulse_complete`
-  * `UnitTangentIterates.MatchingHairpinComplete.hairpin_matching_complete`
-  * Proves the matching bound $\int |k_H - K_{P(H)}| \le C e^{-\beta H}$.
-* **From $L^1$ matching to $C^2$ marked metric distance (used by Theorem 6.8):**
-  * `UnitTangentIterates.CurvatureStabilityL1.dist_le_of_L1_curvature_close`
-  * `UnitTangentIterates.MatchingToMetricDefect.dist_le_of_exp_L1_matching`
-  * Bridges $L^1$ curvature closeness to $C^2$ marked path metric distance.
+`Assembly.lean` proves `exists_ovalOrbit_bounded_width` itself, by building a *model chain*
+(`Ovals.ModelChain`) of closed curves from the hairpin's pulse and feeding it to Theorem 6.4
+(`Ovals.backward_shadowing`, `Shadowing.lean`).
 
-### **Section 6: Regularizing Backward Shadowing**
-* **Marked metric space of curves (Section 6 conventions):**
-  * `UnitTangentIterates.MarkedSpace.tube`
-* **Lemma 6.2 (Curvature interpolation) & chord-arc control:**
-  * `UnitTangentIterates.CurvatureInterpolationComplete.curvature_interpolation_complete`
-  * `UnitTangentIterates.ModelChordArcComplete.model_chord_arc_complete`
-  * Constant-speed interpolation path with $W + S_0 + S_1 \le C(1+L)^2 \|\kappa^{(1)} - \kappa^{(0)}\|_{L^1}$, uniform chord-arc constant, and central symmetry $X(s+L) = -X(s)$.
-* **Lemmas 6.3–6.4 (Smooth dependence of the selected rear; inverse Jacobi estimates):**
-  * `UnitTangentIterates.SelectedRearSmoothDependence.hasDerivAt_selected_steering_time`
-  * `UnitTangentIterates.PeriodicGreen.periodicGreen_hasDerivAt`
-  * `UnitTangentIterates.JacobiInverseComplete.jacobi_inverse_estimates_complete`
-  * $L^1$ non-expansiveness $W(\mathcal{B}\Gamma) \le W(\Gamma)$ with the $S_0, S_1, S_2$ gains and the $C^{r+1}$ regularity gain.
-* **Lemmas 6.5–6.6 (Completeness of summable normal paths; stopped curvature / tube invariance):**
-  * `UnitTangentIterates.TubeInvarianceComplete.tube_invariance_complete`
-  * Tube preservation $\mathcal{B}(\mathcal{D}_{n+1}) \subseteq \mathcal{D}_n$ with ceilings $\kappa_0 < \bar{\kappa} < \hat{\kappa} < 1$ and the smallness threshold $\eta_*$.
-* **Lemma 6.7 (Selected inverse on the closed strip):**
-  * `UnitTangentIterates.SelectedSteeringComplete.selected_steering_complete`
-  * `UnitTangentIterates.BackwardShadowingSchemeComplete.selected_rear_strip_geometry`
-* **Theorem 6.8 (Regularizing backward shadowing):**
-  * `UnitTangentIterates.BackwardShadowingSchemeComplete.tail_decay_of_summable_defects`
-  * `UnitTangentIterates.SelectedInverseContractive.exists_shadowing_orbit_on_invariant_tube`
-  * `UnitTangentIterates.MarkedSchemeTheoremCanonical.exists_canonical_marked_orbit`
-  * Cauchy tail decay $\sum_{m \ge n} e_m \to 0$ and convergence to an exact orbit $X_{n+1} = \mathcal{T}(X_n)$ of smooth ovals.
+---
 
-### **Section 7: Proof of the Main Theorem**
-* **Lemma 7.1 (Large-separation threshold):**
-  * `UnitTangentIterates.LargeSeparationComplete.large_separation_complete`
-  * `UnitTangentIterates.EndToEndModelOrbit.exists_end_to_end_model_orbit`
-  * Existence of $H_*$, linear separation growth $H_n \ge H_0 + (\Delta/2)n$, and summable synchronized defect tails.
-* **Excluding a circle (closing step of the proof of Theorem 1.1):**
-  * `UnitTangentIterates.ClosingArgumentComplete.closing_argument_complete`
-  * `UnitTangentIterates.NoncircularClosingComplete.not_isCircleOfPerimeter_of_large_separation`
-  * The transverse width contradiction gap $C_W + 2d < (2H_0 - d)/\pi$, excluding circles.
+## 3. Section-by-section map
 
-*(Item numbers refer to the current `noncircular_oval_unit_tangent_iterates.tex`; the paper numbers its results by section, e.g. Theorem 6.8 is the regularizing backward shadowing theorem.)*
+### Section 2 — one tangent step
+* `Ovals.steering_exists` (`Steering.lean`): the steering equation `δ' = K − sin δ` has a
+  unique `L`-periodic solution with `0 ≤ δ < π/2`, proved via the Banach fixed point theorem
+  on the periodic resolvent (`Resolvent.lean`) rather than the paper's period-map argument.
+* `Ovals.unitTangentTransform_rearCurve` (`RearFront.lean`): the rear curve built from `F`,
+  `Θ`, `δ` satisfies `𝒯 R = F`.
+* `Ovals.isOval_selectedRear` (`SelectedRear.lean`): the selected rear of a smooth oval is
+  again a smooth oval.
+
+### Section 3 — a translating hairpin
+* `Translator.lean`: the translator equation makes `g = θ + d` an increasing diffeomorphism
+  of `(0, π)`, with `𝒯 C(θ) = C(g(θ)) + (V, 0)`.
+* `HairpinOperator.lean`: the monotone operator `𝒫`.
+* `Barriers.lean`: explicit barrier inequalities for `0 < ε ≤ 1/10`.
+* `Ovals.hairpinIter_spec` (`HairpinExistence.lean`) and `HairpinCurve.lean`: a smooth,
+  strictly convex, embedded hairpin between the barriers, with `𝒯 C = C + (V, 0)`, `V > 0`.
+* `Ovals.pulse_exists` (`Pulse.lean`, built from `PulseAux.lean`, `PulseRear.lean`,
+  `PulseFront.lean`, `PulseAbstract.lean`): the hairpin's curvature pulse `y` satisfies
+  `0 ≤ y ≤ b < 1`, `y ≤ A e^{-a|t|}`, `|y'| ≤ Dy`, `∫ y = π`.
+
+### Section 4 — exact two-cap pairs
+* `Periodization.lean`, `PeriodizationEstimates.lean`, `PeriodizationIntegral.lean`: the
+  periodization `Y_H = ∑_m y(· − mH)` is `C^r`-close to `y` on `|s| ≤ H/2` up to `O(e^{-βH})`,
+  and `∫₀^H Y_H = ∫_ℝ y`.
+* `Ovals.hasDerivAt_angleOfCurvature` et al. (`CurveFromCurvature.lean`): the closed curve
+  built from a periodic curvature of total mass `π` is centrally symmetric.
+* `ClosedPairs.lean`, `PeriodizedPairs.lean`: the exact pair `𝒯 R_H = F_H`, with `0 < Y_H < 1`
+  for large `H`.
+* `PerimeterAsymptotics.lean`: `P(H) = H − Δ + O(e^{-βH})`, `Δ > 0`.
+* `Ovals.periodized_width_bounded` (`WidthBound.lean`, via `Width.lean`): the fronts' width is
+  bounded independently of `H` (Lemma 4.4).
+
+### Section 5 — curvature-measure matching
+* `Ovals.curvature_matching` (`Matching.lean`, combining `FrontMatching.lean` and
+  `RearMatching.lean`): `∫ |k_H − K_{P(H)}| ≤ C e^{-βH}` (Theorem 5.1).
+
+### Section 6 — regularizing backward shadowing
+* `Interpolation.lean` (Lemma 6.1): the constant-speed interpolation path between two
+  centrally symmetric ovals, with bounds on the normal velocity.
+* `Jacobi.lean`, `JacobiEstimates.lean` (Lemma 6.2): the Jacobi equation for the rear's
+  normal velocity and the fixed-time estimates, including `ℓ ≥ 2π / tan A` on the rear
+  perimeter (`Ovals.rear_perimeter_ge`).
+* `WeightedResolvent.lean`, `ResolventBounds.lean`: `L¹`/`L^∞` bounds behind those estimates.
+* `WeightedSteering.lean`, `ParamSteering.lean`, `UDiff.lean`: the steering equation in an
+  arbitrary path parameter, and its differentiable dependence on that parameter.
+* `ShadowIntrinsic.lean`, `ShadowRegularity.lean` (`Ovals.rearF_lipschitz`,
+  `Ovals.rearδ_contDiff`, `Ovals.rearInv_contDiff`): the selected inverse `𝓑` on
+  (half-perimeter, curvature) data gains one derivative per application, and its rear
+  curvature is Lipschitz with constant `L/cos³(arcsin κ)`.
+* `ShadowContinuity.lean`: `𝓑` is continuous — convergent half-perimeters and uniformly
+  convergent curvatures give convergent rear half-perimeters and pointwise convergent rear
+  curvatures.
+* `ShadowRep.lean`, `ShadowPath.lean`, `ShadowInterp.lean`, `ShadowEstimates.lean`,
+  `ShadowMax.lean`, `ShadowLimitTools.lean`: normalized ovals, paths between them, and the
+  ultrafilter-limit tools (equi-Lipschitz pointwise convergence is uniform; the curve with a
+  given curvature depends continuously on it).
+* `ShadowChain.lean`, `ModelChain.lean`, `ShadowNodes.lean`, `ShadowLimit.lean`,
+  `ShadowOrbit.lean`, `ShadowRearCurve.lean`: the backward iterates `𝓑^{N-n} Q_N` of a model
+  chain stay in a fixed tube and converge along a nonprincipal ultrafilter in `N` to an exact
+  orbit `X_n = 𝒯 X_{n+1}`.
+* `Ovals.backward_shadowing` (`Shadowing.lean`, **Theorem 6.4**): for every `κ₀ < 1` there is
+  `η > 0` such that any model chain with curvatures `≤ κ₀` and total defect `≤ η` is shadowed
+  by an exact orbit of ovals, and the width bound passes to the limit.
+
+### Section 7 — proof of the main theorem
+* `Ovals.period_recursion`, `Ovals.defect_tail_le` (`PeriodRecursion.lean`,
+  `PeriodSequence.lean`): the sequence `P(H_{n+1}) = H_n` with `H_n ≥ H_0 + (Δ/2)n` (7.1).
+* `Ovals.model_defects_small` (`ModelDefects.lean`): the total defect `∑ e_n ≤ C e^{-βH_0}`
+  (7.2).
+* `Ovals.exists_ovalOrbit_bounded_width` (`Assembly.lean`): the fronts `Q_n = F_{H_n}` and
+  rears `A_n = R_{H_{n+1}}` form a model chain with curvatures `≤ 1/10`, small total defect,
+  and bounded width; `backward_shadowing` yields the thin orbit.
+* `Ovals.width_le_of_unitTangent`, `Ovals.not_isCircle_of_iterates_width_le`
+  (`Reduction.lean`): rears are never wider than their fronts, and a circle's iterates cannot
+  stay thin.
+* `Ovals.main_of_orbit` (`Reparam.lean`): reparametrization invariance of `𝒯` and curvature
+  turns the thin orbit into Theorem 1.1.
+* `Ovals.injOn_curveOfCurvature`, `Ovals.isOval_curveOfCurvature` (`Embedded.lean`): a closed
+  curve of total turning `2π` and nonnegative curvature is embedded — used wherever a curve is
+  built from prescribed curvature data.
+* `Ovals.circle_perimeter_le` (`Noncircular.lean`): a circle within Hausdorff distance `d` of a
+  set of width `W` has perimeter at most `π(W + 2d)`.
